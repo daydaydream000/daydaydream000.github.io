@@ -1,6 +1,18 @@
 {
-    "title":"Blog Title",
-    "subTitle":"Blog description",
-    "avatarUrl":"https://github.githubassets.com/favicons/favicon.svg",
-    "GMEEK_VERSION":"last"
+    "title":"DayDayDream",
+    "subTitle":"记录所思所学，做一场白日梦。",
+    "avatarUrl":"https://github.com/daydaydream000.png",
+    "GMEEK_VERSION":"last",
+    "onePageListNum":15,
+    "singlePage":["about"],
+    "i18n":"CN",
+    "UTC":8,
+    "themeMode":"manual",
+    "dayTheme":"light",
+    "nightTheme":"dark",
+    "urlMode":"pinyin",
+    "showPostSource":1,
+    "bottomText":"转载请注明出处",
+    "ogImage":"https://github.com/daydaydream000.png",
+    "needComment":0
 }
