@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" version="2.0"><channel><title>DayDayDream</title><link>https://daydaydream000.github.io</link><description>醒着做梦，落笔成诗——记所思，存所学。</description><copyright>DayDayDream</copyright><docs>http://www.rssboard.org/rss-specification</docs><generator>python-feedgen</generator><image><url>https://github.com/daydaydream000.png</url><title>avatar</title><link>https://daydaydream000.github.io</link></image><lastBuildDate>Thu, 08 Oct 2026 13:36:17 +0000</lastBuildDate><managingEditor>DayDayDream</managingEditor><ttl>60</ttl><webMaster>DayDayDream</webMaster><item><title>你好，欢迎来到 DayDayDream</title><link>https://daydaydream000.github.io/post/ni-hao-%EF%BC%8C-huan-ying-lai-dao-%20DayDayDream.html</link><description># 你好，欢迎来到 DayDayDream
+
+这是这个博客的第一篇文章 🎉
+
+在这里，我会记录自己的所思所学——可能是踩过的技术坑、读过的书、随手写下的想法，也可能只是一场白日梦。</description><guid isPermaLink="true">https://daydaydream000.github.io/post/ni-hao-%EF%BC%8C-huan-ying-lai-dao-%20DayDayDream.html</guid><pubDate>Thu, 08 Oct 2026 13:28:10 +0000</pubDate></item><item><title>关于</title><link>https://daydaydream000.github.io/about.html</link><description># 关于
+
+你好，我是 **DayDayDream**。</description><guid isPermaLink="true">https://daydaydream000.github.io/about.html</guid><pubDate>Thu, 08 Oct 2026 12:43:29 +0000</pubDate></item></channel></rss>
