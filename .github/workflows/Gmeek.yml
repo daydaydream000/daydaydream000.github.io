@@ -51,6 +51,10 @@ jobs:
           cp -a /opt/Gmeek/backup ${{ github.workspace }} 
           cp /opt/Gmeek/blogBase.json ${{ github.workspace }} 
 
+      - name: Remove Powered by Gmeek
+        run: |
+          grep -rl 'Powered by' docs --include='*.html' | xargs -r sed -i 's#<span>Powered by <a href="https://meekdai.com/Gmeek.html" target="_blank">Gmeek</a></span>##g'
+
       - name: update html
         run: |
           git config --local user.email "$(jq -r ".email" config.json)"
