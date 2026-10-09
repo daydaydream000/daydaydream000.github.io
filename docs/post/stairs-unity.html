@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>楼梯：一个 Unity 2D 无尽下坠游戏的拆解 · DayDayDream</title>
+<meta name="description" content="把「楼梯」这个小项目拆开看一遍：一个场景、五个脚本、几百行 C#。顺便记下十来处当时没意识到的坑，以及三个我自己挺满意的写法。">
+<link rel="canonical" href="https://daydaydream000.github.io/post/stairs-unity.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DayDayDream">
+<meta property="og:title" content="楼梯：一个 Unity 2D 无尽下坠游戏的拆解">
+<meta property="og:description" content="把「楼梯」这个小项目拆开看一遍：一个场景、五个脚本、几百行 C#。顺便记下十来处当时没意识到的坑，以及三个我自己挺满意的写法。">
+<meta property="og:url" content="https://daydaydream000.github.io/post/stairs-unity.html">
+<meta property="og:image" content="https://daydaydream000.github.io/assets/images/stairs-cover.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f3f8f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="DayDayDream" href="../rss.xml">
+<link rel="stylesheet" href="../assets/style.css">
+<script>
+/* 主题与公告状态在首次绘制前应用，避免闪烁 */
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('dsh-theme'); } catch (e) {}
+  if (saved !== 'light' && saved !== 'dark') saved = 'auto';
+  var root = document.documentElement;
+  root.dataset.theme = saved;
+  root.classList.toggle('dark', saved === 'dark' ||
+    (saved === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  try {
+    if (localStorage.getItem('dsh-notice') === 'off') root.classList.add('notice-off');
+  } catch (e) {}
+})();
+</script>
+
+</head>
+<body class="page-post">
+<a class="skip-link" href="#main">跳到正文</a>
+
+<header class="topbar"><div class="topbar-inner"><a class="topbar-brand" href="../index.html"><img src="../assets/avatar.jpg" alt="" width="30" height="30"><span class="topbar-brand-text">DayDayDream</span></a><nav class="topbar-nav" aria-label="主导航"><a href="../index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg><span>首页</span></a><a href="../tags/index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span>标签</span></a><a href="../about.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>关于</span></a></nav><div class="topbar-tools"><button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索（按 /）"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题"><span class="icon-sun"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg></span><span class="icon-moon"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></svg></span></button></div></div></header>
+<header class="banner banner-short"><img class="banner-bg" src="../assets/banner.jpg" alt="" aria-hidden="true" decoding="async"><div class="banner-scrim"></div><div class="banner-inner"><p class="banner-title">DayDayDream</p><p class="banner-subtitle">醒着做梦，落笔成诗——记所思，存所学。</p></div></header>
+
+<main id="main" class="layout">
+  <div class="layout-inner">
+    <aside class="col col-left"><section class="card-panel profile-card"><img class="profile-avatar" src="../assets/avatar.jpg" alt="DayDayDream" decoding="async"><p class="profile-name">DayDayDream</p><p class="profile-greeting">Hello, I'm DayDayDream.</p><div class="profile-social"><a class="social-chip" href="https://github.com/daydaydream000" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener noreferrer"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.58.69.48A10.04 10.04 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/></svg></a><a class="social-chip" href="mailto:daydaydream000@users.noreply.github.com" title="邮箱" aria-label="邮箱"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></a><a class="social-chip" href="../rss.xml" title="RSS 订阅" aria-label="RSS 订阅"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18.5" r="1.4" fill="currentColor" stroke="none"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/></svg></a></div></section><section class="card-panel notice-card" id="notice"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5v3A1.5 1.5 0 0 0 5.5 15H7l1 4h2l-1-4h2l7 3.5V6.5L11 10H5.5A1.5 1.5 0 0 0 4 10.5Z"/></svg><span>公告</span></h2><p class="notice-text">欢迎来到 DayDayDream —— 醒着做梦，落笔成诗，记所思，存所学。</p><div class="notice-foot"><a class="notice-more" href="../about.html">前往关于</a><button class="notice-close" type="button" aria-label="关闭公告" title="关闭"><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></section></aside>
+    <div class="col col-main"><article class="card-panel post">
+  <header class="post-header">
+    <h1 class="post-title">楼梯：一个 Unity 2D 无尽下坠游戏的拆解</h1>
+    <div class="post-meta"><div class="post-badges"><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><time datetime="2026-10-09">2026 年 10 月 09 日</time></span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg>约 3238 字</span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>10 分钟阅读</span><a class="badge badge-pin" href="../tags/index.html#tag-unity"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>Unity</a><a class="badge badge-pin" href="../tags/index.html#tag-游戏开发"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>游戏开发</a><a class="badge badge-pin" href="../tags/index.html#tag-源码分析"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>源码分析</a></div></div>
+  </header>
+  <div class="toc-mobile"><nav class="toc" aria-label="目录"><p class="toc-title">目录</p><div class="toc-list"><a href="#一句话说清玩法">一句话说清玩法</a><a href="#场景里只有九个物体">场景里只有九个物体</a><a href="#五个脚本各管一段">五个脚本，各管一段</a><a href="#三个我当时写对了的地方">三个我当时写对了的地方</a><a href="#1-「掉出视野就死」没有写一行视口判断" class="toc-h3">1. 「掉出视野就死」没有写一行视口判断</a><a href="#2-地板走对象池而不是随生随毁" class="toc-h3">2. 地板走对象池，而不是随生随毁</a><a href="#3-移动直接改-velocity而不是-addforce" class="toc-h3">3. 移动直接改 velocity，而不是 AddForce</a><a href="#回头再看会皱眉的地方">回头再看会皱眉的地方</a><a href="#一、会影响手感或正确性" class="toc-h3">一、会影响手感或正确性</a><a href="#二、只是浪费不影响玩法" class="toc-h3">二、只是浪费，不影响玩法</a><a href="#三、结构上容易埋雷" class="toc-h3">三、结构上容易埋雷</a><a href="#数值一览">数值一览</a><a href="#如果重做">如果重做</a><a href="#小结">小结</a></div></nav></div>
+  <figure class="post-cover"><img src="../assets/images/stairs-cover.svg" alt="楼梯：一个 Unity 2D 无尽下坠游戏的拆解" loading="lazy" decoding="async"></figure>
+  <div class="post-content"><p>「楼梯」是我做的一个很小的 Unity 2D 项目，工程名 <code>DownStair</code>。整个游戏只有<strong>一个场景、五个脚本</strong>，加起来几百行 C#，但它把 2D 平台游戏里最常见的几件事都碰了一遍：重力与跳跃、射线判地面、无限生成关卡、对象池、死亡与重开。</p><p>这篇就当是给自己做一次代码复审 —— 一边把玩法循环讲清楚，一边把当时写下去、现在回头看会皱眉的地方都列出来。</p><h2 id="一句话说清玩法">一句话说清玩法</h2><p>摄像机永远以 <strong>2 单位/秒</strong>匀速向下移动，地板在下面按 <strong>3 单位一层</strong>随机生成。玩家要做的事情只有一件：<strong>一直往下</strong>。</p><p>因为摄像机在往下走，原地不动的人会相对屏幕不断上升；而屏幕上下沿各挂着一排尖刺 —— 碰上去就死。所以你既不能停，也不能掉太快。有点像把《Downwell》翻过来玩。</p><h2 id="场景里只有九个物体">场景里只有九个物体</h2><p>场景文件 <code>Assets/Scenes/DownStair.unity</code>，去掉装饰用的尖刺精灵之后，真正干活的只有九个：</p><div class="table-wrap"><table><thead><tr><th>物体</th><th>位置</th><th>挂的东西</th></tr></thead><tbody><tr><td><code>Main Camera</code></td><td>(0, 0, −10)</td><td>CameraManager</td></tr><tr><td><code>玩家</code></td><td>(0.25, 1.285)</td><td>Player + Rigidbody2D + CapsuleCollider2D</td></tr><tr><td><code>墙壁-左</code> / <code>墙壁-右</code></td><td>(∓3, 0)</td><td>BoxCollider2D</td></tr><tr><td><code>陷阱 上</code> / <code>陷阱 下</code></td><td>摄像机子物体</td><td>DeadZone + 一排 Triangle 尖刺</td></tr><tr><td><code>管理</code></td><td>(−2.98, 0.18)</td><td>GameManager + GroundManager</td></tr><tr><td><code>Canvas</code> / <code>EventSystem</code></td><td>—</td><td>楼层数 HUD + 重开按钮</td></tr></tbody></table></div><figure class="post-figure"><img src="../assets/images/stairs-scene.svg" alt="场景纵剖面：摄像机视野 10.72 高，上下尖刺贴着屏幕边缘" loading="lazy" decoding="async"><figcaption>场景纵剖面：摄像机视野 10.72 高，上下尖刺贴着屏幕边缘</figcaption></figure><p>有几个数值值得单独记一下：</p><ul><li><strong>摄像机</strong>是正交投影，<code>orthographic size = 5.36</code>，也就是可见高度 10.72；背景纯色 <code>#314D79</code>。</li><li><strong>玩家</strong>是动态刚体，质量 1、重力缩放 1，冻结了 Z 轴旋转，还开了插值（所以低帧率下移动不会抖）。</li><li><strong>地板</strong>预制体 <code>Assets/Resources/地板.prefab</code> 尺寸 2 × 0.4，放在 layer 6「floor」上，<strong>没有 Rigidbody2D</strong>（静态碰撞体）。</li><li><strong>陷阱</strong>的碰撞体是 11.1 × 1 的横条，横跨整条井道，最关键是：它是<strong>摄像机的子物体</strong>。这一点后面会展开。</li></ul><h2 id="五个脚本各管一段">五个脚本，各管一段</h2><div class="code-block"><div class="code-head"><span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code>Player.cs        84 行   输入、地面检测、跳跃、卡住自救
+GroundManager.cs 106 行  地板生成与回收、楼层数 HUD
+CameraManager.cs 19 行   摄像机匀速下移
+DeadZone.cs      15 行   碰到尖刺 → 标记死亡
+GameManager.cs   29 行   死亡后隐藏玩家、显示重开按钮</code></pre></div><p>一帧里大致是这样跑的：</p><figure class="post-figure"><img src="../assets/images/stairs-loop.svg" alt="一帧里发生的事：五个脚本之间的流转" loading="lazy" decoding="async"><figcaption>一帧里发生的事：五个脚本之间的流转</figcaption></figure><p><code>Player.Update</code> 每帧先向下打一条 1.5 长的射线，只和 <code>floor</code> 层碰撞，用结果决定走「地面逻辑」还是「空中逻辑」；<code>GroundManager.Update</code> 数一数玩家脚下还剩几块地板，不够就补、太多就回收；<code>CameraManager.FixedUpdate</code> 把摄像机往下推；一旦尖刺的碰撞回调把 <code>Player.isDead</code> 置为 <code>true</code>，<code>GameManager</code> 就把玩家藏起来、把重开按钮亮出来。</p><h2 id="三个我当时写对了的地方">三个我当时写对了的地方</h2><h3 id="1-「掉出视野就死」没有写一行视口判断">1. 「掉出视野就死」没有写一行视口判断</h3><p>大多数教程会教你在 <code>Update</code> 里比较 <code>Camera.main.WorldToViewportPoint(transform.position)</code>，判断坐标是不是跑出 0~1 之外。这里的做法更省事：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// 陷阱 上 / 陷阱 下 是 Main Camera 的子物体
+// 所以它们永远稳定在 (摄像机 y + 4.88) 和 (摄像机 y − 5.90)</code></pre></div><p>尖刺挂在摄像机下面，摄像机去哪儿它们去哪儿。你不需要写任何「是不是离开屏幕」的判断 —— 碰得到，就说明你已经出界了。一条父子关系替代了一整套视口逻辑，而且美术上还能顺手把尖刺画在屏幕边缘。</p><h3 id="2-地板走对象池而不是随生随毁">2. 地板走对象池，而不是随生随毁</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">groundPool = new ObjectPool&lt;GameObject&gt;(
+    createFunc: () =&gt; Instantiate(Resources.Load&lt;GameObject&gt;("地板")),
+    actionOnGet: obj =&gt; obj.SetActive(true),
+    actionOnRelease: obj =&gt; obj.SetActive(false),
+    actionOnDestroy: obj =&gt; Destroy(obj),
+    defaultCapacity: MAX_GROUND_COUNT,
+    maxSize: 50,
+    collectionCheck: false);</code></pre></div><p>一局下来地板会被生成、回收几十上百次。走对象池之后全程只有十来个实例在复用，完全避开了 <code>Instantiate</code> / <code>Destroy</code> 带来的 GC 峰值 —— 对这种「一直在生成」的玩法来说，这是最值得先做的一步优化。</p><h3 id="3-移动直接改-velocity而不是-addforce">3. 移动直接改 <code>velocity</code>，而不是 <code>AddForce</code></h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// 用 velocity 直接控制水平移动，避免 AddForce 导致越推越紧
+playerRigidBody2D.velocity = new Vector2(horizontalInput * moveSpeed,
+                                         playerRigidBody2D.velocity.y);</code></pre></div><p>这是平台游戏里一个很容易踩的坑：如果每帧用 <code>AddForce</code> 推水平方向，角色贴着墙的时候力还在往里使，一旦离开墙缝就会被攒下来的速度弹出去。直接赋值 <code>velocity.x</code> 相当于「无条件的期望速度」，既跟手又不会累积。当时写下的这句注释，现在看来是最有价值的几行字之一。</p><p>另外地面和空中用了两套速度（10 和 4），手感上的区分也是对的。</p><h2 id="回头再看会皱眉的地方">回头再看会皱眉的地方</h2><p>下面这些是这次复审挑出来的，按严重程度分了三档。</p><h3 id="一、会影响手感或正确性">一、会影响手感或正确性</h3><p><strong>① <code>FixedUpdate</code> 里用了 <code>Time.deltaTime</code></strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">void FixedUpdate()
+{
+    transform.Translate(0, -downSpeed * Time.deltaTime, 0);
+}</code></pre></div><p>物理步长固定是 0.02 秒，但每帧可能执行 0 次、1 次或多次 <code>FixedUpdate</code>。<code>Time.deltaTime</code> 返回的却是「上一渲染帧花了多久」，所以在帧率波动时，摄像机的下移速度会跟着抖。这里应该用 <code>Time.fixedDeltaTime</code>；如果不在意物理同步，干脆把这段搬到 <code>Update</code> 里用 <code>Time.deltaTime</code> 也行，但两者不能混着来。</p><p><strong>② 楼层计数和地板间距是两套数，永远对不上</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public float spacingY = 3;           // 地板之间的真实间距
+public float singleFloorHeight = 1;  // 计数用的"一层楼"
+...
+Mathf.Abs(initPosotionY - playerPositionY) / singleFloorHeight</code></pre></div><p>玩家实际往下走了 3 格，HUD 却报「地下 0003 楼」。更要命的是这两个数没有任何联动 —— 你把 <code>spacingY</code> 从 3 调到 5，显示不会跟着变。要么让 <code>singleFloorHeight = spacingY</code>，要么干脆用「已经生成过多少块地板」来当楼层数，反而更贴近玩家的体感。</p><p><strong>③ 卡住自救每帧都在施加冲量</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">if (Mathf.Abs(horizontalInput) &gt; 0.5f &amp;&amp;
+    Mathf.Abs(playerRigidBody2D.velocity.x) &lt; unstuckSpeedThreshold)
+{
+    playerRigidBody2D.AddForce(Vector2.up * unstuckForce, ForceMode2D.Impulse);
+}</code></pre></div><p>想法本身很好 —— 掉进两块地板的窄缝里时给你一个向上的力，自己爬出来。但 <code>Impulse</code> 是「一次性冲量」，放在每帧都跑的 <code>CheckStuck()</code> 里就变成了持续加速。卡住 5 帧，速度就叠了 5 层。加一个冷却计时器，或者改成只在「刚刚卡住」的那一帧施加一次。</p><p><strong>④ 快速下落时可能穿过地板</strong></p><p>玩家的 Rigidbody2D 用的是 <code>Discrete</code> 碰撞检测，而地板只有 0.4 厚。自由落体 10 个单位之后速度约 <code>√(2 × 9.81 × 10) ≈ 14</code> 单位/秒，一个物理步（0.02 秒）就走 0.28 —— 离 0.4 的板厚只剩一点余量。帧率一掉，或者以后把重力调大，就会穿板掉下去。给玩家开 <code>Continuous</code> 最省心。</p><p><strong>⑤ 地板可能生成到墙里去</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">readonly float leftBorder = -3;
+readonly float righrBorder = 3;</code></pre></div><p>地板宽 2，中心取到 ±3 时边缘会伸到 ±4，而墙的内侧面就在 ±3 —— 于是地板有一截插在墙里。把范围收到 ±2 刚好贴边不重叠。（顺便记一笔：这个字段名 <code>righrBorder</code> 少了个 <code>t</code>。）</p><h3 id="二、只是浪费不影响玩法">二、只是浪费，不影响玩法</h3><p><strong>⑥ 每帧都在按名字查 LayerMask</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">Physics2D.Raycast(transform.position, Vector2.down, 1.5f,
+                  LayerMask.GetMask("floor"));</code></pre></div><p><code>GetMask</code> 每次都要走一遍字符串查表。在 <code>Awake</code> 里缓存成 <code>int</code> 就完事了。顺带一提：这种「按名字取层」的写法还有个隐患 —— 层名一旦被改，射线会静默返回 0，玩家就再也判定不到地面。</p><p><strong>⑦ 每帧都在拼字符串</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">displayCountFloor.text = "地下" + CountLowerGroundFloor().ToString("0000") + "楼";</code></pre></div><p>每帧产生一个新的 string 加一次装箱。用个 <code>int lastFloor</code> 记住上次的值，只在整数变化时才刷新文本，这个开销就没了。</p><p><strong>⑧ 死亡是事件，却被当成状态每帧轮询</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">void Update()
+{
+    if (Player.isDead)
+    {
+        player.SetActive(false);
+        restartButton.gameObject.SetActive(true);
+    }
+}</code></pre></div><p>死亡明明是 <code>DeadZone</code> 里发生的一次性事件，这里却每帧都在重复 <code>SetActive</code>。改成 <code>event</code> / <code>Action</code> 回调，或者至少加个「只执行一次」的标志位。</p><h3 id="三、结构上容易埋雷">三、结构上容易埋雷</h3><p><strong>⑨ <code>static</code> 用得有点多</strong></p><p><code>Player.isDead</code> 是 <code>static</code>，<code>GroundManager.groundPool</code> 和 <code>groundNumber</code> 也是。静态字段在场景重载（也就是点重开按钮）之后依然活着 —— 这次靠 <code>Start()</code> 里重新赋值躲过去了，但只要哪天漏了一行，上一局的死亡状态就会带进新一局。而且 <code>groundNumber</code> 从头到尾就没被用过。能用实例字段就别用 static。</p><p><strong>⑩ 墙的碰撞体是精灵的 20 倍高</strong></p><p><code>墙壁-左/右</code> 的 BoxCollider2D 本地尺寸是 (1, 20)，Transform 缩放 Y 是 13.725，乘起来世界高度 <strong>274.5</strong>；而 SpriteRenderer 画出来的墙只有 <strong>13.7</strong> 高。结果就是：玩家往下掉十几格之后，画面上早就不存在墙了，人却依然被两堵看不见的墙夹着。要么把碰撞体调成跟精灵同高，要么让墙也跟着摄像机走。</p><p><strong>⑪ 死亡用实心碰撞而不是触发器</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnCollisionEnter2D(Collision2D other)
+{
+    if (other.gameObject.CompareTag("玩家")) Player.isDead = true;
+}</code></pre></div><p>尖刺的碰撞体没有勾 <code>Is Trigger</code>，所以在判定死亡之前，物理系统会先把玩家从尖刺里解算出来 —— 会有那么一两帧的推挤。既然尖刺的语义就是「碰到就死」，勾上触发器、换成 <code>OnTriggerEnter2D</code> 更干净，也省掉一次物理解算。</p><p><strong>⑫ 两处没用的 <code>using</code></strong></p><p><code>GroundManager.cs</code> 顶上有 <code>using System.Collections;</code> 和 <code>using Unity.Mathematics;</code>，一个都没用到。后者还会顺带牵进 Burst 相关的依赖，IDE 里灰掉的那些行值得顺手清一清。</p><h2 id="数值一览">数值一览</h2><div class="table-wrap"><table><thead><tr><th>项</th><th>值</th><th>备注</th></tr></thead><tbody><tr><td>重力</td><td>9.81（Y 轴）</td><td>Physics2D 设置，固定步长 0.02</td></tr><tr><td>地面速度 / 空中速度</td><td>10 / 4</td><td>区分手感</td></tr><tr><td>跳跃初速度</td><td>3</td><td>对应跳高 <code>v²/2g ≈ 0.46</code></td></tr><tr><td>地板间距</td><td>3</td><td>跳跃高度只有它的 15%</td></tr><tr><td>地板尺寸</td><td>2 × 0.4</td><td>生成范围 ±3</td></tr><tr><td>摄像机下移速度</td><td>2 /秒</td><td>可见高度 10.72</td></tr></tbody></table></div><p>有一件事从这里能直接读出来：<strong>跳跃高度只有 0.46，而地板间距是 3</strong> —— 玩家跳不回上一层。对这个「只能往下」的玩法来说这大概率是故意的，但如果哪天想做「往上爬」的变体，第一个要动的就是这两个数。</p><h2 id="如果重做">如果重做</h2><p>把上面的问题收一收，大概会是这样一份清单：</p><ol><li>死亡改成事件驱动，<code>DeadZone</code> 用触发器，<code>GameManager</code> 订阅一次就够。</li><li>把所有 <code>static</code> 状态收进实例字段，或者用一个 <code>GameState</code> 单例显式管起来。</li><li><code>LayerMask</code>、地板预制体、字符串常量在 <code>Awake</code> 里缓存好，运行期不再按名字查。</li><li>楼层计数直接绑定 <code>spacingY</code>，或者干脆改成「已生成块数」。</li><li>玩家的碰撞检测换成 <code>Continuous</code>，地板生成范围收到 ±2。</li><li>摄像机、墙壁都挂到同一个「跟随下移」的父物体上，让「屏幕边缘」这个概念只有一处定义。</li></ol><h2 id="小结">小结</h2><p>这个项目代码量很小，但它恰好覆盖了 2D 平台游戏的核心几件事，而且<strong>有两个设计是我现在依然觉得聪明的</strong>：用父子关系表达「掉出视野即死」，以及用 <code>velocity</code> 赋值而不是 <code>AddForce</code> 来处理贴墙。这两处都不是照着教程抄的，是踩了坑之后想出来的。</p><p>至于那些问题 —— <code>Time.deltaTime</code> 用错地方、计数用了两套数、冲量放在 <code>Update</code> 里 —— 全都是那种「写的时候能跑、看起来也没错」的类型。可能这就是定期回头读自己代码的意义：<strong>跑得起来不等于写对了</strong>。</p></div>
+  <footer class="post-footer">
+    <div class="post-tags"><a class="tag" href="../tags/index.html#tag-unity">Unity</a><a class="tag" href="../tags/index.html#tag-游戏开发">游戏开发</a><a class="tag" href="../tags/index.html#tag-源码分析">源码分析</a></div>
+    <p class="post-source"><a href="https://github.com/daydaydream000/daydaydream000.github.io/blob/main/posts/stairs-unity.md">在 GitHub 上查看源文件</a></p>
+  </footer>
+</article>
+<nav class="post-nav" aria-label="上下篇"><a class="post-nav-item prev" href="../post/hello-daydaydream.html"><span class="post-nav-label">← 更新的一篇</span><span class="post-nav-title">你好，欢迎来到 DayDayDream</span></a></nav>
+</div>
+    <aside class="col col-right"><nav class="card-panel toc-card" aria-label="文章目录"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span>文章目录</span></h2><div class="toc-list"><a class="" href="#一句话说清玩法">一句话说清玩法</a><a class="" href="#场景里只有九个物体">场景里只有九个物体</a><a class="" href="#五个脚本各管一段">五个脚本，各管一段</a><a class="" href="#三个我当时写对了的地方">三个我当时写对了的地方</a><a class="toc-h3" href="#1-「掉出视野就死」没有写一行视口判断">1. 「掉出视野就死」没有写一行视口判断</a><a class="toc-h3" href="#2-地板走对象池而不是随生随毁">2. 地板走对象池，而不是随生随毁</a><a class="toc-h3" href="#3-移动直接改-velocity而不是-addforce">3. 移动直接改 velocity，而不是 AddForce</a><a class="" href="#回头再看会皱眉的地方">回头再看会皱眉的地方</a><a class="toc-h3" href="#一、会影响手感或正确性">一、会影响手感或正确性</a><a class="toc-h3" href="#二、只是浪费不影响玩法">二、只是浪费，不影响玩法</a><a class="toc-h3" href="#三、结构上容易埋雷">三、结构上容易埋雷</a><a class="" href="#数值一览">数值一览</a><a class="" href="#如果重做">如果重做</a><a class="" href="#小结">小结</a></div></nav><section class="card-panel"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>站点统计</span></h2><ul class="stat-list"><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span class="stat-label">文章</span><span class="stat-value">2</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span class="stat-label">标签</span><span class="stat-value">5</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span class="stat-label">总字数</span><span class="stat-value">3,763</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="stat-label">最近更新</span><span class="stat-value">2026-10-09</span></li></ul></section></aside>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>转载请注明出处</p>
+  <nav class="footer-nav" aria-label="页脚导航">
+    <a href="../index.html">首页</a>
+    <a href="../tags/index.html">标签</a>
+    <a href="../about.html">关于</a>
+    <a href="../rss.xml">RSS</a>
+    <a href="https://github.com/daydaydream000">GitHub</a>
+    <a href="https://github.com/daydaydream000/daydaydream000.github.io">源码</a>
+    <a href="mailto:daydaydream000@users.noreply.github.com">邮件</a>
+  </nav>
+  <p class="footer-note">本站是纯静态站点，由 build.py 生成，托管于 GitHub Pages。</p>
+</footer>
+
+<a class="back-to-top" id="back-to-top" href="#" aria-label="回到顶部" title="回到顶部">
+  <svg class="i" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</a>
+
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="搜索文章">
+    <div class="search-head">
+      <svg class="i" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off"
+             spellcheck="false" aria-label="搜索关键词">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<script src="../assets/search-index.js" defer></script>
+<script src="../assets/app.js" defer></script>
+</body>
+</html>

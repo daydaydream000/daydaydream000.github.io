@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 660" width="820" height="660" role="img" aria-label="楼梯 运行时循环与脚本分工">
+  <defs>
+    <style>
+      .t  { font-family: 'PingFang SC','Microsoft YaHei','Noto Sans SC',system-ui,sans-serif; }
+      .h  { font-size: 21px; font-weight: 700; fill: #1a1d21; }
+      .k  { font-size: 16px; font-weight: 700; fill: #1a1d21; }
+      .v  { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; fill: #4b5563; }
+      .n  { font-size: 14px; fill: #454b54; }
+      .box { fill: #ffffff; stroke: #e2e5ea; stroke-width: 1.6; }
+      .flow { stroke: #2f9e7f; stroke-width: 2.2; fill: none; }
+    </style>
+    <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#2f9e7f"/>
+    </marker>
+    <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#c9ced8"/>
+    </marker>
+  </defs>
+
+  <rect width="820" height="660" fill="#fbfbfd"/>
+  <text class="t h" x="24" y="38">一帧里发生的事</text>
+  <text class="t n" x="24" y="64">五个脚本各管一段，靠 static 字段和 Unity 消息互相通气。</text>
+
+  <!-- 第一行 -->
+  <rect class="box" x="20" y="92" width="244" height="110" rx="12"/>
+  <text class="t k" x="40" y="122">Player.CheckGround</text>
+  <text class="t v" x="40" y="148">向下射线 1.5，只打 floor 层</text>
+  <text class="t v" x="40" y="170">→ 决定走地面还是空中逻辑</text>
+
+  <rect class="box" x="288" y="92" width="244" height="110" rx="12"/>
+  <text class="t k" x="308" y="122">Player.CheckStuck</text>
+  <text class="t v" x="308" y="148">有输入 + 水平速度≈0</text>
+  <text class="t v" x="308" y="170">→ AddForce(up, Impulse)</text>
+
+  <rect class="box" x="556" y="92" width="244" height="110" rx="12"/>
+  <text class="t k" x="576" y="122">GroundManager.Update</text>
+  <text class="t v" x="576" y="148">脚下不足 3 块 → 生成</text>
+  <text class="t v" x="576" y="170">超过 10 块 → 归还池子</text>
+
+  <path class="flow" d="M266 147 H276" marker-end="url(#a2)"/>
+  <path class="flow" d="M534 147 H544" marker-end="url(#a2)"/>
+
+  <!-- 第二行 -->
+  <rect class="box" x="20" y="256" width="244" height="110" rx="12"/>
+  <text class="t k" x="40" y="286">CameraManager</text>
+  <text class="t v" x="40" y="312">camera.y −= 2 × Δt</text>
+  <text class="t v" x="40" y="334">（FixedUpdate，用错了 Δt）</text>
+
+  <rect class="box" x="288" y="256" width="244" height="110" rx="12"/>
+  <text class="t k" x="308" y="286">DeadZone</text>
+  <text class="t v" x="308" y="312">OnCollisionEnter2D</text>
+  <text class="t v" x="308" y="334">→ Player.isDead = true</text>
+
+  <rect class="box" x="556" y="256" width="244" height="110" rx="12"/>
+  <text class="t k" x="576" y="286">GameManager.Update</text>
+  <text class="t v" x="576" y="312">隐藏玩家 + 亮出重开按钮</text>
+  <text class="t v" x="576" y="334">按钮 → LoadScene(自身)</text>
+
+  <path class="flow" d="M266 311 H276" marker-end="url(#a2)"/>
+  <path class="flow" d="M534 311 H544" marker-end="url(#a2)"/>
+
+  <path d="M147 202 V246" fill="none" stroke="#c9ced8" stroke-width="1.6" stroke-dasharray="5 4" marker-end="url(#a3)"/>
+  <path d="M678 256 V236 H147 V206" fill="none" stroke="#c9ced8" stroke-width="1.6" stroke-dasharray="5 4"/>
+  <text class="t v" x="410" y="228" fill="#6b7280">摄像机下移 → 场景整体上移</text>
+
+  <!-- 底部说明 -->
+  <rect x="20" y="404" width="780" height="216" rx="14" fill="#ffffff" stroke="#e2e5ea"/>
+  <text class="t k" x="44" y="438">这套分工里，我最满意的三处</text>
+  <text class="t n" x="44" y="472">1. 生成 / 回收全走 ObjectPool，一局下来不再有 Instantiate / Destroy 的 GC 峰值。</text>
+  <text class="t n" x="44" y="504">2. 「掉出视野就死」没写任何视口判断 —— 只是把尖刺挂成摄像机的子物体。</text>
+  <text class="t n" x="44" y="536">3. 移动直接改 velocity 而不是 AddForce，贴墙时不会越推越紧，注释里专门写了原因。</text>
+  <line x1="44" y1="560" x2="776" y2="560" stroke="#eceef2"/>
+  <text class="t n" x="44" y="590" fill="#a12222">待改：Δt 用错、计数两套数、冲量逐帧施加、static 状态、每帧查 LayerMask。</text>
+</svg>
