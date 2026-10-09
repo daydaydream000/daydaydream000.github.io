@@ -123,8 +123,9 @@ git push
 ## 自定义
 
 - **站名、副标题、作者、域名、每页篇数、导航项、公告、社交链接**：改 `build.py` 顶部的 `CONFIG`；
-- **首页横幅**：换掉 `assets/banner.jpg`（建议 2400×1000，左侧留出大片柔和区域放标题，
-  人物或主体放右侧），右上角按钮组由 `CONFIG["social"]` 控制；
+- **首页横幅**：换掉 `assets/banner.jpg`（2400×1000；左半边会被 `.banner-scrim` 压暗用来放居中的标题，
+  所以主体尽量靠右）。当前这张是把立绘切掉上下黑边后合成的：整图铺满 + 左侧高斯模糊 + 长羽化过渡，
+  原始立绘留在 `images/head-banner.jpg`；右上角按钮组由 `CONFIG["social"]` 控制；
 - **头像**：`assets/avatar.jpg`（默认，站点不依赖任何第三方域名），原始大图留在 `images/head.jpg` 方便重新裁剪，也可以把 `CONFIG["avatar"]` 填成外链 `https://…`；
 - **配色、字体、版式**：改 `assets/style.css` 顶部的 CSS 变量（`--accent`、`--rail-left`、`--bg`…），深浅色主题各有独立变量；
 - **页面结构**：改 `templates/` 下的模板，`{{key}}` 是 `build.py` 传入的变量；

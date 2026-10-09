@@ -222,10 +222,16 @@ html.dark #theme-toggle .icon-moon { display: inline-flex; }
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to bottom, rgba(18, 32, 40, .30), rgba(18, 32, 40, .04) 42%, rgba(18, 32, 40, .10));
+    /* 左强右弱的斜向压暗，保证居中标题在任何底图上都清晰 */
+    linear-gradient(100deg, rgba(8, 16, 22, .62) 0%, rgba(8, 16, 22, .42) 50%,
+                    rgba(8, 16, 22, .18) 78%, rgba(8, 16, 22, .06) 100%),
+    linear-gradient(to bottom, rgba(18, 32, 40, .22), rgba(18, 32, 40, 0) 38%);
 }
 html.dark .banner-scrim {
-  background: linear-gradient(to bottom, rgba(8, 14, 18, .55), rgba(8, 14, 18, .38));
+  background:
+    linear-gradient(100deg, rgba(6, 12, 16, .68) 0%, rgba(6, 12, 16, .46) 44%,
+                    rgba(6, 12, 16, .18) 72%, rgba(6, 12, 16, .06) 88%),
+    linear-gradient(to bottom, rgba(6, 12, 16, .34), rgba(6, 12, 16, .06) 38%);
 }
 
 .banner::after {
@@ -1075,6 +1081,14 @@ html.notice-off .notice-card { display: none; }
   }
   .banner { min-height: 460px; padding: 118px 20px 76px; }
   .banner-short { min-height: 230px; padding: 104px 20px 46px; }
+  /* 窄屏时可视区几乎成了竖幅，底图往中间挪一点，别只剩一张脸 */
+  .banner-bg { object-position: 62% center; }
+  .banner-scrim {
+    background:
+      linear-gradient(160deg, rgba(8, 16, 22, .60) 0%, rgba(8, 16, 22, .34) 55%,
+                      rgba(8, 16, 22, .22) 100%),
+      linear-gradient(to bottom, rgba(18, 32, 40, .20), rgba(18, 32, 40, 0) 40%);
+  }
   .banner + .layout,
   .banner-short + .layout { margin-top: -28px; }
   .post { padding: 20px 18px 24px; }
