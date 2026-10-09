@@ -52,7 +52,8 @@ CONFIG = {
     "description": "DayDayDream 的个人博客：醒着做梦，落笔成诗——记所思，存所学。",
     "url": "https://daydaydream000.github.io",
     "author": "DayDayDream",
-    "avatar": "https://github.com/daydaydream000.png",
+    # 头像放在 assets/ 里，站点不依赖任何第三方域名；换成 "https://…" 也可以
+    "avatar": "assets/avatar.png",
     "email": "daydaydream000@users.noreply.github.com",
     "github": "https://github.com/daydaydream000",
     "repo": "https://github.com/daydaydream000/daydaydream000.github.io",
@@ -853,10 +854,24 @@ def resolve_root(value: str, root: str) -> str:
     return value.replace(ROOT_TOKEN, root)
 
 
+EXTERNAL_RE = re.compile(r"^(?:[a-z][a-z0-9+.\-]*:|//)", re.I)
+
+
+def asset_url(value: str, root: str) -> str:
+    """站点内资源 → 相对当前页面的路径；外链原样返回。"""
+    value = resolve_root(value, root)
+    if not value or EXTERNAL_RE.match(value) or value.startswith("#"):
+        return value
+    return root + value.lstrip("/")
+
+
 def absolute_url(value: str) -> str:
+    """站点内资源 → 完整 URL（用于 og:image、RSS）。"""
     if value.startswith(ROOT_TOKEN):
         return CONFIG["url"] + "/" + value[len(ROOT_TOKEN):]
-    return value
+    if not value or EXTERNAL_RE.match(value) or value.startswith("#"):
+        return value
+    return CONFIG["url"] + "/" + value.lstrip("/")
 
 
 def render_page(
@@ -897,7 +912,7 @@ def render_page(
         "description": esc_attr(description or CONFIG["description"]),
         "og_type": og_type,
         "canonical": esc_attr(canonical),
-        "og_image": esc_attr(image or CONFIG["avatar"]),
+        "og_image": esc_attr(absolute_url(image or CONFIG["avatar"])),
         "nav": "".join(nav_html),
         "body": body,
         "body_class": body_class,
@@ -907,7 +922,7 @@ def render_page(
         "github": esc_attr(CONFIG["github"]),
         "repo": esc_attr(CONFIG["repo"]),
         "email": esc_attr(CONFIG["email"]),
-        "avatar": esc_attr(CONFIG["avatar"]),
+        "avatar": esc_attr(asset_url(CONFIG["avatar"], root)),
         "year": datetime.now().year,
         "url": CONFIG["url"],
     }
@@ -1047,7 +1062,7 @@ def build_index(posts: list[Doc], per_page: int) -> None:
                 '<div><h1 class="hero-title">{{site_title}}</h1>'
                 '<p class="hero-subtitle">{{site_subtitle}}</p></div></section>',
                 {
-                    "avatar": esc_attr(CONFIG["avatar"]),
+                    "avatar": esc_attr(asset_url(CONFIG["avatar"], root)),
                     "site_title": esc(CONFIG["title"]),
                     "site_subtitle": esc(CONFIG["subtitle"]),
                 },

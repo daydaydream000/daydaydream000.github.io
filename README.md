@@ -112,9 +112,10 @@ git push
 ## 自定义
 
 - **站名、副标题、作者、域名、每页篇数、导航项**：改 `build.py` 顶部的 `CONFIG`；
+- **头像**：换成 `assets/avatar.png`（默认，站点不依赖任何第三方域名），也可以填外链 `https://…`；
 - **配色、字体、版式**：改 `assets/style.css` 顶部的 CSS 变量（`--accent`、`--content-width`、`--bg`…），深浅色主题各有独立变量；
 - **页面结构**：改 `templates/` 下的模板，`{{key}}` 是 `build.py` 传入的变量；
-- **社交分享图**：`CONFIG` 里没有单独配置时使用 `CONFIG["avatar"]`，文章页优先用 `cover`。
+- **社交分享图**：文章页优先用 front matter 里的 `cover`，其余页面回退到 `CONFIG["avatar"]`。
 
 > 修改 `docs/` 里的任何文件都会在下次 `python build.py` 时被覆盖，请改源文件。
 
