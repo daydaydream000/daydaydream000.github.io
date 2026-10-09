@@ -11,8 +11,9 @@
 Markdown（posts/ · pages/）  →  python build.py  →  docs/  →  git push  →  GitHub Pages
 ```
 
-首页由三部分组成：顶部的**介绍区**（头像 + 站名 + 副标题），
-中间的**主推卡片**（`pinned: true` 的文章，没有就用最新一篇），以及下面的**文章网格**。
+首页是一屏**整幅横幅**（`assets/banner.jpg`，底部渐隐溶入页面），下面是**三栏布局**：
+左栏是个人名片与公告，中栏是带计数的标签栏 + 文章卡片列表，右栏是站点统计与最新文章。
+内页复用同一套横幅和三栏骨架，右栏换成文章目录。
 
 ## 目录结构
 
@@ -21,11 +22,15 @@ Markdown（posts/ · pages/）  →  python build.py  →  docs/  →  git push 
 | `posts/` | 文章源文件（Markdown + front matter），进入首页列表、标签页和 RSS |
 | `pages/` | 独立页面（如「关于」），只出现在导航里 |
 | `images/` | 文章中引用的本地图片，构建时自动复制到 `docs/assets/images/` |
-| `assets/` | 手写的 `style.css`、`app.js`、`favicon.svg`，原样复制到 `docs/assets/` |
+| `assets/` | 手写的 `style.css`、`app.js`、`favicon.svg`、`avatar.jpg`、`banner.jpg`，原样复制到 `docs/assets/` |
 | `templates/` | HTML / XML 模板（`{{变量}}` 占位符） |
 | `tools/check_site.py` | 生成结果自检：内部链接、锚点、资源、RSS / sitemap |
 | `build.py` | 静态站点生成器（只用 Python 标准库） |
 | `docs/` | **构建产物**，也是 GitHub Pages 的发布目录，不要手改 |
+
+页面里可用的交互（全部原生 JS，写在 `assets/app.js`）：站内搜索（`/` 或 `Ctrl/⌘+K`，
+索引由 `build.py` 生成到 `docs/assets/search-index.js`）、深浅色切换（记住选择）、
+公告关闭、回到顶部、代码复制、目录滚动高亮。
 
 ## 写一篇文章
 
@@ -73,7 +78,7 @@ draft: false
 本地图片会被自动复制到 `docs/assets/images/`，外链图片（`http(s)://`、`data:`）原样保留。
 
 封面（front matter 的 `cover`）**按原图比例等比显示，不做裁切**，所以建议用宽幅横图
-（如 1200×420 或 16:9）；同一批文章都配封面时，首页网格会整齐很多。
+（如 1200×420 或 16:9）；同一批文章都配封面时，列表会更整齐。
 
 引用块支持 GitHub 风格的提示框：
 
@@ -117,12 +122,16 @@ git push
 
 ## 自定义
 
-- **站名、副标题、作者、域名、每页篇数、导航项**：改 `build.py` 顶部的 `CONFIG`；
+- **站名、副标题、作者、域名、每页篇数、导航项、公告、社交链接**：改 `build.py` 顶部的 `CONFIG`；
+- **首页横幅**：换掉 `assets/banner.jpg`（建议 2400×1000，左侧留出大片柔和区域放标题，
+  人物或主体放右侧），右上角按钮组由 `CONFIG["social"]` 控制；
 - **头像**：`assets/avatar.jpg`（默认，站点不依赖任何第三方域名），原始大图留在 `images/head.jpg` 方便重新裁剪，也可以把 `CONFIG["avatar"]` 填成外链 `https://…`；
-- **配色、字体、版式**：改 `assets/style.css` 顶部的 CSS 变量（`--accent`、`--content-width`、`--bg`…），深浅色主题各有独立变量；
+- **配色、字体、版式**：改 `assets/style.css` 顶部的 CSS 变量（`--accent`、`--rail-left`、`--bg`…），深浅色主题各有独立变量；
 - **页面结构**：改 `templates/` 下的模板，`{{key}}` 是 `build.py` 传入的变量；
-- **首页版式**：`build_index()` / `render_hero()` / `render_featured()` / `render_card()` 决定「介绍区 + 主推卡片 + 文章网格」的结构，样式在 `assets/style.css` 的「首页」段落；
-- **社交分享图**：文章页优先用 front matter 里的 `cover`，其余页面回退到 `CONFIG["avatar"]`。
+- **侧栏组件**：`render_sidebar_left()` / `render_stats_card()` / `render_recent_card()` / `render_toc_card()` / `render_tag_bar()`，
+  样式在 `assets/style.css` 的「侧栏组件」段落；
+- **文章卡片**：`render_post_card()` / `render_post_list()`；
+- **社交分享图**：文章页优先用 front matter 里的 `cover`，其余页面回退到 `CONFIG["banner"]`。
 
 > 修改 `docs/` 里的任何文件都会在下次 `python build.py` 时被覆盖，请改源文件。
 

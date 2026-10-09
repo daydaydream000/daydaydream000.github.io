@@ -1,11 +1,10 @@
 <!DOCTYPE html>
-<html lang="{{lang}}" data-theme="auto">
+<html lang="{{lang}}" data-theme="auto" data-root="{{root}}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{title_tag}}</title>
 <meta name="description" content="{{description}}">
-<meta name="author" content="{{author}}">
 <link rel="canonical" href="{{canonical}}">
 <meta property="og:type" content="{{og_type}}">
 <meta property="og:site_name" content="{{site_title}}">
@@ -14,90 +13,77 @@
 <meta property="og:url" content="{{canonical}}">
 <meta property="og:image" content="{{og_image}}">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#14161a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f3f8f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171a" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="{{root}}assets/favicon.svg" type="image/svg+xml">
 <link rel="alternate" type="application/rss+xml" title="{{site_title}}" href="{{root}}rss.xml">
 <link rel="stylesheet" href="{{root}}assets/style.css">
 <script>
-  // 在首屏渲染前定好主题，避免闪白 / 闪黑
-  (function () {
-    try {
-      var saved = localStorage.getItem('theme');
-      var theme = saved || 'auto';
-      var dark = theme === 'dark' || (theme === 'auto' &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches);
-      document.documentElement.dataset.theme = theme;
-      document.documentElement.classList.toggle('dark', dark);
-    } catch (e) { /* 隐私模式下忽略 */ }
-  })();
+/* 主题与公告状态在首次绘制前应用，避免闪烁 */
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('dsh-theme'); } catch (e) {}
+  if (saved !== 'light' && saved !== 'dark') saved = 'auto';
+  var root = document.documentElement;
+  root.dataset.theme = saved;
+  root.classList.toggle('dark', saved === 'dark' ||
+    (saved === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  try {
+    if (localStorage.getItem('dsh-notice') === 'off') root.classList.add('notice-off');
+  } catch (e) {}
+})();
 </script>
 {{extra_head}}
 </head>
-<body class="{{body_class}}" data-root="{{root}}">
+<body class="{{body_class}}">
 <a class="skip-link" href="#main">跳到正文</a>
 
-<header class="site-header">
-  <div class="wrap header-inner">
-    <a class="brand" href="{{root}}index.html">
-      <img class="brand-avatar" src="{{avatar}}" alt="" width="40" height="40" loading="eager" decoding="async">
-      <span class="brand-text">
-        <span class="brand-title">{{site_title}}</span>
-        <span class="brand-sub">{{site_subtitle}}</span>
-      </span>
-    </a>
+{{topbar}}
+{{banner}}
 
-    <nav class="site-nav" aria-label="主导航">{{nav}}</nav>
-
-    <div class="header-tools">
-      <button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索 (按 /)">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      </button>
-      <button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题">
-        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg>
-        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></svg>
-      </button>
-    </div>
+<main id="main" class="layout">
+  <div class="layout-inner">
+    <aside class="col col-left">{{left}}</aside>
+    <div class="col col-main">{{body}}</div>
+    <aside class="col col-right">{{right}}</aside>
   </div>
-</header>
-
-<main id="main" class="wrap">
-{{body}}
 </main>
 
 <footer class="site-footer">
-  <div class="wrap footer-inner">
-    <p class="footer-line">
-      © {{year}} {{author}} · {{footer_text}}
-    </p>
-    <p class="footer-links">
-      <a href="{{root}}index.html">首页</a>
-      <a href="{{root}}tags/index.html">标签</a>
-      <a href="{{root}}rss.xml">RSS</a>
-      <a href="{{github}}" target="_blank" rel="noopener noreferrer">GitHub</a>
-      <a href="{{repo}}" target="_blank" rel="noopener noreferrer">源码</a>
-      <a href="mailto:{{email}}">邮件</a>
-    </p>
-    <p class="footer-note">
-      本站是纯静态站点，由 <code>build.py</code> 生成，托管于 GitHub Pages。
-    </p>
-  </div>
+  <p>{{footer_text}}</p>
+  <nav class="footer-nav" aria-label="页脚导航">
+    <a href="{{root}}index.html">首页</a>
+    <a href="{{root}}tags/index.html">标签</a>
+    <a href="{{root}}about.html">关于</a>
+    <a href="{{root}}rss.xml">RSS</a>
+    <a href="{{github}}">GitHub</a>
+    <a href="{{repo}}">源码</a>
+    <a href="mailto:{{email}}">邮件</a>
+  </nav>
+  <p class="footer-note">本站是纯静态站点，由 build.py 生成，托管于 GitHub Pages。</p>
 </footer>
 
-<div id="search-overlay" class="search-overlay" hidden>
-  <div class="search-panel" role="dialog" aria-modal="true" aria-label="站内搜索">
-    <div class="search-bar">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off" spellcheck="false">
-      <button id="search-close" class="icon-btn" type="button" aria-label="关闭搜索">Esc</button>
+<a class="back-to-top" id="back-to-top" href="#" aria-label="回到顶部" title="回到顶部">
+  <svg class="i" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</a>
+
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="搜索文章">
+    <div class="search-head">
+      <svg class="i" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off"
+             spellcheck="false" aria-label="搜索关键词">
+      <kbd>Esc</kbd>
     </div>
-    <div id="search-results" class="search-results"></div>
+    <div class="search-results" id="search-results"></div>
   </div>
 </div>
-
-<button id="back-to-top" class="back-to-top" type="button" aria-label="回到顶部" hidden>
-  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-</button>
 
 <script src="{{root}}assets/search-index.js" defer></script>
 <script src="{{root}}assets/app.js" defer></script>

@@ -52,8 +52,17 @@ CONFIG = {
     "description": "DayDayDream 的个人博客：醒着做梦，落笔成诗——记所思，存所学。",
     "url": "https://daydaydream000.github.io",
     "author": "DayDayDream",
-    # 头像放在 assets/ 里，站点不依赖任何第三方域名；换成 "https://…" 也可以
+    # 头像与横幅都放在 assets/ 里，站点不依赖任何第三方域名；换成 "https://…" 也可以
     "avatar": "assets/avatar.jpg",
+    "banner": "assets/banner.jpg",
+    "greeting": "Hello, I'm DayDayDream.",
+    "notice": "欢迎来到 DayDayDream —— 醒着做梦，落笔成诗，记所思，存所学。",
+    "notice_link": ("前往关于", "about.html"),
+    "social": [
+        ("GitHub", "https://github.com/daydaydream000", "github"),
+        ("邮箱", "mailto:daydaydream000@users.noreply.github.com", "mail"),
+        ("RSS 订阅", "rss.xml", "rss"),
+    ],
     "email": "daydaydream000@users.noreply.github.com",
     "github": "https://github.com/daydaydream000",
     "repo": "https://github.com/daydaydream000/daydaydream000.github.io",
@@ -61,9 +70,9 @@ CONFIG = {
     "lang": "zh-CN",
     "per_page": 10,
     "nav": [
-        ("首页", "index.html"),
-        ("标签", "tags/index.html"),
-        ("关于", "about.html"),
+        ("首页", "index.html", "home"),
+        ("标签", "tags/index.html", "tag"),
+        ("关于", "about.html", "user"),
     ],
 }
 
@@ -451,7 +460,8 @@ def render_blocks(lines: list[str], ctx: RenderContext, tight: bool = False) -> 
             label = f'<span class="code-lang">{esc(lang or "text")}</span>' if lang else ""
             out.append(
                 '<div class="code-block">'
-                f'<div class="code-head">{label}<button class="copy-btn" type="button" '
+                f'<div class="code-head"><span>{label}</span>'
+                '<button class="code-copy" type="button" '
                 'data-copy aria-label="复制代码">复制</button></div>'
                 f"<pre><code{cls}>{esc(chr(10).join(code))}</code></pre>"
                 "</div>"
@@ -881,6 +891,64 @@ def absolute_url(value: str) -> str:
     return CONFIG["url"] + "/" + value.lstrip("/")
 
 
+# --------------------------------------------------------------------------
+# 界面组件（Firefly 风格：整屏横幅 + 悬浮胶囊导航 + 三栏卡片）
+# --------------------------------------------------------------------------
+
+# name: (SVG 内部内容, 是否是填充型图标)
+ICONS: dict[str, tuple[str, bool]] = {
+    "home": ('<path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/>', False),
+    "tag": ('<path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/>'
+            '<circle cx="7.8" cy="7.8" r="1.4"/>', False),
+    "user": ('<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/>', False),
+    "search": ('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>', False),
+    "sun": ('<circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4'
+            'M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/>', False),
+    "moon": ('<path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/>', False),
+    "arrow-up": ('<path d="M12 19V5M5 12l7-7 7 7"/>', False),
+    "arrow-right": ('<path d="M5 12h14M13 5l7 7-7 7"/>', False),
+    "calendar": ('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/>', False),
+    "folder": ('<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h6.5a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13'
+               'a2 2 0 0 1-2-2v-10Z"/>', False),
+    "pin": ('<path d="M9 4h6l-1 6 4 3v2H6v-2l4-3-1-6Z"/><path d="M12 15v5"/>', False),
+    "clock": ('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>', False),
+    "file": ('<path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/>', False),
+    "chart": ('<path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/>', False),
+    "mail": ('<rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/>', False),
+    "rss": ('<circle cx="5" cy="18.5" r="1.4" fill="currentColor" stroke="none"/>'
+            '<path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/>', False),
+    "close": ('<path d="M6 6l12 12M18 6 6 18"/>', False),
+    "megaphone": ('<path d="M4 10.5v3A1.5 1.5 0 0 0 5.5 15H7l1 4h2l-1-4h2l7 3.5V6.5L11 10H5.5A1.5 1.5 0 0 0 4 10.5Z"/>', False),
+    "github": ('<path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.09.68-.22.68-.48 '
+               '0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 '
+               '1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 '
+               '0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 '
+               '2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 '
+               '1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.58.69.48A10.04 10.04 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/>', True),
+}
+
+
+def icon_svg(name: str, size: int = 16) -> str:
+    body, filled = ICONS.get(name, ICONS["file"])
+    head = (f'class="i" viewBox="0 0 24 24" width="{size}" height="{size}" '
+            'aria-hidden="true" focusable="false"')
+    if filled:
+        return f'<svg {head} fill="currentColor">{body}</svg>'
+    return (f'<svg {head} fill="none" stroke="currentColor" stroke-width="1.8" '
+            f'stroke-linecap="round" stroke-linejoin="round">{body}</svg>')
+
+
+def link_href(href: str, root: str) -> str:
+    """站内链接补上当前页面的相对根路径，外链原样返回。"""
+    if EXTERNAL_RE.match(href) or href.startswith("#"):
+        return href
+    return root + href.lstrip("/")
+
+
+def external_attrs(href: str) -> str:
+    return ' target="_blank" rel="noopener noreferrer"' if href.startswith("http") else ""
+
+
 def render_page(
     *,
     out_path: Path,
@@ -888,17 +956,16 @@ def render_page(
     body: str,
     description: str = "",
     nav_active: str = "",
-    extra_head: str = "",
     body_class: str = "",
     og_type: str = "website",
     canonical: str = "",
     image: str = "",
+    banner: str = "",
+    left: str = "",
+    right: str = "",
+    extra_head: str = "",
 ) -> None:
     root = root_prefix(out_path)
-    nav_html = []
-    for label, target in CONFIG["nav"]:
-        active = ' class="active" aria-current="page"' if target == nav_active else ""
-        nav_html.append(f'<a href="{root}{target}"{active}>{esc(label)}</a>')
 
     if not canonical:
         posix = out_path.as_posix()
@@ -919,8 +986,11 @@ def render_page(
         "description": esc_attr(description or CONFIG["description"]),
         "og_type": og_type,
         "canonical": esc_attr(canonical),
-        "og_image": esc_attr(absolute_url(image or CONFIG["avatar"])),
-        "nav": "".join(nav_html),
+        "og_image": esc_attr(absolute_url(image or CONFIG["banner"])),
+        "topbar": render_topbar(root, nav_active),
+        "banner": banner,
+        "left": left,
+        "right": right,
         "body": body,
         "body_class": body_class,
         "extra_head": extra_head,
@@ -936,83 +1006,244 @@ def render_page(
     write_text(OUT_DIR / out_path, fill(template("base.html"), context))
 
 
-def tags_html(doc: Doc, root: str) -> str:
-    return "".join(
-        f'<a class="tag" href="{root}tags/index.html#{t["anchor"]}" '
-        f'style="--tag-color:{t["color"]}">{esc(t["name"])}</a>'
-        for t in doc.tag_links
+def render_topbar(root: str, nav_active: str) -> str:
+    items = []
+    for label, target, icon in CONFIG["nav"]:
+        active = ' class="active" aria-current="page"' if target == nav_active else ""
+        items.append(
+            f'<a href="{root}{target}"{active}>{icon_svg(icon, 17)}<span>{esc(label)}</span></a>'
+        )
+    return (
+        '<header class="topbar">'
+        '<div class="topbar-inner">'
+        f'<a class="topbar-brand" href="{root}index.html">'
+        f'<img src="{asset_url(CONFIG["avatar"], root)}" alt="" width="30" height="30">'
+        f'<span class="topbar-brand-text">{esc(CONFIG["title"])}</span></a>'
+        f'<nav class="topbar-nav" aria-label="主导航">{"".join(items)}</nav>'
+        '<div class="topbar-tools">'
+        '<button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索（按 /）">'
+        f'{icon_svg("search", 18)}</button>'
+        '<button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题">'
+        f'<span class="icon-sun">{icon_svg("sun", 18)}</span>'
+        f'<span class="icon-moon">{icon_svg("moon", 18)}</span></button>'
+        "</div></div></header>"
     )
 
 
-def meta_html(doc: Doc, root: str, *, with_reading: bool = True) -> str:
-    reading = f'<span class="dot">·</span><span>{doc.reading} 分钟</span>' if with_reading else ""
+def render_banner(
+    root: str,
+    title: str,
+    subtitle: str = "",
+    *,
+    social: bool = False,
+    short: bool = False,
+) -> str:
+    background = esc_attr(asset_url(CONFIG["banner"], root))
+    socials = ""
+    if social:
+        socials = '<div class="banner-social">' + "".join(
+            f'<a class="social-btn" href="{link_href(href, root)}" title="{esc(label)}" '
+            f'aria-label="{esc(label)}"{external_attrs(href)}>{icon_svg(name, 18)}</a>'
+            for label, href, name in CONFIG["social"]
+        ) + "</div>"
+    subtitle_html = f'<p class="banner-subtitle">{esc(subtitle)}</p>' if subtitle else ""
+    classes = "banner banner-short" if short else "banner"
+    # 首页的横幅是整页的大标题（h1）；内页正文里已有 h1，横幅只作装饰
+    tag = "p" if short else "h1"
     return (
-        '<div class="card-meta">'
-        f'<time datetime="{doc.date_str}">{esc(doc.date_display)}</time>'
-        f"{reading}"
-        f'<span class="tags">{tags_html(doc, root)}</span>'
+        f'<header class="{classes}">'
+        f'<img class="banner-bg" src="{background}" alt="" aria-hidden="true" decoding="async">'
+        '<div class="banner-scrim"></div>'
+        '<div class="banner-inner">'
+        f'<{tag} class="banner-title">{esc(title)}</{tag}>'
+        f"{subtitle_html}{socials}"
+        "</div></header>"
+    )
+
+
+def render_profile_card(root: str) -> str:
+    socials = "".join(
+        f'<a class="social-chip" href="{link_href(href, root)}" title="{esc(label)}" '
+        f'aria-label="{esc(label)}"{external_attrs(href)}>{icon_svg(name, 17)}</a>'
+        for label, href, name in CONFIG["social"]
+    )
+    return (
+        '<section class="card-panel profile-card">'
+        f'<img class="profile-avatar" src="{asset_url(CONFIG["avatar"], root)}" '
+        f'alt="{esc_attr(CONFIG["title"])}" decoding="async">'
+        f'<p class="profile-name">{esc(CONFIG["title"])}</p>'
+        f'<p class="profile-greeting">{esc(CONFIG["greeting"])}</p>'
+        f'<div class="profile-social">{socials}</div>'
+        "</section>"
+    )
+
+
+def render_notice_card(root: str) -> str:
+    text = CONFIG.get("notice") or ""
+    if not text:
+        return ""
+    link = ""
+    if CONFIG.get("notice_link"):
+        label, href = CONFIG["notice_link"]
+        link = f'<a class="notice-more" href="{link_href(href, root)}">{esc(label)}</a>'
+    return (
+        '<section class="card-panel notice-card" id="notice">'
+        f'<h2 class="widget-title">{icon_svg("megaphone", 16)}<span>公告</span></h2>'
+        f'<p class="notice-text">{esc(text)}</p>'
+        f'<div class="notice-foot">{link}'
+        '<button class="notice-close" type="button" aria-label="关闭公告" title="关闭">'
+        f'{icon_svg("close", 15)}</button></div>'
+        "</section>"
+    )
+
+
+def render_sidebar_left(root: str) -> str:
+    return render_profile_card(root) + render_notice_card(root)
+
+
+def render_stats_card(posts: list[Doc]) -> str:
+    tags: set[str] = set()
+    words = 0
+    latest = None
+    for doc in posts:
+        tags.update(doc.tags)
+        words += doc.word_count
+        if latest is None or doc.date > latest:
+            latest = doc.date
+    rows = [
+        ("file", "文章", str(len(posts))),
+        ("tag", "标签", str(len(tags))),
+        ("chart", "总字数", f"{words:,}"),
+        ("clock", "最近更新", latest.strftime("%Y-%m-%d") if latest else "—"),
+    ]
+    body = "".join(
+        f'<li>{icon_svg(icon, 15)}<span class="stat-label">{esc(label)}</span>'
+        f'<span class="stat-value">{esc(value)}</span></li>'
+        for icon, label, value in rows
+    )
+    return (
+        '<section class="card-panel">'
+        f'<h2 class="widget-title">{icon_svg("chart", 16)}<span>站点统计</span></h2>'
+        f'<ul class="stat-list">{body}</ul>'
+        "</section>"
+    )
+
+
+def render_recent_card(posts: list[Doc], root: str, limit: int = 5) -> str:
+    if not posts:
+        return ""
+    items = "".join(
+        f'<li><a href="{root}{doc.url}">'
+        f'<time datetime="{doc.date_str}">{doc.date_str}</time>'
+        f'<span class="recent-title">{esc(doc.title)}</span></a></li>'
+        for doc in posts[:limit]
+    )
+    return (
+        '<section class="card-panel">'
+        f'<h2 class="widget-title">{icon_svg("file", 16)}<span>最新文章</span></h2>'
+        f'<ul class="recent-list">{items}</ul>'
+        "</section>"
+    )
+
+
+def render_toc_card(toc: list[dict], root: str) -> str:
+    entries = [item for item in toc if item["level"] in (2, 3)]
+    if not entries:
+        return ""
+    links = "".join(
+        f'<a class="{"toc-h3" if item["level"] == 3 else ""}" '
+        f'href="#{esc_attr(item["id"])}">{esc(item["text"])}</a>'
+        for item in entries
+    )
+    return (
+        '<nav class="card-panel toc-card" aria-label="文章目录">'
+        f'<h2 class="widget-title">{icon_svg("file", 16)}<span>文章目录</span></h2>'
+        f'<div class="toc-list">{links}</div>'
+        "</nav>"
+    )
+
+
+def render_tag_bar(posts: list[Doc], root: str, limit: int = 6) -> str:
+    counts: dict[str, int] = {}
+    for doc in posts:
+        for tag in doc.tags:
+            counts[tag] = counts.get(tag, 0) + 1
+    ordered = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:limit]
+    pills = [f'<a class="pill active" href="{root}index.html">{icon_svg("home", 16)}<span>全部</span></a>']
+    for tag, count in ordered:
+        pills.append(
+            f'<a class="pill" href="{root}tags/index.html#{tag_anchor(tag)}">'
+            f'<span>{esc(tag)}</span><b>{count}</b></a>'
+        )
+    return (
+        '<div class="card-panel tag-bar">'
+        f'{"".join(pills)}'
+        f'<a class="pill-more" href="{root}tags/index.html">更多{icon_svg("arrow-right", 14)}</a>'
         "</div>"
     )
 
 
-def render_hero(root: str) -> str:
-    return (
-        '<section class="hero">'
-        f'<img class="hero-avatar" src="{asset_url(CONFIG["avatar"], root)}" '
-        f'alt="{esc_attr(CONFIG["title"])}" width="112" height="112" decoding="async">'
-        '<div class="hero-body">'
-        f'<h1 class="hero-title">{esc(CONFIG["title"])}</h1>'
-        f'<p class="hero-subtitle">{esc(CONFIG["subtitle"])}</p>'
-        "</div></section>"
+def tags_html(doc: Doc, root: str) -> str:
+    return "".join(
+        f'<a class="tag" href="{root}tags/index.html#{t["anchor"]}">{esc(t["name"])}</a>'
+        for t in doc.tag_links
     )
 
 
-def render_featured(doc: Doc | None, root: str) -> str:
-    if doc is None:
-        return ""
-    cover = ""
-    if doc.cover:
-        cover = (
-            f'<a class="featured-cover" href="{root}{doc.url}" tabindex="-1" aria-hidden="true">'
-            f'<img src="{asset_url(doc.cover, root)}" alt="" decoding="async"></a>'
+def post_meta_html(doc: Doc, root: str) -> str:
+    """文章页标题下方的一行信息：日期 · 更新 · 字数 · 用时 · 标签。"""
+    parts = [
+        f'<span class="badge">{icon_svg("calendar", 13)}'
+        f'<time datetime="{doc.date_str}">{esc(doc.date_display)}</time></span>'
+    ]
+    if doc.updated:
+        parts.append(
+            f'<span class="badge">{icon_svg("clock", 13)}更新于 {esc(format_date(doc.updated))}</span>'
         )
-    badge = '<span class="featured-badge">置顶</span>' if doc.pinned else ""
-    return (
-        '<article class="featured">'
-        f"{cover}"
-        '<div class="featured-body">'
-        f"{badge}"
-        f'<h2 class="featured-title"><a href="{root}{doc.url}">{esc(doc.title)}</a></h2>'
-        f'<p class="featured-summary">{esc(doc.summary)}</p>'
-        f"{meta_html(doc, root)}"
-        "</div></article>"
-    )
+    parts.append(f'<span class="badge">{icon_svg("file", 13)}约 {doc.word_count} 字</span>')
+    parts.append(f'<span class="badge">{icon_svg("clock", 13)}{doc.reading} 分钟阅读</span>')
+    for tag in doc.tag_links:
+        parts.append(
+            f'<a class="badge badge-pin" href="{root}tags/index.html#{tag["anchor"]}">'
+            f'{icon_svg("tag", 13)}{esc(tag["name"])}</a>'
+        )
+    return f'<div class="post-badges">{"".join(parts)}</div>'
 
 
-def render_card(doc: Doc, root: str) -> str:
-    cover = ""
+def render_post_card(doc: Doc, root: str) -> str:
+    badges = []
+    if doc.pinned:
+        badges.append(f'<span class="badge badge-pin">{icon_svg("pin", 13)}置顶</span>')
+    badges.append(f'<span class="badge">{icon_svg("calendar", 13)}{doc.date_str}</span>')
+    if doc.tags:
+        badges.append(f'<span class="badge">{icon_svg("folder", 13)}{esc(doc.tags[0])}</span>')
+    badges.append(f'<span class="badge">{icon_svg("clock", 13)}{doc.reading} 分钟</span>')
+
+    thumb = ""
     if doc.cover:
-        cover = (
-            f'<a class="card-cover" href="{root}{doc.url}" tabindex="-1" aria-hidden="true">'
+        thumb = (
+            f'<a class="post-thumb" href="{root}{doc.url}" tabindex="-1" aria-hidden="true">'
             f'<img src="{asset_url(doc.cover, root)}" alt="" loading="lazy" decoding="async"></a>'
         )
+    chips = "".join(
+        f'<a class="chip" href="{root}tags/index.html#{t["anchor"]}">#{esc(t["name"])}</a>'
+        for t in doc.tag_links
+    )
     return (
-        '<article class="card">'
-        f"{cover}"
-        '<div class="card-body">'
-        f'<h2 class="card-title"><a href="{root}{doc.url}">{esc(doc.title)}</a></h2>'
-        f'<p class="card-summary">{esc(doc.summary)}</p>'
-        f"{meta_html(doc, root)}"
-        "</div></article>"
+        '<article class="card-panel post-card">'
+        '<div class="post-card-body">'
+        f'<h2 class="post-card-title"><a href="{root}{doc.url}">{esc(doc.title)}</a></h2>'
+        f'<div class="post-badges">{"".join(badges)}</div>'
+        f'<p class="post-excerpt">{esc(doc.summary)}</p>'
+        f'<div class="post-chips">{chips}</div>'
+        "</div>"
+        f"{thumb}"
+        "</article>"
     )
 
 
-def render_card_grid(posts: list[Doc], root: str, heading: str = "") -> str:
-    if not posts:
-        return ""
-    head = f'<h2 class="section-title">{esc(heading)}</h2>' if heading else ""
-    cards = "".join(render_card(doc, root) for doc in posts)
-    return f'{head}<section class="post-grid" aria-label="文章列表">{cards}</section>'
+def render_post_list(posts: list[Doc], root: str) -> str:
+    return "".join(render_post_card(doc, root) for doc in posts)
 
 
 def toc_html(toc: list[dict]) -> str:
@@ -1099,20 +1330,10 @@ def build_index(posts: list[Doc], per_page: int) -> None:
         out_path = Path("index.html") if page_no == 1 else Path(f"page/{page_no}/index.html")
         root = root_prefix(out_path)
 
-        # 首页第一屏：一篇主推 + 其余网格
-        featured = None
-        rest = chunk
-        if page_no == 1 and chunk:
-            featured = next((doc for doc in chunk if doc.pinned), chunk[0])
-            rest = [doc for doc in chunk if doc is not featured]
-
-        hero = render_hero(root) if page_no == 1 else ""
-        if page_no > 1:
-            rest_html = render_card_grid(rest, root)
-        elif featured is not None:
-            rest_html = render_card_grid(rest, root, heading="更多文章")
+        if chunk:
+            posts_html = render_post_list(chunk, root)
         else:
-            rest_html = render_card_grid(rest, root)
+            posts_html = '<p class="card-panel empty">还没有文章，去 <code>posts/</code> 里写下第一篇吧。</p>'
 
         pager = ""
         if total > 1:
@@ -1125,17 +1346,18 @@ def build_index(posts: list[Doc], per_page: int) -> None:
                 bits.append(f'<a class="pager-link" href="{root}page/{page_no + 1}/index.html">下一页 →</a>')
             pager = f'<nav class="pager">{"".join(bits)}</nav>'
 
+        # 标签栏只放在首页第一页，翻页后不再重复
+        tag_bar = render_tag_bar(posts, root) if page_no == 1 else ""
         body = fill(
             template("index.html"),
-            {
-                "hero": hero,
-                "featured": render_featured(featured, root),
-                "posts": rest_html if (featured is not None or rest) else (
-                    '<p class="empty">还没有文章，去 <code>posts/</code> 里写下第一篇吧。</p>'
-                ),
-                "pager": pager,
-            },
+            {"tag_bar": tag_bar, "posts": posts_html, "pager": pager},
         )
+
+        if page_no == 1:
+            banner = render_banner(root, CONFIG["title"], CONFIG["subtitle"], social=True)
+        else:
+            banner = render_banner(root, CONFIG["title"], f"第 {page_no} 页", short=True)
+
         render_page(
             out_path=out_path,
             page_title=CONFIG["title"] if page_no == 1 else f"第 {page_no} 页",
@@ -1143,6 +1365,9 @@ def build_index(posts: list[Doc], per_page: int) -> None:
             description=CONFIG["description"],
             nav_active="index.html",
             body_class="page-index",
+            banner=banner,
+            left=render_sidebar_left(root),
+            right=render_stats_card(posts) + render_recent_card(posts, root),
         )
 
 
@@ -1150,7 +1375,6 @@ def build_posts(posts: list[Doc], pages: list[Doc]) -> None:
     for index, doc in enumerate(posts):
         out_path = Path(doc.url)
         root = root_prefix(out_path)
-        tags = tags_html(doc, root)
         cover = ""
         if doc.cover:
             cover = (
@@ -1161,17 +1385,8 @@ def build_posts(posts: list[Doc], pages: list[Doc]) -> None:
             template("post.html"),
             {
                 "title": esc(doc.title),
-                "date": esc(doc.date_display),
-                "date_iso": doc.date_str,
-                "updated": esc(format_date(doc.updated)) if doc.updated else "",
-                "updated_block": (
-                    f'<span class="dot">·</span><span>更新于 {esc(format_date(doc.updated))}</span>'
-                    if doc.updated
-                    else ""
-                ),
-                "reading": doc.reading,
-                "words": doc.word_count,
-                "tags": tags,
+                "meta": post_meta_html(doc, root),
+                "tags": tags_html(doc, root),
                 "cover": cover,
                 "content": doc.html.replace(ROOT_TOKEN, root),
                 "toc": toc_html(doc.toc),
@@ -1191,6 +1406,9 @@ def build_posts(posts: list[Doc], pages: list[Doc]) -> None:
             og_type="article",
             body_class="page-post",
             image=absolute_url(doc.cover) if doc.cover else "",
+            banner=render_banner(root, CONFIG["title"], CONFIG["subtitle"], short=True),
+            left=render_sidebar_left(root),
+            right=render_toc_card(doc.toc, root) + render_stats_card(posts),
         )
 
     for doc in pages:
@@ -1215,6 +1433,9 @@ def build_posts(posts: list[Doc], pages: list[Doc]) -> None:
             description=doc.summary,
             nav_active=doc.url,
             body_class="page-single",
+            banner=render_banner(root, CONFIG["title"], CONFIG["subtitle"], short=True),
+            left=render_sidebar_left(root),
+            right=render_stats_card(posts) + render_recent_card(posts, root),
         )
 
 
@@ -1265,6 +1486,9 @@ def build_tags(posts: list[Doc]) -> None:
         description=f"{CONFIG['title']} 的全部标签",
         nav_active="tags/index.html",
         body_class="page-tags",
+        banner=render_banner(root, CONFIG["title"], CONFIG["subtitle"], short=True),
+        left=render_sidebar_left(root),
+        right=render_stats_card(posts) + render_recent_card(posts, root),
     )
 
 
@@ -1347,7 +1571,7 @@ def build_search_index(posts: list[Doc], pages: list[Doc]) -> None:
     )
 
 
-def build_404() -> None:
+def build_404(posts: list[Doc]) -> None:
     body = fill(template("404.html"), {"root": ""})
     render_page(
         out_path=Path("404.html"),
@@ -1355,6 +1579,9 @@ def build_404() -> None:
         body=body,
         description="找不到这个页面",
         body_class="page-404",
+        banner=render_banner("", CONFIG["title"], CONFIG["subtitle"], short=True),
+        left=render_sidebar_left(""),
+        right=render_recent_card(posts, ""),
     )
 
 
@@ -1389,7 +1616,7 @@ def main() -> int:
     build_rss(posts)
     build_sitemap(posts, pages)
     build_search_index(posts, pages)
-    build_404()
+    build_404(posts)
 
     total_files = sum(1 for p in OUT_DIR.rglob("*") if p.is_file())
     print(f"完成: {total_files} 个文件 → {OUT_DIR.relative_to(ROOT)}/")
