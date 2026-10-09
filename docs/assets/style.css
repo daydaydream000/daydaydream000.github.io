@@ -258,7 +258,7 @@ html.dark .banner-scrim {
   line-height: 1.15;
   font-weight: 800;
   letter-spacing: .01em;
-  text-shadow: 0 4px 26px rgba(12, 28, 34, .55);
+  text-shadow: 0 2px 10px rgba(8, 16, 22, .78), 0 8px 34px rgba(8, 16, 22, .55);
 }
 .banner-short .banner-title { font-size: clamp(1.7rem, 4vw, 2.4rem); }
 
@@ -267,7 +267,7 @@ html.dark .banner-scrim {
   font-size: clamp(.95rem, 2vw, 1.15rem);
   letter-spacing: .04em;
   color: rgba(255, 255, 255, .92);
-  text-shadow: 0 2px 18px rgba(12, 28, 34, .6);
+  text-shadow: 0 1px 8px rgba(8, 16, 22, .8), 0 4px 22px rgba(8, 16, 22, .6);
 }
 
 .banner-social {
