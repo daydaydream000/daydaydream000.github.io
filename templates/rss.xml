@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>{{site_title}}</title>
+    <link>{{site_url}}/</link>
+    <description>{{description}}</description>
+    <language>{{language}}</language>
+    <copyright>{{author}}</copyright>
+    <managingEditor>{{email}} ({{author}})</managingEditor>
+    <webMaster>{{email}} ({{author}})</webMaster>
+    <lastBuildDate>{{last_build}}</lastBuildDate>
+    <generator>build.py</generator>
+    <atom:link href="{{site_url}}/rss.xml" rel="self" type="application/rss+xml"/>
+{{items}}
+  </channel>
+</rss>

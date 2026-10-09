@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>你好，欢迎来到 DayDayDream · DayDayDream</title>
+<meta name="description" content="这是这个博客的第一篇文章，也是一次推倒重来的记录。">
+<meta name="author" content="DayDayDream">
+<link rel="canonical" href="https://daydaydream000.github.io/post/hello-daydaydream.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DayDayDream">
+<meta property="og:title" content="你好，欢迎来到 DayDayDream">
+<meta property="og:description" content="这是这个博客的第一篇文章，也是一次推倒重来的记录。">
+<meta property="og:url" content="https://daydaydream000.github.io/post/hello-daydaydream.html">
+<meta property="og:image" content="https://daydaydream000.github.io/assets/images/hello-daydaydream.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14161a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="DayDayDream" href="../rss.xml">
+<link rel="stylesheet" href="../assets/style.css">
+<script>
+  // 在首屏渲染前定好主题，避免闪白 / 闪黑
+  (function () {
+    try {
+      var saved = localStorage.getItem('theme');
+      var theme = saved || 'auto';
+      var dark = theme === 'dark' || (theme === 'auto' &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.classList.toggle('dark', dark);
+    } catch (e) { /* 隐私模式下忽略 */ }
+  })();
+</script>
+
+</head>
+<body class="page-post" data-root="../">
+<a class="skip-link" href="#main">跳到正文</a>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="../index.html">
+      <img class="brand-avatar" src="https://github.com/daydaydream000.png" alt="" width="40" height="40" loading="eager" decoding="async">
+      <span class="brand-text">
+        <span class="brand-title">DayDayDream</span>
+        <span class="brand-sub">醒着做梦，落笔成诗——记所思，存所学。</span>
+      </span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航"><a href="../index.html">首页</a><a href="../tags/index.html">标签</a><a href="../about.html">关于</a></nav>
+
+    <div class="header-tools">
+      <button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索 (按 /)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      </button>
+      <button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题">
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="wrap">
+<article class="post">
+  <header class="post-header">
+    <h1 class="post-title">你好，欢迎来到 DayDayDream</h1>
+    <div class="post-meta">
+      <time datetime="2026-10-08">2026 年 10 月 08 日</time>
+      <span class="dot">·</span><span>约 525 字</span>
+      <span class="dot">·</span><span>2 分钟阅读</span>
+      
+      <span class="tags"><a class="tag" href="../tags/index.html#tag-随笔" style="--tag-color:#8250df">随笔</a><a class="tag" href="../tags/index.html#tag-建站" style="--tag-color:#1f883d">建站</a></span>
+    </div>
+  </header>
+
+  <figure class="post-cover"><img src="../assets/images/hello-daydaydream.svg" alt="你好，欢迎来到 DayDayDream" loading="lazy" decoding="async"></figure>
+  <nav class="toc" aria-label="目录"><p class="toc-title">目录</p><div class="toc-list"><a href="#你能看到什么">你能看到什么</a><a href="#这个博客是怎么搭起来的">这个博客是怎么搭起来的</a><a href="#写在最后">写在最后</a></div></nav>
+
+  <div class="post-content">
+<p>这是这个博客的第一篇文章 🎉</p><p>在这里，我会记录自己的所思所学——可能是踩过的技术坑、读过的书、随手写下的想法，也可能只是一场白日梦。</p><h2 id="你能看到什么">你能看到什么</h2><ul><li>📝 <strong>随笔与思考</strong>：忽然冒出来的念头，趁热记下</li><li>🛠️ <strong>技术笔记</strong>：踩过的坑、绕过的路、顺手写下的小工具</li><li>📚 <strong>读书与生活</strong>：读完的书、走过的路，偶尔的碎碎念</li></ul><h2 id="这个博客是怎么搭起来的">这个博客是怎么搭起来的</h2><p>上一版博客用 <a href="https://github.com/Meekdai/Gmeek" target="_blank" rel="noopener noreferrer">Gmeek</a> 搭建：文章写在 GitHub Issues 里，由 Actions 自动拉取仓库生成 HTML。它开箱即用，但版式和结构都交给模板了，想改点什么总隔着一层。</p><p>所以这次推倒重来，换回最朴素的做法——整站就是纯静态的 HTML，内容、样式、模板全放在这个仓库里，由 GitHub Pages 直接发布。</p><figure class="post-figure"><img src="../assets/images/pipeline.svg" alt="站点构建流程：Markdown 源文件经 build.py 生成静态站点，推送到 main 分支的 docs 目录后由 GitHub Pages 发布" loading="lazy" decoding="async"><figcaption>站点构建流程：Markdown 源文件经 build.py 生成静态站点，推送到 main 分支的 docs 目录后由 GitHub Pages 发布</figcaption></figure><p>具体只有三件事：</p><ol><li>文章用 Markdown 写在 <code>posts/</code> 目录，独立页面放在 <code>pages/</code>；</li><li>在本地运行 <code>python build.py</code>，把整站生成到 <code>docs/</code>；</li><li><code>git push</code> 之后，GitHub Pages 自动从 <code>main</code> 分支的 <code>/docs</code> 目录发布。</li></ol><div class="code-block"><div class="code-head"><span class="code-lang">bash</span><button class="copy-btn" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-bash"># 写完一篇文章之后
+python build.py
+git add -A
+git commit -m "post: 新文章"
+git push</code></pre></div><p>目录分工也很直白：</p><div class="table-wrap"><table><thead><tr><th>路径</th><th>用途</th></tr></thead><tbody><tr><td><code>posts/</code></td><td>文章源文件（Markdown）</td></tr><tr><td><code>pages/</code></td><td>独立页面，比如「关于」</td></tr><tr><td><code>images/</code></td><td>文章中引用的图片，构建时自动复制</td></tr><tr><td><code>assets/</code></td><td>手写的 CSS 与 JavaScript</td></tr><tr><td><code>templates/</code></td><td>页面模板</td></tr><tr><td><code>docs/</code></td><td>生成结果，也是 Pages 的发布目录</td></tr></tbody></table></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>生成器只用 Python 标准库，没有第三方依赖；换台机器 clone 下来就能跑。</p></div><h2 id="写在最后">写在最后</h2><blockquote><p>种一棵树最好的时间是十年前，其次是现在。</p></blockquote><p>开始记录吧，欢迎常来坐坐。</p>
+  </div>
+
+  <footer class="post-footer">
+    <span class="post-source"><a href="https://github.com/daydaydream000/daydaydream000.github.io/blob/main/posts/hello-daydaydream.md">在 GitHub 上查看源文件</a></span>
+    <span class="post-tags"><a class="tag" href="../tags/index.html#tag-随笔" style="--tag-color:#8250df">随笔</a><a class="tag" href="../tags/index.html#tag-建站" style="--tag-color:#1f883d">建站</a></span>
+  </footer>
+</article>
+
+
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <p class="footer-line">
+      © 2026 DayDayDream · 转载请注明出处
+    </p>
+    <p class="footer-links">
+      <a href="../index.html">首页</a>
+      <a href="../tags/index.html">标签</a>
+      <a href="../rss.xml">RSS</a>
+      <a href="https://github.com/daydaydream000" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="https://github.com/daydaydream000/daydaydream000.github.io" target="_blank" rel="noopener noreferrer">源码</a>
+      <a href="mailto:daydaydream000@users.noreply.github.com">邮件</a>
+    </p>
+    <p class="footer-note">
+      本站是纯静态站点，由 <code>build.py</code> 生成，托管于 GitHub Pages。
+    </p>
+  </div>
+</footer>
+
+<div id="search-overlay" class="search-overlay" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="站内搜索">
+    <div class="search-bar">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off" spellcheck="false">
+      <button id="search-close" class="icon-btn" type="button" aria-label="关闭搜索">Esc</button>
+    </div>
+    <div id="search-results" class="search-results"></div>
+  </div>
+</div>
+
+<button id="back-to-top" class="back-to-top" type="button" aria-label="回到顶部" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+</button>
+
+<script src="../assets/search-index.js" defer></script>
+<script src="../assets/app.js" defer></script>
+</body>
+</html>

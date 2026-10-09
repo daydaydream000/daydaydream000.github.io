@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="1200" height="420" role="img" aria-label="DayDayDream 博客封面">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1b2a4a"/>
+      <stop offset="55%" stop-color="#2f4a8c"/>
+      <stop offset="100%" stop-color="#7a3a86"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.72" cy="0.28" r="0.6">
+      <stop offset="0%" stop-color="#ffd9a0" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#ffd9a0" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="420" fill="url(#bg)"/>
+  <rect width="1200" height="420" fill="url(#glow)"/>
+
+  <!-- 星星 -->
+  <g fill="#ffffff" opacity="0.75">
+    <circle cx="130" cy="86" r="2.4"/>
+    <circle cx="268" cy="150" r="1.7"/>
+    <circle cx="392" cy="72" r="2"/>
+    <circle cx="520" cy="196" r="1.5"/>
+    <circle cx="676" cy="96" r="2.2"/>
+    <circle cx="812" cy="168" r="1.6"/>
+    <circle cx="950" cy="76" r="2.1"/>
+    <circle cx="1082" cy="146" r="1.8"/>
+    <circle cx="196" cy="250" r="1.5"/>
+    <circle cx="1040" cy="286" r="1.6"/>
+  </g>
+
+  <!-- 月亮 -->
+  <g transform="translate(936,268)">
+    <circle r="74" fill="#f7e7c6" opacity="0.95"/>
+    <circle r="74" fill="#1b2a4a" opacity="0.55" transform="translate(-40,-26)"/>
+    <circle r="10" cx="24" cy="-30" fill="#e6d3ac" opacity="0.8"/>
+    <circle r="6" cx="44" cy="16" fill="#e6d3ac" opacity="0.7"/>
+    <circle r="4" cx="-6" cy="44" fill="#e6d3ac" opacity="0.6"/>
+  </g>
+
+  <!-- 地平线 -->
+  <path d="M0 336 C 180 296, 360 372, 560 340 C 760 308, 940 366, 1200 322 L1200 420 L0 420 Z" fill="#0e1729" opacity="0.92"/>
+  <path d="M0 366 C 220 336, 420 392, 640 366 C 860 340, 1020 392, 1200 356 L1200 420 L0 420 Z" fill="#0a1120"/>
+
+  <text x="96" y="188" font-family="'PingFang SC','Microsoft YaHei','Noto Sans SC',system-ui,sans-serif"
+        font-size="76" font-weight="700" fill="#ffffff" letter-spacing="2">DayDayDream</text>
+  <text x="100" y="248" font-family="'PingFang SC','Microsoft YaHei','Noto Sans SC',system-ui,sans-serif"
+        font-size="30" fill="#c8d6f2" letter-spacing="4">醒着做梦，落笔成诗</text>
+</svg>

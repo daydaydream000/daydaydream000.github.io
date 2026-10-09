@@ -1,0 +1,11 @@
+# 统一用 LF：docs/ 是 build.py 生成的，源文件与产物保持一致的换行符
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary

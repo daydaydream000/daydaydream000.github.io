@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 420" width="1040" height="420" role="img" aria-label="构建流程图">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#2f6feb"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #d4d8de; stroke-width: 2; }
+      .lbl  { font-family: 'PingFang SC','Microsoft YaHei','Noto Sans SC',system-ui,sans-serif; font-size: 20px; font-weight: 600; fill: #1a1d21; }
+      .sub  { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 15px; fill: #6b7280; }
+      .cap  { font-family: 'PingFang SC','Microsoft YaHei','Noto Sans SC',system-ui,sans-serif; font-size: 16px; fill: #454b54; }
+      .flow { color: #2f6feb; stroke: #2f6feb; stroke-width: 2.4; fill: none; }
+    </style>
+  </defs>
+
+  <rect width="1040" height="420" fill="#fbfbfd"/>
+
+  <!-- 1. 源文件 -->
+  <rect class="box" x="40" y="120" width="220" height="150" rx="14"/>
+  <text class="lbl" x="66" y="164">Markdown 源文件</text>
+  <text class="sub" x="66" y="196">posts/*.md</text>
+  <text class="sub" x="66" y="220">pages/*.md</text>
+  <text class="sub" x="66" y="244">images/</text>
+
+  <!-- 2. 生成器 -->
+  <rect class="box" x="340" y="120" width="220" height="150" rx="14" stroke="#2f6feb"/>
+  <text class="lbl" x="366" y="164">build.py</text>
+  <text class="sub" x="366" y="196">python build.py</text>
+  <text class="sub" x="366" y="220">Markdown → HTML</text>
+  <text class="sub" x="366" y="244">零第三方依赖</text>
+
+  <!-- 3. 发布目录 -->
+  <rect class="box" x="640" y="120" width="220" height="150" rx="14"/>
+  <text class="lbl" x="666" y="164">docs/</text>
+  <text class="sub" x="666" y="196">index.html</text>
+  <text class="sub" x="666" y="220">post/*.html</text>
+  <text class="sub" x="666" y="244">rss.xml · sitemap</text>
+
+  <!-- 箭头 -->
+  <path class="flow" d="M262 195 H332" marker-end="url(#arrow)"/>
+  <path class="flow" d="M562 195 H632" marker-end="url(#arrow)"/>
+
+  <!-- GitHub -->
+  <rect class="box" x="40" y="316" width="820" height="72" rx="14" fill="#1b1e24" stroke="#1b1e24"/>
+  <text class="cap" x="66" y="360" fill="#e8eaee">
+    git push  →  main 分支  →  Settings ▸ Pages ▸ Deploy from a branch ▸ /docs  →  https://daydaydream000.github.io
+  </text>
+  <path class="flow" d="M750 272 V308" marker-end="url(#arrow)"/>
+
+  <text class="cap" x="40" y="62" font-size="22" font-weight="700" fill="#1a1d21">站点构建流程</text>
+  <text class="cap" x="40" y="92">内容留在仓库里，样式和模板都可手改，GitHub 只负责把 docs/ 发出去。</text>
+</svg>

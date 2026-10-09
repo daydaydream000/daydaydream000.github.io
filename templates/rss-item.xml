@@ -1,0 +1,10 @@
+    <item>
+      <title>{{title}}</title>
+      <link>{{url}}</link>
+      <guid isPermaLink="true">{{url}}</guid>
+      <pubDate>{{date}}</pubDate>
+      <author>{{email}} ({{author}})</author>
+      {{tags}}
+      <description>{{summary}}</description>
+      <content:encoded><![CDATA[{{content}}]]></content:encoded>
+    </item>
