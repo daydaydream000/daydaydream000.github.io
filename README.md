@@ -11,6 +11,9 @@
 Markdown（posts/ · pages/）  →  python build.py  →  docs/  →  git push  →  GitHub Pages
 ```
 
+首页由三部分组成：顶部的**介绍区**（头像 + 站名 + 文章数 / 标签数 / RSS），
+中间的**主推卡片**（`pinned: true` 的文章，没有就用最新一篇），以及下面的**文章网格**。
+
 ## 目录结构
 
 | 路径 | 说明 |
@@ -51,9 +54,9 @@ draft: false
 | `updated` | 否 | 有值时文章页额外显示「更新于 …」 |
 | `tags` | 否 | 数组或逗号分隔字符串，例如 `[随笔, 建站]` |
 | `summary` | 否 | 首页卡片摘要，也用于 RSS 与搜索 |
-| `cover` | 否 | 封面图，出现在文章顶部与首页卡片 |
+| `cover` | 否 | 封面图，出现在文章顶部、首页主推卡片或网格卡片 |
 | `slug` | 否 | 自定义 URL 文件名（默认取源文件名的英文/数字部分） |
-| `pinned` | 否 | `true` 时置顶 |
+| `pinned` | 否 | `true` 时置顶，并占据首页的主推卡片位置 |
 | `draft` | 否 | `true` 时不参与构建 |
 | `author` | 否 | 覆盖默认作者 |
 
@@ -68,6 +71,9 @@ draft: false
 
 图片写 `![图注](images/x.png)`；**独占一段**时会渲染成带图注的 `<figure>`，否则作为行内图片。
 本地图片会被自动复制到 `docs/assets/images/`，外链图片（`http(s)://`、`data:`）原样保留。
+
+封面（front matter 的 `cover`）**按原图比例等比显示，不做裁切**，所以建议用宽幅横图
+（如 1200×420 或 16:9）；同一批文章都配封面时，首页网格会整齐很多。
 
 引用块支持 GitHub 风格的提示框：
 
@@ -112,9 +118,10 @@ git push
 ## 自定义
 
 - **站名、副标题、作者、域名、每页篇数、导航项**：改 `build.py` 顶部的 `CONFIG`；
-- **头像**：换成 `assets/avatar.png`（默认，站点不依赖任何第三方域名），也可以填外链 `https://…`；
+- **头像**：`assets/avatar.jpg`（默认，站点不依赖任何第三方域名），原始大图留在 `images/head.jpg` 方便重新裁剪，也可以把 `CONFIG["avatar"]` 填成外链 `https://…`；
 - **配色、字体、版式**：改 `assets/style.css` 顶部的 CSS 变量（`--accent`、`--content-width`、`--bg`…），深浅色主题各有独立变量；
 - **页面结构**：改 `templates/` 下的模板，`{{key}}` 是 `build.py` 传入的变量；
+- **首页版式**：`build_index()` / `render_hero()` / `render_featured()` / `render_card()` 决定「介绍区 + 主推卡片 + 文章网格」的结构，样式在 `assets/style.css` 的「首页」段落；
 - **社交分享图**：文章页优先用 front matter 里的 `cover`，其余页面回退到 `CONFIG["avatar"]`。
 
 > 修改 `docs/` 里的任何文件都会在下次 `python build.py` 时被覆盖，请改源文件。

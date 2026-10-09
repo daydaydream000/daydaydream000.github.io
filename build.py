@@ -53,7 +53,7 @@ CONFIG = {
     "url": "https://daydaydream000.github.io",
     "author": "DayDayDream",
     # 头像放在 assets/ 里，站点不依赖任何第三方域名；换成 "https://…" 也可以
-    "avatar": "assets/avatar.png",
+    "avatar": "assets/avatar.jpg",
     "email": "daydaydream000@users.noreply.github.com",
     "github": "https://github.com/daydaydream000",
     "repo": "https://github.com/daydaydream000/daydaydream000.github.io",
@@ -858,9 +858,16 @@ EXTERNAL_RE = re.compile(r"^(?:[a-z][a-z0-9+.\-]*:|//)", re.I)
 
 
 def asset_url(value: str, root: str) -> str:
-    """站点内资源 → 相对当前页面的路径；外链原样返回。"""
-    value = resolve_root(value, root)
-    if not value or EXTERNAL_RE.match(value) or value.startswith("#"):
+    """站点内资源 → 相对当前页面的路径；外链原样返回。
+
+    带 @@ROOT@@ 占位符的值（Markdown 渲染出来的图片）已经知道自己的站点内位置，
+    只需替换占位符，千万不能再拼一次 root。
+    """
+    if not value:
+        return value
+    if ROOT_TOKEN in value:
+        return value.replace(ROOT_TOKEN, root)
+    if EXTERNAL_RE.match(value) or value.startswith("#"):
         return value
     return root + value.lstrip("/")
 
@@ -929,35 +936,89 @@ def render_page(
     write_text(OUT_DIR / out_path, fill(template("base.html"), context))
 
 
-def render_post_list(posts: list[Doc], root: str) -> str:
+def tags_html(doc: Doc, root: str) -> str:
+    return "".join(
+        f'<a class="tag" href="{root}tags/index.html#{t["anchor"]}" '
+        f'style="--tag-color:{t["color"]}">{esc(t["name"])}</a>'
+        for t in doc.tag_links
+    )
+
+
+def meta_html(doc: Doc, root: str, *, with_reading: bool = True) -> str:
+    reading = f'<span class="dot">·</span><span>{doc.reading} 分钟</span>' if with_reading else ""
+    return (
+        '<div class="card-meta">'
+        f'<time datetime="{doc.date_str}">{esc(doc.date_display)}</time>'
+        f"{reading}"
+        f'<span class="tags">{tags_html(doc, root)}</span>'
+        "</div>"
+    )
+
+
+def render_hero(posts: list[Doc], tag_count: int, root: str) -> str:
+    stats = [
+        f'<a class="hero-stat" href="{root}index.html"><strong>{len(posts)}</strong>篇文章</a>',
+        f'<a class="hero-stat" href="{root}tags/index.html"><strong>{tag_count}</strong>个标签</a>',
+        f'<a class="hero-stat" href="{root}rss.xml">RSS 订阅</a>',
+    ]
+    return (
+        '<section class="hero">'
+        f'<img class="hero-avatar" src="{asset_url(CONFIG["avatar"], root)}" '
+        f'alt="{esc_attr(CONFIG["title"])}" width="112" height="112" decoding="async">'
+        '<div class="hero-body">'
+        f'<h1 class="hero-title">{esc(CONFIG["title"])}</h1>'
+        f'<p class="hero-subtitle">{esc(CONFIG["subtitle"])}</p>'
+        f'<div class="hero-stats">{"".join(stats)}</div>'
+        "</div></section>"
+    )
+
+
+def render_featured(doc: Doc | None, root: str) -> str:
+    if doc is None:
+        return ""
+    cover = ""
+    if doc.cover:
+        cover = (
+            f'<a class="featured-cover" href="{root}{doc.url}" tabindex="-1" aria-hidden="true">'
+            f'<img src="{asset_url(doc.cover, root)}" alt="" decoding="async"></a>'
+        )
+    badge = '<span class="featured-badge">置顶</span>' if doc.pinned else ""
+    return (
+        '<article class="featured">'
+        f"{cover}"
+        '<div class="featured-body">'
+        f"{badge}"
+        f'<h2 class="featured-title"><a href="{root}{doc.url}">{esc(doc.title)}</a></h2>'
+        f'<p class="featured-summary">{esc(doc.summary)}</p>'
+        f"{meta_html(doc, root)}"
+        "</div></article>"
+    )
+
+
+def render_card(doc: Doc, root: str) -> str:
+    cover = ""
+    if doc.cover:
+        cover = (
+            f'<a class="card-cover" href="{root}{doc.url}" tabindex="-1" aria-hidden="true">'
+            f'<img src="{asset_url(doc.cover, root)}" alt="" loading="lazy" decoding="async"></a>'
+        )
+    return (
+        '<article class="card">'
+        f"{cover}"
+        '<div class="card-body">'
+        f'<h2 class="card-title"><a href="{root}{doc.url}">{esc(doc.title)}</a></h2>'
+        f'<p class="card-summary">{esc(doc.summary)}</p>'
+        f"{meta_html(doc, root)}"
+        "</div></article>"
+    )
+
+
+def render_card_grid(posts: list[Doc], root: str, heading: str = "") -> str:
     if not posts:
-        return '<p class="empty">还没有文章，去 <code>posts/</code> 里写下第一篇吧。</p>'
-    items = []
-    for doc in posts:
-        tags = "".join(
-            f'<a class="tag" href="{root}tags/index.html#{t["anchor"]}" '
-            f'style="--tag-color:{t["color"]}">{esc(t["name"])}</a>'
-            for t in doc.tag_links
-        )
-        cover = ""
-        if doc.cover:
-            cover = (
-                f'<a class="card-cover" href="{root}{doc.url}" tabindex="-1" aria-hidden="true">'
-                f'<img src="{resolve_root(doc.cover, root)}" alt="" loading="lazy" decoding="async"></a>'
-            )
-        items.append(
-            '<article class="card">'
-            f"{cover}"
-            '<div class="card-body">'
-            f'<h2 class="card-title"><a href="{root}{doc.url}">{esc(doc.title)}</a></h2>'
-            f'<p class="card-summary">{esc(doc.summary)}</p>'
-            '<div class="card-meta">'
-            f'<time datetime="{doc.date_str}">{esc(doc.date_display)}</time>'
-            f'<span class="dot">·</span><span>{doc.reading} 分钟</span>'
-            f'<span class="tags">{tags}</span>'
-            "</div></div></article>"
-        )
-    return "".join(items)
+        return ""
+    head = f'<h2 class="section-title">{esc(heading)}</h2>' if heading else ""
+    cards = "".join(render_card(doc, root) for doc in posts)
+    return f'{head}<section class="post-grid" aria-label="文章列表">{cards}</section>'
 
 
 def toc_html(toc: list[dict]) -> str:
@@ -1036,12 +1097,37 @@ def collect_images(posts: list[Doc], pages: list[Doc]) -> dict[Path, str]:
     return images
 
 
+def count_tags(posts: list[Doc]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for doc in posts:
+        for tag in doc.tags:
+            counts[tag] = counts.get(tag, 0) + 1
+    return counts
+
+
 def build_index(posts: list[Doc], per_page: int) -> None:
     total = max(1, math.ceil(len(posts) / per_page))
+    tag_count = len(count_tags(posts))
+
     for page_no in range(1, total + 1):
         chunk = posts[(page_no - 1) * per_page: page_no * per_page]
         out_path = Path("index.html") if page_no == 1 else Path(f"page/{page_no}/index.html")
         root = root_prefix(out_path)
+
+        # 首页第一屏：一篇主推 + 其余网格
+        featured = None
+        rest = chunk
+        if page_no == 1 and chunk:
+            featured = next((doc for doc in chunk if doc.pinned), chunk[0])
+            rest = [doc for doc in chunk if doc is not featured]
+
+        hero = render_hero(posts, tag_count, root) if page_no == 1 else ""
+        if page_no > 1:
+            rest_html = render_card_grid(rest, root)
+        elif featured is not None:
+            rest_html = render_card_grid(rest, root, heading="更多文章")
+        else:
+            rest_html = render_card_grid(rest, root)
 
         pager = ""
         if total > 1:
@@ -1054,27 +1140,15 @@ def build_index(posts: list[Doc], per_page: int) -> None:
                 bits.append(f'<a class="pager-link" href="{root}page/{page_no + 1}/index.html">下一页 →</a>')
             pager = f'<nav class="pager">{"".join(bits)}</nav>'
 
-        intro = ""
-        if page_no == 1:
-            intro = fill(
-                '<section class="hero">'
-                '<img class="hero-avatar" src="{{avatar}}" alt="{{site_title}}" width="84" height="84" loading="lazy">'
-                '<div><h1 class="hero-title">{{site_title}}</h1>'
-                '<p class="hero-subtitle">{{site_subtitle}}</p></div></section>',
-                {
-                    "avatar": esc_attr(asset_url(CONFIG["avatar"], root)),
-                    "site_title": esc(CONFIG["title"]),
-                    "site_subtitle": esc(CONFIG["subtitle"]),
-                },
-            )
-
         body = fill(
             template("index.html"),
             {
-                "hero": intro,
-                "posts": render_post_list(chunk, root),
+                "hero": hero,
+                "featured": render_featured(featured, root),
+                "posts": rest_html if (featured is not None or rest) else (
+                    '<p class="empty">还没有文章，去 <code>posts/</code> 里写下第一篇吧。</p>'
+                ),
                 "pager": pager,
-                "count": len(posts),
             },
         )
         render_page(
@@ -1091,15 +1165,11 @@ def build_posts(posts: list[Doc], pages: list[Doc]) -> None:
     for index, doc in enumerate(posts):
         out_path = Path(doc.url)
         root = root_prefix(out_path)
-        tags = "".join(
-            f'<a class="tag" href="{root}tags/index.html#{t["anchor"]}" '
-            f'style="--tag-color:{t["color"]}">{esc(t["name"])}</a>'
-            for t in doc.tag_links
-        )
+        tags = tags_html(doc, root)
         cover = ""
         if doc.cover:
             cover = (
-                f'<figure class="post-cover"><img src="{resolve_root(doc.cover, root)}" '
+                f'<figure class="post-cover"><img src="{asset_url(doc.cover, root)}" '
                 f'alt="{esc_attr(doc.title)}" loading="lazy" decoding="async"></figure>'
             )
         body = fill(
