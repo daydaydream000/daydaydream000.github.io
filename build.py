@@ -955,12 +955,7 @@ def meta_html(doc: Doc, root: str, *, with_reading: bool = True) -> str:
     )
 
 
-def render_hero(posts: list[Doc], tag_count: int, root: str) -> str:
-    stats = [
-        f'<a class="hero-stat" href="{root}index.html"><strong>{len(posts)}</strong>篇文章</a>',
-        f'<a class="hero-stat" href="{root}tags/index.html"><strong>{tag_count}</strong>个标签</a>',
-        f'<a class="hero-stat" href="{root}rss.xml">RSS 订阅</a>',
-    ]
+def render_hero(root: str) -> str:
     return (
         '<section class="hero">'
         f'<img class="hero-avatar" src="{asset_url(CONFIG["avatar"], root)}" '
@@ -968,7 +963,6 @@ def render_hero(posts: list[Doc], tag_count: int, root: str) -> str:
         '<div class="hero-body">'
         f'<h1 class="hero-title">{esc(CONFIG["title"])}</h1>'
         f'<p class="hero-subtitle">{esc(CONFIG["subtitle"])}</p>'
-        f'<div class="hero-stats">{"".join(stats)}</div>'
         "</div></section>"
     )
 
@@ -1097,17 +1091,8 @@ def collect_images(posts: list[Doc], pages: list[Doc]) -> dict[Path, str]:
     return images
 
 
-def count_tags(posts: list[Doc]) -> dict[str, int]:
-    counts: dict[str, int] = {}
-    for doc in posts:
-        for tag in doc.tags:
-            counts[tag] = counts.get(tag, 0) + 1
-    return counts
-
-
 def build_index(posts: list[Doc], per_page: int) -> None:
     total = max(1, math.ceil(len(posts) / per_page))
-    tag_count = len(count_tags(posts))
 
     for page_no in range(1, total + 1):
         chunk = posts[(page_no - 1) * per_page: page_no * per_page]
@@ -1121,7 +1106,7 @@ def build_index(posts: list[Doc], per_page: int) -> None:
             featured = next((doc for doc in chunk if doc.pinned), chunk[0])
             rest = [doc for doc in chunk if doc is not featured]
 
-        hero = render_hero(posts, tag_count, root) if page_no == 1 else ""
+        hero = render_hero(root) if page_no == 1 else ""
         if page_no > 1:
             rest_html = render_card_grid(rest, root)
         elif featured is not None:

@@ -11,7 +11,7 @@
 Markdown（posts/ · pages/）  →  python build.py  →  docs/  →  git push  →  GitHub Pages
 ```
 
-首页由三部分组成：顶部的**介绍区**（头像 + 站名 + 文章数 / 标签数 / RSS），
+首页由三部分组成：顶部的**介绍区**（头像 + 站名 + 副标题），
 中间的**主推卡片**（`pinned: true` 的文章，没有就用最新一篇），以及下面的**文章网格**。
 
 ## 目录结构
