@@ -87,6 +87,35 @@
     }
   }
 
+  /* ---------- 顶部阅读进度条 + 导航栏滚动收缩 ---------- */
+  var pageProgress = doc.getElementById("page-progress");
+  var topbarEl = doc.querySelector(".topbar");
+  if (pageProgress || topbarEl) {
+    var progressTicking = false;
+    var onProgress = function () {
+      var scrollTop = window.scrollY || root.scrollTop;
+      var max = root.scrollHeight - window.innerHeight;
+      var ratio = max > 0 ? Math.min(1, scrollTop / max) : 0;
+      if (pageProgress) {
+        pageProgress.style.transform = "scaleX(" + ratio + ")";
+        pageProgress.style.opacity = ratio > 0.004 ? "1" : "0";
+      }
+      if (topbarEl) {
+        topbarEl.classList.toggle("is-scrolled", scrollTop > 24);
+      }
+      progressTicking = false;
+    };
+    var requestProgress = function () {
+      if (!progressTicking) {
+        progressTicking = true;
+        window.requestAnimationFrame(onProgress);
+      }
+    };
+    window.addEventListener("scroll", requestProgress, { passive: true });
+    window.addEventListener("resize", requestProgress);
+    onProgress();
+  }
+
   /* ---------- 代码复制 ---------- */
   doc.querySelectorAll("[data-copy]").forEach(function (button) {
     button.addEventListener("click", function () {
