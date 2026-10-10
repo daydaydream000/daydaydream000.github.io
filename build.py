@@ -882,6 +882,20 @@ def asset_url(value: str, root: str) -> str:
     return root + value.lstrip("/")
 
 
+def asset_version(rel: str) -> str:
+    """静态资源的内容指纹，拼进引用 URL 的 ?v= 里。
+
+    页面 HTML 与 CSS/JS 必须成对更新：GitHub Pages 对静态资源给 10 分钟缓存，
+    只按文件名引用的话，改完样式用户可能仍拿到旧 CSS，出现「HTML 是新的、
+    样式是旧的」的错乱（按钮被旧的圆形规则压成小圆、文字溢出等）。
+    """
+    path = ASSETS_DIR / rel
+    try:
+        return hashlib.sha1(path.read_bytes()).hexdigest()[:10]
+    except OSError:
+        return "0"
+
+
 def absolute_url(value: str) -> str:
     """站点内资源 → 完整 URL（用于 og:image、RSS）。"""
     if value.startswith(ROOT_TOKEN):
@@ -1002,6 +1016,8 @@ def render_page(
         "avatar": esc_attr(asset_url(CONFIG["avatar"], root)),
         "year": datetime.now().year,
         "url": CONFIG["url"],
+        "css_ver": asset_version("style.css"),
+        "js_ver": asset_version("app.js"),
     }
     write_text(OUT_DIR / out_path, fill(template("base.html"), context))
 
@@ -1188,12 +1204,11 @@ def render_tag_bar(posts: list[Doc], root: str, limit: int = 6) -> str:
         for tag in doc.tags:
             counts[tag] = counts.get(tag, 0) + 1
     ordered = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:limit]
-    # 首页 pill 纯图标 + 分隔线（对齐 Firefly CategoryBar 结构：主页 | 分类… | 更多）
+    # 首页 pill 纯图标 + 分隔线（对齐 Firefly CategoryBar：主页 | 可横向滚动的分类 | 更多）
     home_pill = (
         f'<a class="pill pill-home active" href="{root}index.html" '
         f'aria-label="全部" title="全部">{icon_svg("home", 16)}</a>'
     )
-    divider = '<span class="tag-divider" aria-hidden="true"></span>'
     pills = "".join(
         f'<a class="pill" href="{root}tags/index.html#{tag_anchor(tag)}">'
         f'<span>{esc(tag)}</span><b>{count}</b></a>'
@@ -1201,7 +1216,14 @@ def render_tag_bar(posts: list[Doc], root: str, limit: int = 6) -> str:
     )
     return (
         '<div class="card-panel tag-bar">'
-        f'{home_pill}{divider}{pills}'
+        f"{home_pill}"
+        '<span class="tag-divider" aria-hidden="true"></span>'
+        '<div class="tag-scroll-area">'
+        '<span class="tag-fade tag-fade-left" aria-hidden="true"></span>'
+        f'<div class="tag-scroll">{pills}</div>'
+        '<span class="tag-fade tag-fade-right" aria-hidden="true"></span>'
+        "</div>"
+        '<span class="tag-divider tag-divider-more" aria-hidden="true"></span>'
         f'<a class="pill-more" href="{root}tags/index.html">更多{icon_svg("arrow-right", 14)}</a>'
         "</div>"
     )

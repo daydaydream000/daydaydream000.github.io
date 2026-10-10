@@ -616,9 +616,36 @@ html.notice-off .notice-card { display: none; }
   display: flex;
   align-items: center;
   gap: .5rem;
-  flex-wrap: wrap;
+  /* 不换行：分类在中间区域横向滚动，溢出用两侧渐隐提示（对齐 Firefly CategoryBar） */
+  flex-wrap: nowrap;
   padding: 12px 14px;
 }
+.tag-scroll-area { position: relative; flex: 1; min-width: 0; }
+.tag-scroll {
+  display: flex;
+  gap: .5rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.tag-scroll::-webkit-scrollbar { display: none; }
+.tag-scroll .pill { flex: none; }
+/* 两侧渐隐：滚到两端时对应一侧淡出，提示「还有内容」 */
+.tag-fade {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2.5rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .3s ease-in-out;
+  z-index: 1;
+}
+.tag-fade[data-visible] { opacity: 1; }
+.tag-fade-left { left: 0; background: linear-gradient(to left, transparent, var(--surface)); }
+.tag-fade-right { right: 0; background: linear-gradient(to right, transparent, var(--surface)); }
+.tag-divider-more { opacity: 0; transition: opacity .3s ease-in-out; }
+.tag-divider-more[data-visible] { opacity: .6; }
 .pill {
   display: inline-flex;
   align-items: center;

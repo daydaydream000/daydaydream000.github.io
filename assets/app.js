@@ -260,4 +260,54 @@
       }
     });
   }
+
+  /* ---------- 分类栏：溢出时横向滚动 + 两侧渐隐 ---------- */
+  var tagBar = doc.querySelector(".tag-bar");
+  if (tagBar) {
+    var tagScroll = tagBar.querySelector(".tag-scroll");
+    var tagFadeLeft = tagBar.querySelector(".tag-fade-left");
+    var tagFadeRight = tagBar.querySelector(".tag-fade-right");
+    var tagMoreDivider = tagBar.querySelector(".tag-divider-more");
+
+    if (tagScroll) {
+      var syncTagBar = function () {
+        var max = tagScroll.scrollWidth - tagScroll.clientWidth;
+        var hasOverflow = max > 1;
+        var atStart = tagScroll.scrollLeft <= 1;
+        var atEnd = tagScroll.scrollLeft >= max - 1;
+        if (tagFadeLeft) tagFadeLeft.toggleAttribute("data-visible", hasOverflow && !atStart);
+        if (tagFadeRight) tagFadeRight.toggleAttribute("data-visible", hasOverflow && !atEnd);
+        if (tagMoreDivider) tagMoreDivider.toggleAttribute("data-visible", hasOverflow);
+      };
+
+      tagScroll.addEventListener("scroll", syncTagBar, { passive: true });
+      window.addEventListener("resize", syncTagBar);
+
+      /* 竖滚轮推到两端后放行页面滚动，中间区段则把列表横向推动 */
+      tagScroll.addEventListener(
+        "wheel",
+        function (event) {
+          if (tagScroll.scrollWidth <= tagScroll.clientWidth || event.ctrlKey) return;
+          if (Math.abs(event.deltaX) >= Math.abs(event.deltaY)) return;
+          var delta =
+            event.deltaMode === 1
+              ? event.deltaY * 16
+              : event.deltaMode === 2
+                ? event.deltaY * tagScroll.clientWidth
+                : event.deltaY;
+          var max = tagScroll.scrollWidth - tagScroll.clientWidth;
+          var atStart = tagScroll.scrollLeft <= 1;
+          var atEnd = tagScroll.scrollLeft >= max - 1;
+          if ((delta < 0 && atStart) || (delta > 0 && atEnd)) return;
+          event.preventDefault();
+          tagScroll.scrollLeft = Math.min(max, Math.max(0, tagScroll.scrollLeft + delta));
+          syncTagBar();
+        },
+        { passive: false }
+      );
+
+      syncTagBar();
+      window.addEventListener("load", syncTagBar);
+    }
+  }
 })();
