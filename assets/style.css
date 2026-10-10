@@ -223,15 +223,15 @@ html.dark #theme-toggle .icon-moon { display: inline-flex; }
   position: absolute;
   inset: 0;
   background:
-    /* 文字区居中压暗：保证居中标题在任何底图上都清晰（对齐 Firefly 居中文字层） */
-    radial-gradient(60% 70% at 50% 52%, rgba(6, 12, 18, .52) 0%, rgba(6, 12, 18, 0) 70%),
+    /* 左侧文字区局部压暗：保证左对齐标题在任何底图上都清晰 */
+    radial-gradient(60% 70% at 24% 52%, rgba(6, 12, 18, .55) 0%, rgba(6, 12, 18, 0) 70%),
     linear-gradient(100deg, rgba(8, 16, 22, .62) 0%, rgba(8, 16, 22, .42) 50%,
                     rgba(8, 16, 22, .18) 78%, rgba(8, 16, 22, .06) 100%),
     linear-gradient(to bottom, rgba(18, 32, 40, .22), rgba(18, 32, 40, 0) 38%);
 }
 html.dark .banner-scrim {
   background:
-    radial-gradient(60% 70% at 50% 52%, rgba(4, 8, 12, .55) 0%, rgba(4, 8, 12, 0) 72%),
+    radial-gradient(60% 70% at 24% 52%, rgba(4, 8, 12, .58) 0%, rgba(4, 8, 12, 0) 72%),
     linear-gradient(100deg, rgba(6, 12, 16, .68) 0%, rgba(6, 12, 16, .46) 44%,
                     rgba(6, 12, 16, .18) 72%, rgba(6, 12, 16, .06) 88%),
     linear-gradient(to bottom, rgba(6, 12, 16, .34), rgba(6, 12, 16, .06) 38%);
@@ -253,6 +253,13 @@ html.dark .banner-scrim {
   max-width: 780px;
   text-align: center;
   color: #fff;
+}
+/* 整页大横幅：标题/副标题/按钮整体左对齐，把右侧让给立绘 */
+.banner:not(.banner-short) .banner-inner {
+  text-align: left;
+  margin-right: auto;
+  max-width: 620px;
+  padding-left: clamp(8px, 4vw, 36px);
 }
 
 .banner-title {
@@ -300,6 +307,7 @@ html.dark .banner-scrim {
   justify-content: center;
   gap: .75rem;
 }
+.banner:not(.banner-short) .banner-social { justify-content: flex-start; }
 
 .social-btn,
 .social-chip {
