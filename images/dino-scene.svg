@@ -1,0 +1,201 @@
+<svg viewBox="0 0 820 620" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#87CEEB"/>
+      <stop offset="100%" stop-color="#E0F0FF"/>
+    </linearGradient>
+    <linearGradient id="groundGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A09070"/>
+      <stop offset="100%" stop-color="#6B5B40"/>
+    </linearGradient>
+    <style>
+      .dim { font: 11px monospace; fill: #444; }
+      .dim-bold { font: bold 11px monospace; fill: #222; }
+      .label { font: 12px sans-serif; fill: #333; }
+      .label-bold { font: bold 12px sans-serif; fill: #111; }
+      .arrow { fill: none; stroke: #666; stroke-width: 1.5; marker-end: url(#arrow); }
+      .dash { fill: none; stroke: #888; stroke-width: 1; stroke-dasharray: 4 3; }
+      .solid { fill: none; stroke: #333; stroke-width: 2; }
+      .highlight { fill: #FF6B35; opacity: 0.9; }
+      .note { font: 10px sans-serif; fill: #666; }
+      .title { font: bold 16px sans-serif; fill: #111; }
+    </style>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666"/>
+    </marker>
+    <marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#FF6B35"/>
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="410" y="30" class="title" text-anchor="middle">场景纵剖面：相机视野 / 地面循环 / 障碍生成 / 天空装饰</text>
+
+  <!-- Sky background -->
+  <rect x="40" y="50" width="740" height="520" fill="url(#skyGrad)" stroke="#CCDDEE" stroke-width="1"/>
+
+  <!-- Camera frustum (orthographic, size=5) -->
+  <g>
+    <!-- Camera position at x=200 (world), y=0 -->
+    <rect x="40" y="50" width="740" height="20" fill="#FFD700" opacity="0.15"/>
+    <text x="410" y="65" class="label-bold" text-anchor="middle">相机正交视野：orthographicSize = 5 → 半高 5，半宽 5×aspect（约 8.9）</text>
+
+    <!-- Camera position indicator -->
+    <circle cx="240" cy="200" r="6" fill="#FF6B35"/>
+    <text x="240" y="190" class="label" text-anchor="middle">Main Camera</text>
+    <text x="240" y="215" class="dim" text-anchor="middle">(200, 0, -10)</text>
+
+    <!-- Frustum lines -->
+    <line x1="240" y1="80" x2="40" y2="80" class="dash" stroke="#FF6B35" stroke-width="2"/>
+    <line x1="240" y1="320" x2="40" y2="320" class="dash" stroke="#FF6B35" stroke-width="2"/>
+    <line x1="240" y1="80" x2="780" y2="80" class="dash" stroke="#FF6B35" stroke-width="2"/>
+    <line x1="240" y1="320" x2="780" y2="320" class="dash" stroke="#FF6B35" stroke-width="2"/>
+    <!-- Vertical edges -->
+    <line x1="40" y1="80" x2="40" y2="320" class="solid" stroke="#FF6B35"/>
+    <line x1="780" y1="80" x2="780" y2="320" class="solid" stroke="#FF6B35"/>
+
+    <!-- Camera center crosshair -->
+    <line x1="230" y1="200" x2="250" y2="200" class="solid" stroke="#FF6B35"/>
+    <line x1="240" y1="190" x2="240" y2="210" class="solid" stroke="#FF6B35"/>
+  </g>
+
+  <!-- Ground level -->
+  <line x1="40" y1="420" x2="780" y2="420" class="solid" stroke="#5D4E37" stroke-width="4"/>
+  <text x="40" y="435" class="dim">groundY = -4.26</text>
+
+  <!-- Player (dinosaur) at startX = -12 → world x = -5.575 (scene local) -->
+  <g transform="translate(120, 350)">
+    <ellipse cx="0" cy="0" rx="18" ry="14" fill="#5A7A5A"/>
+    <ellipse cx="20" cy="-12" rx="12" ry="10" fill="#5A7A5A"/>
+    <ellipse cx="32" cy="-10" rx="7" ry="5" fill="#5A7A5A"/>
+    <circle cx="26" cy="-14" r="3" fill="#FFF"/>
+    <circle cx="27" cy="-14" r="1.5" fill="#111"/>
+    <ellipse cx="-6" cy="14" rx="5" ry="12" transform="rotate(-15 -6 14)" fill="#5A7A5A"/>
+    <ellipse cx="6" cy="14" rx="5" ry="12" transform="rotate(25 6 14)" fill="#5A7A5A"/>
+    <path d="M-18,4 Q-30,12 -25,20 Q-32,5 -22,-5 Z" fill="#5A7A5A"/>
+  </g>
+  <text x="120" y="330" class="label-bold" text-anchor="middle">Player (dinosaur)</text>
+  <text x="120" y="345" class="dim" text-anchor="middle">Start: (-5.575, -3.47)  Tag=Player  Layer=7</text>
+  <text x="120" y="360" class="dim" text-anchor="middle">Rigidbody2D Dynamic  mass=1  gravity=1  Continuous</text>
+  <text x="120" y="373" class="dim" text-anchor="middle">CapsuleCollider2D 0.79×0.79  offset(-0.05, 0.085)</text>
+
+  <!-- CapsuleCollider visualization -->
+  <ellipse cx="120" cy="350" rx="28" ry="35" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.7"/>
+
+  <!-- Ground tiles (repeating) -->
+  <g fill="#8B7355" stroke="#5D4E37" stroke-width="1.5">
+    <rect x="40" y="420" width="80" height="30" rx="2"/>
+    <rect x="120" y="420" width="70" height="30" rx="2"/>
+    <rect x="190" y="420" width="85" height="30" rx="2"/>
+    <rect x="275" y="420" width="75" height="30" rx="2"/>
+    <rect x="350" y="420" width="80" height="30" rx="2"/>
+    <rect x="430" y="420" width="70" height="30" rx="2"/>
+    <rect x="500" y="420" width="85" height="30" rx="2"/>
+    <rect x="585" y="420" width="75" height="30" rx="2"/>
+    <rect x="660" y="420" width="80" height="30" rx="2"/>
+    <rect x="740" y="420" width="40" height="30" rx="2"/>
+  </g>
+
+  <!-- GroundManager params -->
+  <g>
+    <rect x="40" y="460" width="300" height="120" fill="#FFF8E7" stroke="#E8D0A0" stroke-width="1" rx="5"/>
+    <text x="50" y="475" class="label-bold">GroundManager 参数</text>
+    <text x="50" y="492" class="dim">groundPrefabs: ground1 / ground2 / ground3 (随机)</text>
+    <text x="50" y="507" class="dim">groundY = -4.26     startX = -12</text>
+    <text x="50" y="522" class="dim">spawnAhead = 30     recycleBehind = 5</text>
+    <text x="50" y="537" class="dim">WidthOf() 读 Sprite.bounds.size.x，无图默认 8</text>
+    <text x="50" y="552" class="dim">FillGroundUntil() for 上限 50（保险丝）</text>
+
+    <!-- Arrow from GroundManager box to ground tiles -->
+    <line x1="190" y1="460" x2="190" y2="420" class="arrow" marker-end="url(#arrow2)"/>
+  </g>
+
+  <!-- Obstacles (cacti) -->
+  <g fill="#3A7A32" stroke="#2D5A27" stroke-width="1.5">
+    <!-- Cactus at x=350 -->
+    <rect x="430" y="370" width="14" height="50" rx="3"/>
+    <rect x="420" y="388" width="34" height="14" rx="3"/>
+    <rect x="434" y="388" width="6" height="30" rx="2"/>
+
+    <!-- Cactus at x=520 -->
+    <rect x="600" y="380" width="12" height="40" rx="3"/>
+    <rect x="592" y="395" width="28" height="12" rx="3"/>
+    <rect x="602" y="395" width="4" height="25" rx="2"/>
+
+    <!-- Cactus at x=680 -->
+    <rect x="760" y="390" width="16" height="30" rx="3"/>
+    <rect x="750" y="405" width="36" height="12" rx="3"/>
+  </g>
+
+  <!-- ObstacleManager params -->
+  <g>
+    <rect x="380" y="460" width="300" height="120" fill="#E8F5E8" stroke="#A0D0A0" stroke-width="1" rx="5"/>
+    <text x="390" y="475" class="label-bold">ObstacleManager 参数</text>
+    <text x="390" y="492" class="dim">obstaclePrefabs: cactus1~6 (6 种随机)</text>
+    <text x="390" y="507" class="dim">obstacleY = -3.93   scale = 2.5</text>
+    <text x="390" y="522" class="dim">minGap = 4   maxGap = 9   (中心距随机)</text>
+    <text x="390" y="537" class="dim">spawnAhead = 40   recycleBehind = 8</text>
+    <text x="390" y="552" class="dim">while 循环无上限（建议加保险丝 20）</text>
+  </g>
+
+  <!-- Sky decor: clouds -->
+  <g fill="#FFFFFF" opacity="0.7">
+    <ellipse cx="150" cy="130" rx="40" ry="15"/>
+    <ellipse cx="190" cy="120" rx="30" ry="18"/>
+    <ellipse cx="100" cy="125" rx="25" ry="12"/>
+    <ellipse cx="550" cy="100" rx="35" ry="13"/>
+    <ellipse cx="590" cy="90" rx="28" ry="15"/>
+    <ellipse cx="510" cy="98" rx="22" ry="11"/>
+  </g>
+
+  <!-- Pterosaur -->
+  <g transform="translate(700, 150)" fill="#4A4A4A">
+    <ellipse cx="0" cy="0" rx="10" ry="6"/>
+    <ellipse cx="12" cy="-1" rx="4" ry="4"/>
+    <path d="M-1,-1 Q-22,-22 -16,-10 Q-4,-4 -1,-1" opacity="0.8"/>
+    <path d="M-1,1 Q-22,22 -16,10 Q-4,4 -1,1" opacity="0.8"/>
+  </g>
+
+  <!-- SkyDecorManager params -->
+  <g>
+    <rect x="620" y="460" width="180" height="120" fill="#E8E8F5" stroke="#C0C0E0" stroke-width="1" rx="5"/>
+    <text x="630" y="475" class="label-bold">SkyDecorManager</text>
+    <text x="630" y="492" class="dim" style="font-size:10px;">cloudMin/MaxY: 1.8 / 4.5</text>
+    <text x="630" y="505" class="dim" style="font-size:10px;">pteroMin/MaxY: 0.3 / 2.6</text>
+    <text x="630" y="518" class="dim" style="font-size:10px;">pteroFlySpeed: 1.2</text>
+    <text x="630" y="531" class="dim" style="font-size:10px;">cloudGap: 7~16</text>
+    <text x="630" y="544" class="dim" style="font-size:10px;">pteroGap: 14~28</text>
+  </g>
+
+  <!-- Spawn/recycle zones -->
+  <g>
+    <!-- spawnAhead line (right of camera) -->
+    <line x1="780" y1="80" x2="780" y2="320" class="dash" stroke="#00AA00" stroke-width="2"/>
+    <text x="785" y="100" class="dim" transform="rotate(-90 785 100)">CameraRight + spawnAhead (30/40/36)</text>
+
+    <!-- recycleBehind line (left of camera) -->
+    <line x1="40" y1="80" x2="40" y2="320" class="dash" stroke="#AA0000" stroke-width="2"/>
+    <text x="20" y="300" class="dim" transform="rotate(90 20 300)">CameraLeft - recycleBehind (5/8/6)</text>
+  </g>
+
+  <!-- Dimensions -->
+  <g>
+    <!-- Vertical dimension: camera height -->
+    <line x1="30" y1="80" x2="30" y2="320" class="arrow"/>
+    <text x="18" y="200" class="dim-bold" transform="rotate(-90 18 200)" text-anchor="middle">视野高 = 10 (2 × orthographicSize)</text>
+
+    <!-- Horizontal dimension: camera width -->
+    <line x1="40" y1="60" x2="780" y2="60" class="arrow"/>
+    <text x="410" y="52" class="dim-bold" text-anchor="middle">视野宽 ≈ 17.8 (2 × 5 × aspect)</text>
+
+    <!-- Ground tile width -->
+    <line x1="120" y1="455" x2="190" y2="455" class="arrow" marker-end="url(#arrow2)" stroke="#8B7355"/>
+    <text x="155" y="450" class="dim-bold" text-anchor="middle" fill="#8B7355">地砖宽 ≈ 7.2~8.5 (Sprite 实际大小)</text>
+  </g>
+
+  <!-- Score & GameOver note -->
+  <g>
+    <rect x="40" y="585" width="740" height="25" fill="#FFF0F0" stroke="#F0C0C0" stroke-width="1" rx="3"/>
+    <text x="410" y="602" class="note" text-anchor="middle">ScoreManager: 分数 = (player.x - startX) × pointsPerUnit(1) → 5 位数字图片拼贴 前导零补齐  |  GameOverUI.Show(): Time.timeScale=0 → 面板  |  Restart(): timeScale=1 → 重载场景</text>
+  </g>
+</svg>

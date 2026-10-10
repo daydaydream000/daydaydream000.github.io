@@ -1,0 +1,218 @@
+<svg viewBox="0 0 820 660" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gridGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F8F9FA"/>
+      <stop offset="100%" stop-color="#E8EDF2"/>
+    </linearGradient>
+    <style>
+      .box { fill: #FFF; stroke: #CCDDEE; stroke-width: 1.5; rx: 6; }
+      .box-main { fill: #FFF; stroke: #4A90D9; stroke-width: 2; rx: 6; }
+      .box-pool { fill: #FFF; stroke: #28A745; stroke-width: 1.5; rx: 6; }
+      .box-ui { fill: #FFF; stroke: #FFC107; stroke-width: 1.5; rx: 6; }
+      .box-decor { fill: #FFF; stroke: #6F42C1; stroke-width: 1.5; rx: 6; }
+      .title { font: bold 14px sans-serif; fill: #111; }
+      .subtitle { font: bold 12px sans-serif; fill: #333; }
+      .code { font: 11px monospace; fill: #444; }
+      .code-bold { font: bold 11px monospace; fill: #111; }
+      .arrow { fill: none; stroke: #666; stroke-width: 1.5; marker-end: url(#arrow); }
+      .arrow-main { fill: none; stroke: #4A90D9; stroke-width: 2; marker-end: url(#arrow2); }
+      .arrow-pool { fill: none; stroke: #28A745; stroke-width: 1.5; marker-end: url(#arrow3); }
+      .arrow-ui { fill: none; stroke: #E0A800; stroke-width: 1.5; marker-end: url(#arrow4); }
+      .arrow-decor { fill: none; stroke: #6F42C1; stroke-width: 1.5; marker-end: url(#arrow5); }
+      .note { font: 10px sans-serif; fill: #888; }
+      .label { font: 11px sans-serif; fill: #333; }
+      .label-bold { font: bold 11px sans-serif; fill: #111; }
+      .highlight { fill: #FF6B35; }
+      .good { fill: #28A745; }
+      .warn { fill: #FFC107; }
+      .bad { fill: #DC3545; }
+    </style>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666"/>
+    </marker>
+    <marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#4A90D9"/>
+    </marker>
+    <marker id="arrow3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#28A745"/>
+    </marker>
+    <marker id="arrow4" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#E0A800"/>
+    </marker>
+    <marker id="arrow5" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#6F42C1"/>
+    </marker>
+  </defs>
+
+  <!-- Background grid -->
+  <rect width="820" height="660" fill="url(#gridGrad)"/>
+
+  <!-- Title -->
+  <text x="410" y="28" class="title" text-anchor="middle">一帧里发生的事：Update / FixedUpdate / 对象池流转</text>
+
+  <!-- ===== TOP ROW: INPUT & CAMERA ===== -->
+  <g transform="translate(20, 50)">
+    <rect x="0" y="0" width="370" height="160" class="box-main"/>
+    <text x="185" y="25" class="subtitle" text-anchor="middle">🎮 玩家输入 + 相机</text>
+
+    <!-- Move.Update (Input) -->
+    <rect x="15" y="35" width="340" height="50" class="box" fill="#E8F4FD"/>
+    <text x="25" y="52" class="label-bold">Move.Update()</text>
+    <text x="25" y="68" class="code">if (Input.GetKeyDown(KeyCode.Space) && isGrounded)</text>
+    <text x="25" y="82" class="code">    rb.velocity = new Vector2(rb.velocity.x, jumpForce);</text>
+
+    <!-- Move.FixedUpdate (Physics) -->
+    <rect x="15" y="95" width="340" height="50" class="box" fill="#E8F4FD"/>
+    <text x="25" y="112" class="label-bold">Move.FixedUpdate()</text>
+    <text x="25" y="128" class="code">CheckGround();  // 射线检测落地</text>
+    <text x="25" y="142" class="code">rb.velocity = new Vector2(runSpeed, rb.velocity.y);</text>
+
+    <!-- Move.OnTriggerEnter2D -->
+    <line x1="200" y1="87" x2="200" y2="130" class="arrow-main"/>
+  </g>
+
+  <g transform="translate(410, 50)">
+    <rect x="0" y="0" width="390" height="160" class="box-main"/>
+    <text x="195" y="25" class="subtitle" text-anchor="middle">📷 相机跟随</text>
+
+    <rect x="15" y="35" width="360" height="100" class="box" fill="#F0E8FF"/>
+    <text x="25" y="52" class="label-bold">CamerFollow.Update()</text>
+    <text x="25" y="70" class="code">targetX = player.position.x + offsetX;</text>
+    <text x="25" y="85" class="code">target = (targetX, fixedY, fixedZ);</text>
+    <text x="25" y="100" class="code">transform.position = Lerp(pos, target, smooth);</text>
+    <text x="25" y="118" class="code warn">⚠ smooth 未乘 deltaTime → 帧率相关</text>
+
+    <text x="25" y="140" class="note">只跟 X，Y/Z 固定 → 跳跃不带镜头</text>
+  </g>
+
+  <!-- ===== MIDDLE ROW: GROUND / OBSTACLE / SKY ===== -->
+  <g transform="translate(20, 230)">
+    <rect x="0" y="0" width="370" height="200" class="box-main"/>
+    <text x="185" y="25" class="subtitle" text-anchor="middle">🌍 GroundManager.Update()</text>
+
+    <rect x="15" y="35" width="340" height="45" class="box" fill="#E8F8E8"/>
+    <text x="25" y="52" class="label-bold">① RecycleOldGround()</text>
+    <text x="25" y="70" class="code">while (firstRight < CameraLeft - recycleBehind)</text>
+    <text x="25" y="85" class="code">    groundList.RemoveAt(0);  pool.Return(first);</text>
+
+    <rect x="15" y="90" width="340" height="45" class="box" fill="#E8F8E8"/>
+    <text x="25" y="107" class="label-bold">② 兜底：groundList 空 → 从 CameraLeft 重铺</text>
+    <text x="25" y="125" class="code">FillGroundUntil(CameraLeft(), RightEdgeNeed());</text>
+
+    <rect x="15" y="145" width="340" height="45" class="box" fill="#E8F8E8"/>
+    <text x="25" y="162" class="label-bold">③ 补右边</text>
+    <text x="25" y="180" class="code">if (RightEdgeOfLastGround() < RightEdgeNeed())</text>
+    <text x="25" y="195" class="code">    FillGroundUntil(lastRight, RightEdgeNeed());</text>
+  </g>
+
+  <g transform="translate(410, 230)">
+    <rect x="0" y="0" width="390" height="200" class="box-main"/>
+    <text x="195" y="25" class="subtitle" text-anchor="middle">🌵 ObstacleManager.Update()</text>
+
+    <rect x="15" y="35" width="360" height="45" class="box" fill="#F8E8E8"/>
+    <text x="25" y="52" class="label-bold">if (Time.timeScale == 0) return;  // 暂停不刷</text>
+
+    <rect x="15" y="90" width="360" height="45" class="box" fill="#F8E8E8"/>
+    <text x="25" y="107" class="label-bold">① RecycleOld()</text>
+    <text x="25" y="125" class="code">while (first.x < CameraLeft - recycleBehind)</text>
+    <text x="25" y="140" class="code">    activeList.RemoveAt(0);  pool.Return(first);</text>
+
+    <rect x="15" y="155" width="360" height="35" class="box" fill="#F8E8E8"/>
+    <text x="25" y="172" class="label-bold">② SpawnAheadIfNeeded()</text>
+    <text x="25" y="188" class="code">while (nextSpawnX < CameraRight + spawnAhead)</text>
+  </g>
+
+  <g transform="translate(20, 450)">
+    <rect x="0" y="0" width="780" height="110" class="box-main"/>
+    <text x="390" y="25" class="subtitle" text-anchor="middle">☁ SkyDecorManager.Update()  —— 纯装饰，不参与玩法</text>
+
+    <rect x="15" y="35" width="360" height="60" class="box" fill="#F0E8FF"/>
+    <text x="25" y="52" class="label-bold">云朵</text>
+    <text x="25" y="68" class="code">MovePteros();  // 翼龙向左飞 dx = -speed * dt</text>
+    <text x="25" y="83" class="code">RecycleClouds();  SpawnCloudsIfNeeded();</text>
+
+    <rect x="400" y="35" width="360" height="60" class="box" fill="#F0E8FF"/>
+    <text x="410" y="52" class="label-bold">翼龙</text>
+    <text x="410" y="68" class="code">RecyclePteros();  SpawnPterosIfNeeded();</text>
+    <text x="410" y="83" class="code">PterosaurFlap.Update() 切帧 (frameWingsUp/Down)</text>
+
+    <text x="390" y="100" class="note" text-anchor="middle">无碰撞体、无 Obstacle 标记 → 撞到也不死，timeScale=0 时 deltaTime=0 自动停</text>
+  </g>
+
+  <!-- ===== BOTTOM ROW: POOLS ===== -->
+  <g transform="translate(20, 575)">
+    <rect x="0" y="0" width="370" height="75" class="box-pool"/>
+    <text x="185" y="20" class="subtitle" text-anchor="middle">🏊 GroundPool / ObstaclePool (借/还)</text>
+
+    <rect x="10" y="28" width="350" height="40" class="box" fill="#E8F8E8"/>
+    <text x="20" y="45" class="code">GetRandom() → 有旧复用 / 无则 Instantiate + Setup</text>
+    <text x="20" y="58" class="code">Return(obj) → SetActive(false) → 按 prefabIndex 入队</text>
+
+    <text x="185" y="72" class="note" text-anchor="middle">Ground: Static + 实体碰撞  |  Obstacle: Kinematic + Trigger + Obstacle 标记</text>
+  </g>
+
+  <g transform="translate(410, 575)">
+    <rect x="0" y="0" width="390" height="75" class="box-ui"/>
+    <text x="195" y="20" class="subtitle" text-anchor="middle">🎯 UI & 结束流程</text>
+
+    <rect x="10" y="28" width="370" height="40" class="box" fill="#FFF8E7"/>
+    <text x="20" y="45" class="code">ScoreManager.Update():  distance = player.x - startX  →  图片拼数字</text>
+    <text x="20" y="58" class="code">Move.OnTriggerEnter2D: 碰 Obstacle → GameOverUI.Show()</text>
+
+    <text x="195" y="72" class="note" text-anchor="middle">Show(): timeScale=0 → 面板  |  Restart(): timeScale=1 → LoadScene</text>
+  </g>
+
+  <!-- ===== RIGHT SIDE: 总结框 ===== -->
+  <g transform="translate(20, 660)">
+    <!-- This will be outside viewBox, let me adjust -->
+  </g>
+
+  <!-- ===== SIDE SUMMARY BOXES ===== -->
+  <g transform="translate(600, 50)">
+    <rect x="0" y="0" width="200" height="520" class="box" fill="#F8F8F8"/>
+    <text x="100" y="22" class="subtitle" text-anchor="middle">✅ 写对了的三处</text>
+
+    <g transform="translate(10, 30)">
+      <text x="0" y="0" class="label-bold good">1. 对象池分仓库不串种</text>
+      <text x="0" y="18" class="code" style="font-size:9px;">Queue[] warehouses + prefabIndex</text>
+      <text x="0" y="36" class="label-bold good">2. 物理层分工清晰</text>
+      <text x="0" y="54" class="code" style="font-size:9px;">Player Dynamic / Ground Static / Obstacle Kinematic+Trigger</text>
+      <text x="0" y="72" class="label-bold good">3. 只在玩家侧写碰撞</text>
+      <text x="0" y="90" class="code" style="font-size:9px;">Obstacle 空标签，Move 统一判定，避免双向触发</text>
+      <text x="0" y="108" class="label-bold good">4. OnEnable 重置动画</text>
+      <text x="0" y="126" class="code" style="font-size:9px;">PterosaurFlap 对象池复用时自动归零</text>
+      <text x="0" y="144" class="label-bold good">5. timeScale 暂停全局</text>
+      <text x="0" y="162" class="code" style="font-size:9px;">GameOverUI.Show() 先暂停再开面板，顺序正确</text>
+      <text x="0" y="180" class="label-bold good">6. SkyDecor 自动随 timeScale 停</text>
+      <text x="0" y="198" class="code" style="font-size:9px;">deltaTime=0 自然停，无需额外判断</text>
+    </g>
+
+    <text x="100" y="260" class="subtitle" text-anchor="middle">⚠ 回头会皱眉的 10 处</text>
+
+    <g transform="translate(10, 270)">
+      <text x="0" y="0" class="code-bold bad">①</text><text x="16" y="0" class="code" style="font-size:9px;">CamerFollow Lerp 未乘 dt → 帧率相关</text>
+      <text x="0" y="18" class="code-bold bad">②</text><text x="16" y="18" class="code" style="font-size:9px;">Move 强行覆盖 vx → 扩展性差</text>
+      <text x="0" y="36" class="code-bold bad">③</text><text x="16" y="36" class="code" style="font-size:9px;">地面 Layer 未自动设 → 可能查不到地</text>
+      <text x="0" y="54" class="code-bold bad">④</text><text x="16" y="54" class="code" style="font-size:9px;">FindWithTag 每局一次仍有隐患</text>
+      <text x="0" y="72" class="code-bold warn">⑤</text><text x="16" y="72" class="code" style="font-size:9px;">类名 CamerFollow 缺 a (文件名同错)</text>
+      <text x="0" y="90" class="code-bold bad">⑥</text><text x="16" y="90" class="code" style="font-size:9px;">FillGroundUntil 保险丝 50 无常量名</text>
+      <text x="0" y="108" class="code-bold bad">⑦</text><text x="16" y="108" class="code" style="font-size:9px;">SpawnAheadIfNeeded while 无上限</text>
+      <text x="0" y="126" class="code-bold bad">⑧</text><text x="16" y="126" class="code" style="font-size:9px;">EnsureCollider/SetupNewObstacle 重复代码</text>
+      <text x="0" y="144" class="code-bold bad">⑨</text><text x="16" y="144" class="code" style="font-size:9px;">GroundTile/ObstacleMark 可合并为通用 Mark</text>
+      <text x="0" y="162" class="code-bold bad">⑩</text><text x="16" y="162" class="code" style="font-size:9px;">CameraLeft/Right 算法在 3 处重复</text>
+    </g>
+  </g>
+
+  <!-- Bottom legend -->
+  <g transform="translate(20, 620)">
+    <text x="0" y="0" class="label-bold">颜色图例：</text>
+    <rect x="80" y="-10" width="15" height="15" class="box-main" rx="3"/>
+    <text x="100" y="2" class="label">核心流程 (每帧必跑)</text>
+    <rect x="280" y="-10" width="15" height="15" class="box-pool" rx="3"/>
+    <text x="300" y="2" class="label">对象池 (借/还)</text>
+    <rect x="430" y="-10" width="15" height="15" class="box-ui" rx="3"/>
+    <text x="450" y="2" class="label">UI / 结束</text>
+    <rect x="570" y="-10" width="15" height="15" class="box-decor" rx="3"/>
+    <text x="590" y="2" class="label">天空装饰 (纯视觉)</text>
+  </g>
+</svg>
