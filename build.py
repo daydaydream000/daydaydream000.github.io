@@ -1057,16 +1057,12 @@ def render_banner(
     background = esc_attr(asset_url(CONFIG["banner"], root))
     socials = ""
     if social:
-        # 第一个按钮（GitHub）带文字，做成胶囊，其余保持圆形图标（参考 Firefly）
-        buttons = []
-        for i, (label, href, name) in enumerate(CONFIG["social"]):
-            cls = "social-btn wide" if i == 0 else "social-btn"
-            text = f"<span>{esc(label)}</span>" if i == 0 else ""
-            buttons.append(
-                f'<a class="{cls}" href="{link_href(href, root)}" title="{esc(label)}" '
-                f'aria-label="{esc(label)}"{external_attrs(href)}>{icon_svg(name, 18)}{text}</a>'
-            )
-        socials = '<div class="banner-social">' + "".join(buttons) + "</div>"
+        # 横幅社交按钮统一为纯图标圆形（GitHub 也不带文字）
+        socials = '<div class="banner-social">' + "".join(
+            f'<a class="social-btn" href="{link_href(href, root)}" title="{esc(label)}" '
+            f'aria-label="{esc(label)}"{external_attrs(href)}>{icon_svg(name, 18)}</a>'
+            for label, href, name in CONFIG["social"]
+        ) + "</div>"
     subtitle_html = f'<p class="banner-subtitle">{esc(subtitle)}</p>' if subtitle else ""
     classes = "banner banner-short" if short else "banner"
     # 首页的横幅是整页的大标题（h1）；内页正文里已有 h1，横幅只作装饰

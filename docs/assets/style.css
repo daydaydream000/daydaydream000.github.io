@@ -281,14 +281,18 @@ html.dark .banner-scrim {
   max-width: 100%;
   overflow: hidden;
   white-space: nowrap;
-  border-right: 2px solid rgba(255, 255, 255, .85);
+  /* 光标：打字完成后只闪 4 下就停住隐藏，不再一直闪（base 透明 = 动画结束即消失） */
+  border-right: 2px solid transparent;
   animation:
     banner-type .95s steps(19) .35s both,
-    banner-caret .75s step-end .35s infinite,
+    banner-caret .7s step-end .35s 4,
     banner-rise .55s ease-out .1s both;
 }
 @keyframes banner-type { from { width: 0; } to { width: 19em; } }
-@keyframes banner-caret { 50% { border-right-color: transparent; } }
+@keyframes banner-caret {
+  0%, 100% { border-right-color: rgba(255, 255, 255, .85); }
+  50% { border-right-color: transparent; }
+}
 
 .banner-social {
   margin-top: 1.25rem;
@@ -321,15 +325,6 @@ html.dark .banner-scrim {
   color: #fff;
   transform: translateY(-3px);
   box-shadow: 0 6px 18px rgba(8, 16, 22, .28), 0 0 0 4px rgba(255, 255, 255, .08);
-}
-/* 带文字的胶囊按钮（如 GitHub），参考 Firefly 的首个社交按钮 */
-.social-btn.wide {
-  width: auto;
-  padding: 0 1.05rem;
-  gap: .45rem;
-  border-radius: 999px;
-  font-size: .9rem;
-  font-weight: 600;
 }
 
 /* 入场动画：标题、副标题、社交按钮依次淡入上移；尊重用户的减少动效偏好 */
