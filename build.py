@@ -1041,11 +1041,16 @@ def render_banner(
     background = esc_attr(asset_url(CONFIG["banner"], root))
     socials = ""
     if social:
-        socials = '<div class="banner-social">' + "".join(
-            f'<a class="social-btn" href="{link_href(href, root)}" title="{esc(label)}" '
-            f'aria-label="{esc(label)}"{external_attrs(href)}>{icon_svg(name, 18)}</a>'
-            for label, href, name in CONFIG["social"]
-        ) + "</div>"
+        # 第一个按钮（GitHub）带文字，做成胶囊，其余保持圆形图标（参考 Firefly）
+        buttons = []
+        for i, (label, href, name) in enumerate(CONFIG["social"]):
+            cls = "social-btn wide" if i == 0 else "social-btn"
+            text = f"<span>{esc(label)}</span>" if i == 0 else ""
+            buttons.append(
+                f'<a class="{cls}" href="{link_href(href, root)}" title="{esc(label)}" '
+                f'aria-label="{esc(label)}"{external_attrs(href)}>{icon_svg(name, 18)}{text}</a>'
+            )
+        socials = '<div class="banner-social">' + "".join(buttons) + "</div>"
     subtitle_html = f'<p class="banner-subtitle">{esc(subtitle)}</p>' if subtitle else ""
     classes = "banner banner-short" if short else "banner"
     # 首页的横幅是整页的大标题（h1）；内页正文里已有 h1，横幅只作装饰
@@ -1080,9 +1085,11 @@ def render_profile_card(root: str) -> str:
     )
     return (
         '<section class="card-panel profile-card">'
+        f'<a class="profile-avatar-link" href="{root}about.html" aria-label="关于我">'
         f'<img class="profile-avatar" src="{asset_url(CONFIG["avatar"], root)}" '
-        f'alt="{esc_attr(CONFIG["title"])}" decoding="async">'
+        f'alt="{esc_attr(CONFIG["title"])}" decoding="async"></a>'
         f'<p class="profile-name">{esc(CONFIG["title"])}</p>'
+        '<div class="profile-accent" aria-hidden="true"></div>'
         f'<p class="profile-greeting">{esc(CONFIG["greeting"])}</p>'
         f'<div class="profile-social">{socials}</div>'
         "</section>"
@@ -1153,6 +1160,7 @@ def render_recent_card(posts: list[Doc], root: str, limit: int = 5) -> str:
         '<section class="card-panel">'
         f'<h2 class="widget-title">{icon_svg("file", 16)}<span>最新文章</span></h2>'
         f'<ul class="recent-list">{items}</ul>'
+        f'<a class="widget-more" href="{root}index.html">更多文章{icon_svg("arrow-right", 14)}</a>'
         "</section>"
     )
 
@@ -1180,15 +1188,20 @@ def render_tag_bar(posts: list[Doc], root: str, limit: int = 6) -> str:
         for tag in doc.tags:
             counts[tag] = counts.get(tag, 0) + 1
     ordered = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))[:limit]
-    pills = [f'<a class="pill active" href="{root}index.html">{icon_svg("home", 16)}<span>全部</span></a>']
-    for tag, count in ordered:
-        pills.append(
-            f'<a class="pill" href="{root}tags/index.html#{tag_anchor(tag)}">'
-            f'<span>{esc(tag)}</span><b>{count}</b></a>'
-        )
+    # 首页 pill 纯图标 + 分隔线（对齐 Firefly CategoryBar 结构：主页 | 分类… | 更多）
+    home_pill = (
+        f'<a class="pill pill-home active" href="{root}index.html" '
+        f'aria-label="全部" title="全部">{icon_svg("home", 16)}</a>'
+    )
+    divider = '<span class="tag-divider" aria-hidden="true"></span>'
+    pills = "".join(
+        f'<a class="pill" href="{root}tags/index.html#{tag_anchor(tag)}">'
+        f'<span>{esc(tag)}</span><b>{count}</b></a>'
+        for tag, count in ordered
+    )
     return (
         '<div class="card-panel tag-bar">'
-        f'{"".join(pills)}'
+        f'{home_pill}{divider}{pills}'
         f'<a class="pill-more" href="{root}tags/index.html">更多{icon_svg("arrow-right", 14)}</a>'
         "</div>"
     )
@@ -1378,7 +1391,7 @@ def build_index(posts: list[Doc], per_page: int) -> None:
             body_class="page-index",
             banner=banner,
             left=render_sidebar_left(root),
-            right=render_stats_card(posts) + render_recent_card(posts, root),
+            right=render_recent_card(posts, root) + render_stats_card(posts),
         )
 
 
@@ -1446,7 +1459,7 @@ def build_posts(posts: list[Doc], pages: list[Doc]) -> None:
             body_class="page-single",
             banner=render_banner(root, CONFIG["title"], CONFIG["subtitle"], short=True),
             left=render_sidebar_left(root),
-            right=render_stats_card(posts) + render_recent_card(posts, root),
+            right=render_recent_card(posts, root) + render_stats_card(posts),
         )
 
 
@@ -1499,7 +1512,7 @@ def build_tags(posts: list[Doc]) -> None:
         body_class="page-tags",
         banner=render_banner(root, CONFIG["title"], CONFIG["subtitle"], short=True),
         left=render_sidebar_left(root),
-        right=render_stats_card(posts) + render_recent_card(posts, root),
+        right=render_recent_card(posts, root) + render_stats_card(posts),
     )
 
 
