@@ -1334,3 +1334,61 @@ html.notice-off .notice-card { display: none; }
   .layout-inner { display: block; }
   body { background: #fff; }
 }
+
+/* ==========================================================================
+   动效
+   参考 Firefly transition.css 的 fade-in-up / onload-animation 渐进延迟，
+   以及 layout-styles.css 的 kenburns 背景缓动。
+   入场动画只在 app.js 挂上 html.anim-reveal 后才启用（无 JS 时内容照常可见）；
+   末尾的 prefers-reduced-motion 兜底会把所有动画压到 .001ms。
+   ========================================================================== */
+
+/* 淡入上移（Firefly fade-in-up） */
+@keyframes dsd-rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* 横幅底图缓慢呼吸（Firefly kenburns 的静态版：单向位移，不回弹） */
+@keyframes dsd-drift {
+  from { transform: scale(1.04) translate(0, 0); }
+  to   { transform: scale(1.12) translate(-1.6%, -1%); }
+}
+.banner-bg { animation: dsd-drift 26s ease-out forwards; }
+
+/* 进入视口时才播放的入场动画（JS 加 .is-in，并按批次设 animation-delay） */
+html.anim-reveal .anim-item { opacity: 0; }
+html.anim-reveal .anim-item.is-in { animation: dsd-rise .55s ease-out forwards; }
+
+/* 卡片悬停：轻微上浮 + 阴影加深 */
+.post-card,
+.col-left .card-panel,
+.col-right .card-panel,
+.tag-bar {
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.post-card:hover,
+.col-right .card-panel:hover,
+.tag-bar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 34px rgba(8, 16, 22, .16);
+  border-color: var(--border-strong);
+}
+
+/* 标题竖条与强调条的生长反馈 */
+.post-card-title::before,
+.profile-accent,
+.widget-title::before {
+  transition: transform .25s ease;
+  transform-origin: center top;
+}
+.post-card:hover .post-card-title::before { transform: scaleY(1.25); }
+.profile-card:hover .profile-accent { transform: scaleX(1.35); }
+.col-right .card-panel:hover .widget-title::before { transform: scaleY(1.2); }
+
+/* 头像悬停轻微放大 */
+.profile-avatar { transition: transform .3s ease; }
+.profile-avatar-link:hover .profile-avatar { transform: scale(1.04); }
+
+/* 标签与按钮的按下反馈 */
+.chip:active, .pill:active, .social-chip:active, .social-btn:active { transform: scale(.94); }

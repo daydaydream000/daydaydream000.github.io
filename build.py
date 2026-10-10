@@ -1096,7 +1096,7 @@ def render_profile_card(root: str) -> str:
         for label, href, name in CONFIG["social"]
     )
     return (
-        '<section class="card-panel profile-card">'
+        '<section class="card-panel profile-card" data-reveal="0">'
         f'<a class="profile-avatar-link" href="{root}about.html" aria-label="关于我">'
         f'<img class="profile-avatar" src="{asset_url(CONFIG["avatar"], root)}" '
         f'alt="{esc_attr(CONFIG["title"])}" decoding="async"></a>'
@@ -1117,7 +1117,7 @@ def render_notice_card(root: str) -> str:
         label, href = CONFIG["notice_link"]
         link = f'<a class="notice-more" href="{link_href(href, root)}">{esc(label)}</a>'
     return (
-        '<section class="card-panel notice-card" id="notice">'
+        '<section class="card-panel notice-card" id="notice" data-reveal="1">'
         f'<h2 class="widget-title">{icon_svg("megaphone", 16)}<span>公告</span></h2>'
         f'<p class="notice-text">{esc(text)}</p>'
         f'<div class="notice-foot">{link}'
@@ -1152,7 +1152,7 @@ def render_stats_card(posts: list[Doc]) -> str:
         for icon, label, value in rows
     )
     return (
-        '<section class="card-panel">'
+        '<section class="card-panel" data-reveal="3">'
         f'<h2 class="widget-title">{icon_svg("chart", 16)}<span>站点统计</span></h2>'
         f'<ul class="stat-list">{body}</ul>'
         "</section>"
@@ -1169,7 +1169,7 @@ def render_recent_card(posts: list[Doc], root: str, limit: int = 5) -> str:
         for doc in posts[:limit]
     )
     return (
-        '<section class="card-panel">'
+        '<section class="card-panel" data-reveal="2">'
         f'<h2 class="widget-title">{icon_svg("file", 16)}<span>最新文章</span></h2>'
         f'<ul class="recent-list">{items}</ul>'
         f'<a class="widget-more" href="{root}index.html">更多文章{icon_svg("arrow-right", 14)}</a>'
@@ -1187,7 +1187,7 @@ def render_toc_card(toc: list[dict], root: str) -> str:
         for item in entries
     )
     return (
-        '<nav class="card-panel toc-card" aria-label="文章目录">'
+        '<nav class="card-panel toc-card" aria-label="文章目录" data-reveal="0">'
         f'<h2 class="widget-title">{icon_svg("file", 16)}<span>文章目录</span></h2>'
         f'<div class="toc-list">{links}</div>'
         "</nav>"
@@ -1211,7 +1211,7 @@ def render_tag_bar(posts: list[Doc], root: str, limit: int = 6) -> str:
         for tag, count in ordered
     )
     return (
-        '<div class="card-panel tag-bar">'
+        '<div class="card-panel tag-bar" data-reveal="0">'
         f"{home_pill}"
         '<span class="tag-divider" aria-hidden="true"></span>'
         '<div class="tag-scroll-area">'
@@ -1252,7 +1252,7 @@ def post_meta_html(doc: Doc, root: str) -> str:
     return f'<div class="post-badges">{"".join(parts)}</div>'
 
 
-def render_post_card(doc: Doc, root: str) -> str:
+def render_post_card(doc: Doc, root: str, reveal_index: int = 0) -> str:
     badges = []
     if doc.pinned:
         badges.append(f'<span class="badge badge-pin">{icon_svg("pin", 13)}置顶</span>')
@@ -1272,7 +1272,7 @@ def render_post_card(doc: Doc, root: str) -> str:
         for t in doc.tag_links
     )
     return (
-        '<article class="card-panel post-card">'
+        f'<article class="card-panel post-card" data-reveal="{reveal_index}">'
         '<div class="post-card-body">'
         f'<h2 class="post-card-title"><a href="{root}{doc.url}">{esc(doc.title)}</a></h2>'
         f'<div class="post-badges">{"".join(badges)}</div>'
@@ -1285,7 +1285,11 @@ def render_post_card(doc: Doc, root: str) -> str:
 
 
 def render_post_list(posts: list[Doc], root: str) -> str:
-    return "".join(render_post_card(doc, root) for doc in posts)
+    # data-reveal 是入场错峰的批次序号，由 app.js 换算成 animation-delay
+    return "".join(
+        render_post_card(doc, root, reveal_index=i)
+        for i, doc in enumerate(posts)
+    )
 
 
 def toc_html(toc: list[dict]) -> str:

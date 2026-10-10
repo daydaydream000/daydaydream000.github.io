@@ -48,6 +48,45 @@
     });
   }
 
+  /* ---------- 进入视口时的入场动画 ---------- */
+  /* 给需要错峰入场的元素打上 anim-item（由 build.py 输出的 data-reveal 属性决定），
+     再用 IntersectionObserver 在进入视口时加 .is-in 并设逐项递增的延迟，
+     模仿 Firefly onload-animation 的渐进延迟。observer 不可用时直接全部显示。 */
+  var revealTargets = doc.querySelectorAll("[data-reveal]");
+  if (revealTargets.length && "IntersectionObserver" in window) {
+    var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!reduceMotion) {
+      root.classList.add("anim-reveal");
+      var revealObserver = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (!entry.isIntersecting) return;
+            var node = entry.target;
+            node.style.animationDelay = Math.min(node.dataset.reveal, 12) * 45 + "ms";
+            node.classList.add("is-in");
+            revealObserver.unobserve(node);
+          });
+        },
+        { rootMargin: "0px 0px -8% 0px", threshold: 0.08 }
+      );
+      Array.prototype.forEach.call(revealTargets, function (node) {
+        node.classList.add("anim-item");
+        revealObserver.observe(node);
+      });
+      /* 兜底：1.4s 后还没进场的（observer 在某些环境可能漏触发）直接显示，
+         保证内容绝不会因为动画系统故障而隐藏 */
+      window.setTimeout(function () {
+        Array.prototype.forEach.call(revealTargets, function (node) {
+          if (!node.classList.contains("is-in")) {
+            node.classList.remove("anim-item");
+            node.style.opacity = "";
+            node.style.animationDelay = "";
+          }
+        });
+      }, 1400);
+    }
+  }
+
   /* ---------- 代码复制 ---------- */
   doc.querySelectorAll("[data-copy]").forEach(function (button) {
     button.addEventListener("click", function () {
