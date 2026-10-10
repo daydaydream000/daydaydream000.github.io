@@ -1050,6 +1050,15 @@ def render_banner(
     classes = "banner banner-short" if short else "banner"
     # 首页的横幅是整页的大标题（h1）；内页正文里已有 h1，横幅只作装饰
     tag = "p" if short else "h1"
+    # 整页大横幅加一个下指雪佛龙，引导往下看；短横幅不需要
+    scroll_hint = (
+        '<a class="banner-scroll" href="#main" aria-label="向下滚动到内容">'
+        '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" '
+        'stroke="currentColor" stroke-width="2.2" stroke-linecap="round" '
+        'stroke-linejoin="round" aria-hidden="true">'
+        '<polyline points="6 9 12 15 18 9"></polyline></svg></a>'
+        if not short else ""
+    )
     return (
         f'<header class="{classes}">'
         f'<img class="banner-bg" src="{background}" alt="" aria-hidden="true" decoding="async">'
@@ -1057,7 +1066,9 @@ def render_banner(
         '<div class="banner-inner">'
         f'<{tag} class="banner-title">{esc(title)}</{tag}>'
         f"{subtitle_html}{socials}"
-        "</div></header>"
+        "</div>"
+        f"{scroll_hint}"
+        "</header>"
     )
 
 
