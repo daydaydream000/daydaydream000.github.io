@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARPG 学习日志 Day 1：让一个骑士动起来 · DayDayDream</title>
+<meta name="description" content="开新坑了——从零做一个 2D ARPG。第一天只解决一件事：让 Tiny Swords 里的蓝衣骑士能听键盘的话。42 行代码、藕合动画状态机，顺便记下我踩到的第一个坑。">
+<link rel="canonical" href="https://daydaydream000.github.io/post/arpg-day1-player.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DayDayDream">
+<meta property="og:title" content="ARPG 学习日志 Day 1：让一个骑士动起来">
+<meta property="og:description" content="开新坑了——从零做一个 2D ARPG。第一天只解决一件事：让 Tiny Swords 里的蓝衣骑士能听键盘的话。42 行代码、藕合动画状态机，顺便记下我踩到的第一个坑。">
+<meta property="og:url" content="https://daydaydream000.github.io/post/arpg-day1-player.html">
+<meta property="og:image" content="https://daydaydream000.github.io/assets/images/arpg-day1-cover.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f3f8f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="DayDayDream" href="../rss.xml">
+<link rel="stylesheet" href="../assets/style.css?v=e703f0f169">
+<script>
+/* 主题与公告状态在首次绘制前应用，避免闪烁 */
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('dsh-theme'); } catch (e) {}
+  if (saved !== 'light' && saved !== 'dark') saved = 'auto';
+  var root = document.documentElement;
+  root.dataset.theme = saved;
+  root.classList.toggle('dark', saved === 'dark' ||
+    (saved === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  try {
+    if (localStorage.getItem('dsh-notice') === 'off') root.classList.add('notice-off');
+  } catch (e) {}
+})();
+</script>
+
+</head>
+<body class="page-post">
+<div id="page-progress" aria-hidden="true"></div>
+<a class="skip-link" href="#main">跳到正文</a>
+
+<header class="topbar"><div class="topbar-inner"><a class="topbar-brand" href="../index.html"><img src="../assets/avatar.jpg" alt="" width="30" height="30"><span class="topbar-brand-text">DayDayDream</span></a><nav class="topbar-nav" aria-label="主导航"><a href="../index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg><span>首页</span></a><a href="../tags/index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span>标签</span></a><a href="../about.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>关于</span></a></nav><div class="topbar-tools"><button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索（按 /）"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题"><span class="icon-sun"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg></span><span class="icon-moon"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></svg></span></button></div></div></header>
+<header class="banner banner-short"><img class="banner-bg" src="../assets/banner.jpg" alt="" aria-hidden="true" decoding="async"><div class="banner-scrim"></div><div class="banner-inner"><p class="banner-title">DayDayDream</p><p class="banner-subtitle">醒着做梦，落笔成诗——记所思，存所学。</p></div></header>
+
+<main id="main" class="layout">
+  <div class="layout-inner">
+    <aside class="col col-left"><section class="card-panel profile-card" data-reveal="0"><a class="profile-avatar-link" href="../about.html" aria-label="关于我"><img class="profile-avatar" src="../assets/avatar.jpg" alt="DayDayDream" decoding="async"></a><p class="profile-name">DayDayDream</p><div class="profile-accent" aria-hidden="true"></div><p class="profile-greeting">Hello, I'm DayDayDream.</p><div class="profile-social"><a class="social-chip" href="https://github.com/daydaydream000" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener noreferrer"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.58.69.48A10.04 10.04 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/></svg></a><a class="social-chip" href="mailto:daydaydream000@users.noreply.github.com" title="邮箱" aria-label="邮箱"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></a><a class="social-chip" href="../rss.xml" title="RSS 订阅" aria-label="RSS 订阅"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18.5" r="1.4" fill="currentColor" stroke="none"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/></svg></a></div></section><section class="card-panel notice-card" id="notice" data-reveal="1"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5v3A1.5 1.5 0 0 0 5.5 15H7l1 4h2l-1-4h2l7 3.5V6.5L11 10H5.5A1.5 1.5 0 0 0 4 10.5Z"/></svg><span>公告</span></h2><p class="notice-text">欢迎来到 DayDayDream —— 醒着做梦，落笔成诗，记所思，存所学。</p><div class="notice-foot"><a class="notice-more" href="../about.html">前往关于</a><button class="notice-close" type="button" aria-label="关闭公告" title="关闭"><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></section></aside>
+    <div class="col col-main"><article class="card-panel post">
+  <header class="post-header">
+    <h1 class="post-title">ARPG 学习日志 Day 1：让一个骑士动起来</h1>
+    <div class="post-meta"><div class="post-badges"><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><time datetime="2026-10-11">2026 年 10 月 11 日</time></span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg>约 2487 字</span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>8 分钟阅读</span><a class="badge badge-pin" href="../tags/index.html#tag-unity"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>Unity</a><a class="badge badge-pin" href="../tags/index.html#tag-游戏开发"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>游戏开发</a><a class="badge badge-pin" href="../tags/index.html#tag-arpg"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>ARPG</a><a class="badge badge-pin" href="../tags/index.html#tag-学习日志"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>学习日志</a></div></div>
+  </header>
+  <div class="toc-mobile"><nav class="toc" aria-label="目录"><p class="toc-title">目录</p><div class="toc-list"><a href="#为什么开这个坑">为什么开这个坑</a><a href="#今天的目标人物能走">今天的目标：人物能走</a><a href="#第一步搭一个不会掉下去的骑士">第一步：搭一个不会掉下去的骑士</a><a href="#第二步42-行代码搞定移动">第二步：42 行代码搞定移动</a><a href="#为什么物理写在-fixedupdate" class="toc-h3">为什么物理写在 FixedUpdate？</a><a href="#为什么用-velocity-而不是-addforce" class="toc-h3">为什么用 velocity 而不是 AddForce？</a><a href="#inputgetaxis-帮我做了三件事" class="toc-h3">Input.GetAxis 帮我做了三件事</a><a href="#第三步翻转的两个坑">第三步：翻转的两个坑</a><a href="#坑一翻转要翻-transform不是-spriterenderer" class="toc-h3">坑一：翻转要翻 transform，不是 SpriteRenderer</a><a href="#坑二不要每帧都翻转" class="toc-h3">坑二：不要每帧都翻转</a><a href="#第四步动画状态机">第四步：动画状态机</a><a href="#今天踩到的第一个坑">今天踩到的第一个坑</a><a href="#另一个已经埋下的隐患">另一个已经埋下的隐患</a><a href="#今天的成果">今天的成果</a><a href="#数值速查">数值速查</a></div></nav></div>
+  <figure class="post-cover"><img src="../assets/images/arpg-day1-cover.svg" alt="ARPG 学习日志 Day 1：让一个骑士动起来" loading="lazy" decoding="async"></figure>
+  <div class="post-content"><h2 id="为什么开这个坑">为什么开这个坑</h2><p>之前拆过两个 Unity 小项目（<a href="stairs-unity.html">楼梯</a> 和 <a href="dino-unity.html">小恐龙</a>），都是「读别人的代码写分析」。这次换个方向：<strong>自己动手，从零搭一个 ARPG</strong>，全程记录学习进度。</p><p>工程名很朴素，叫 <code>ARPGbegin</code>，用的美术素材是 <a href="https://pixelfrog-assets.itch.io/tiny-swords" target="_blank" rel="noopener noreferrer">Tiny Swords</a>——一套很完整的像素风素材，有骑士、哥布林、地形、UI，够折腾很久。</p><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>文章里的代码和数值都直接来自工程里正在跑的文件（<code>SampleScene.unity</code> + <code>PlayerMovement.cs</code>），不是伪代码。</p></div><hr><h2 id="今天的目标人物能走">今天的目标：人物能走</h2><p>只做一件事：<strong>让骑士响应 WASD / 方向键移动</strong>，并且走路时播放走路动画、停下来播放待机动画。</p><p>听起来简单，但这里面藏着 2D 角色控制的三个核心问题：</p><ol><li>速度怎么给——直接改位置，还是用物理？</li><li>朝哪个方向——左右翻转怎么做才不连物理一起翻？</li><li>什么时候换动画——动画参数怎么算？</li></ol><hr><h2 id="第一步搭一个不会掉下去的骑士">第一步：搭一个不会掉下去的骑士</h2><p>我先在场景里创建角色，然后挂上这几个组件：</p><div class="table-wrap"><table><thead><tr><th>组件</th><th>作用</th><th>关键设置</th></tr></thead><tbody><tr><td><strong>SpriteRenderer</strong></td><td>显示像素图</td><td>Sorting Order = <strong>10</strong>（要压在地面上）</td></tr><tr><td><strong>Rigidbody2D</strong></td><td>参与物理</td><td>Body Type = Dynamic，<strong>Gravity Scale = 0</strong>，Constraints = Freeze Rotation</td></tr><tr><td><strong>CapsuleCollider2D</strong></td><td>碰撞体</td><td>Size ≈ 0.40 × 0.53，Direction = Horizontal</td></tr><tr><td><strong>Animator</strong></td><td>播放动画</td><td>Controller = Player.controller</td></tr><tr><td><strong>PlayerMovement</strong></td><td>我写的脚本</td><td>—</td></tr></tbody></table></div><p>两个设置特别关键，一开始我没想明白为什么要这样：</p><p><strong>为什么 <code>GravityScale = 0</code>？</strong>ARPG 是俯视角（Top-Down），世界没有「下」的概念。如果留着重力，骑士会一直往下掉。所以干脆关掉重力，让角色的位置完全由代码控制——这也是俯视角和平台跳跃最本质的区别。</p><p><strong>为什么 <code>Constraints = Freeze Rotation</code>？</strong>俯视角角色移动时如果要转身，物理引擎可能会让刚体轻微旋转，看起来就歪了。锁定 Z 轴旋转是标准做法。</p><div class="alert alert-tip"><p class="alert-title"><span class="alert-icon">💡</span>技巧</p><p>碰撞体我用了 <strong>Capsule（胶囊）</strong> 而不是 Box（矩形）。原因是俯视角角色在贴墙走的时候，胶囊的圆角不容易卡在瓦片缝隙里。这是个很小的选择，但手感差别很明显。</p></div><hr><h2 id="第二步42-行代码搞定移动">第二步：42 行代码搞定移动</h2><p>完整脚本 <code>Assets/Scripe/PlayerMovement.cs</code>：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">using UnityEngine;
+
+public class PlayerMovement : MonoBehaviour
+{
+    public float speed = 5f;
+    public int facingDirection = 1;
+    public Rigidbody2D rb;
+    public Animator anim;
+
+    void Start()
+    {
+        rb = GetComponent&lt;Rigidbody2D&gt;();
+        anim = GetComponent&lt;Animator&gt;();
+    }
+
+    void FixedUpdate()
+    {
+        float horizontal = Input.GetAxis("Horizontal");
+        float vertical = Input.GetAxis("Vertical");
+
+        // 朝向与当前缩放不一致时翻转
+        if (horizontal &gt; 0 &amp;&amp; transform.localScale.x &lt; 0 ||
+            horizontal &lt; 0 &amp;&amp; transform.localScale.x &gt; 0)
+        {
+            Flip();
+        }
+
+        // 用绝对值喂动画：只关心「有没有在动」，不关心往哪动
+        anim.SetFloat("horizontal", Mathf.Abs(horizontal));
+        anim.SetFloat("vertical", Mathf.Abs(vertical));
+
+        rb.velocity = new Vector2(horizontal, vertical) * speed;
+    }
+
+    void Flip()
+    {
+        facingDirection *= -1;
+        transform.localScale = new Vector3(
+            facingDirection, transform.localScale.y, transform.localScale.z);
+    }
+}</code></pre></div><p>代码不长，但每一行都有讲究。</p><h3 id="为什么物理写在-fixedupdate">为什么物理写在 <code>FixedUpdate</code>？</h3><p><code>Update</code> 跟帧率走，<code>FixedUpdate</code> 跟固定时间步长（默认 0.02 秒）走。<strong>所有跟 Rigidbody 打交道的代码都应该放 <code>FixedUpdate</code></strong>，否则在不同帧率的机器上，角色速度会不一样。</p><p>这也是我在<a href="stairs-unity.html">楼梯那篇</a>里挑出的毛病（那个项目的 <code>CameraManager</code> 在 <code>FixedUpdate</code> 里用了 <code>Time.deltaTime</code>），所以这次一开始就写对了。</p><h3 id="为什么用-velocity-而不是-addforce">为什么用 <code>velocity</code> 而不是 <code>AddForce</code>？</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">rb.velocity = new Vector2(horizontal, vertical) * speed;</code></pre></div><p>这行是<strong>直接赋值</strong>速度，不是施加力。区别很大：</p><ul><li><code>AddForce</code> 是「推」——速度会累积，松手后还有惯性，角色会滑一段</li><li><code>velocity =</code> 是「设定」——按下去就是 5 单位/秒，松开立刻为 0</li></ul><p>对像素风 ARPG 来说，<strong>要的就是这种干脆的手感</strong>。老式 RPG 里角色都是说走就走、说停就停的。</p><h3 id="inputgetaxis-帮我做了三件事"><code>Input.GetAxis</code> 帮我做了三件事</h3><p><code>Input.GetAxis("Horizontal")</code> 返回的是 <code>-1</code> 到 <code>1</code> 之间的浮点数，它自动处理了：</p><ol><li><strong>多键映射</strong>——A/左方向键都行</li><li><strong>平滑过渡</strong>——检测到键盘输入时会有个短暂的加速曲线</li><li><strong>对角线归一化</strong>——不会出现「斜着走比直着走快 1.41 倍」</li></ol><p>第 3 点很重要。如果自己算 <code>Vector2(1, 1)</code>，长度是 1.414，斜着走就会比直走快。<code>GetAxis</code> 输出的已经是处理过的值。</p><div class="alert alert-warning"><p class="alert-title"><span class="alert-icon">⚠️</span>警告</p><p><code>GetAxis</code> 的平滑其实对像素游戏<strong>有点过于柔和</strong>。如果想要更硬朗的复古手感，可以换成 <code>Input.GetAxisRaw("Horizontal")</code>——它直接返回 -1/0/1，没有过渡。我暂时保留 <code>GetAxis</code>，等后面加冲刺再一起调。</p></div><hr><h2 id="第三步翻转的两个坑">第三步：翻转的两个坑</h2><h3 id="坑一翻转要翻-transform不是-spriterenderer">坑一：翻转要翻 <code>transform</code>，不是 SpriteRenderer</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">transform.localScale = new Vector3(facingDirection, y, z);</code></pre></div><p>我一开始想的是 <code>spriteRenderer.flipX = true</code>。两种都能让图片左右镜像，但<strong>翻转整个 <code>transform</code> 会连碰撞体一起翻</strong>——这是好事，因为碰撞体跟着角色走才对称。</p><p>但这里有个隐患，后面会讲到。</p><h3 id="坑二不要每帧都翻转">坑二：不要每帧都翻转</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">if (horizontal &gt; 0 &amp;&amp; transform.localScale.x &lt; 0 ||
+    horizontal &lt; 0 &amp;&amp; transform.localScale.x &gt; 0)
+{
+    Flip();
+}</code></pre></div><p>这个判断的意思是：<strong>「想往右走，但现在朝左」或者「想往左走，但现在朝右」</strong>——只有这两种情况才翻转。</p><p>如果直接写成 <code>if (horizontal != 0) Flip();</code>，角色就会疯狂抽搐：每一帧都翻一次，<code>facingDirection</code> 在 1 和 -1 之间来回跳。</p><hr><h2 id="第四步动画状态机">第四步：动画状态机</h2><p>Animator Controller 里我建了两个状态：<code>idle</code> 和 <code>walk</code>，两个 float 参数：<code>horizontal</code> 和 <code>vertical</code>。</p><p>脚本喂参数时用了 <code>Mathf.Abs()</code>：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">anim.SetFloat("horizontal", Mathf.Abs(horizontal));
+anim.SetFloat("vertical", Mathf.Abs(vertical));</code></pre></div><p><strong>为什么取绝对值？</strong> 因为动画只需要知道「有没有在动」——往左走和往右走都是走路动画，方向由 <code>localScale</code> 翻转解决。如果不取绝对值，参数会是负数，而状态机的条件写的是 <code>Greater 0.1</code>，负数值就永远触发不了。</p><p>状态机里的过渡条件大致是这样：</p><div class="table-wrap"><table><thead><tr><th>从</th><th>到</th><th>条件</th></tr></thead><tbody><tr><td>idle</td><td>walk</td><td><code>horizontal &gt; 0.1</code></td></tr><tr><td>idle</td><td>walk</td><td><code>vertical &gt; 0.1</code></td></tr><tr><td>walk</td><td>idle</td><td><code>horizontal &lt; 0.1</code> 且 <code>vertical &lt; 0.1</code></td></tr></tbody></table></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p><code>0.1</code> 这个阈值叫<strong>死区</strong>。因为 <code>GetAxis</code> 有平滑曲线，松开按键后数值不会立刻归零，而是缓慢衰减。如果没有死区，角色停下后动画还会断断续续播一会儿，看起来像在抽搐。</p></div><p>动画剪辑都是 60 采样率（<code>m_SampleRate: 60</code>），也就是按 60 FPS 逐帧绘制的手绘动画。</p><hr><h2 id="今天踩到的第一个坑">今天踩到的第一个坑</h2><p>写完跑起来，角色能动能转向，看起来一切正常。但我盯着代码看了几秒，发现一个<strong>现在没报错、以后一定出事</strong>的地方：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">void Start()
+{
+    rb = GetComponent&lt;Rigidbody2D&gt;();
+    anim = GetComponent&lt;Animator&gt;();
+}</code></pre></div><p><code>rb</code> 和 <code>anim</code> 明明是 <code>public</code> 字段——<strong>Inspector 里可以手动拖引用</strong>。但这里又在 <code>Start()</code> 里用 <code>GetComponent</code> 覆盖了一遍。</p><p>这意味着：如果哪天我在 Inspector 里拖了个别的对象（比如把某个特效的 Animator 拖进来），<code>Start()</code> 一执行就被覆盖成自己的了，<strong>Inspector 的设置形同虚设</strong>。</p><p>正确做法二选一：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// 方案 A：既然是 public，就信任 Inspector，别覆盖
+void Start() { }   // 或者干脆删掉 rb/anim，改用私有字段
+
+// 方案 B：既然是代码拿，就别 public（更推荐，避免误操作）
+[SerializeField] private Rigidbody2D rb;
+[SerializeField] private Animator anim;</code></pre></div><p>我倾向方案 B——用 <code>[SerializeField] private</code> 既能在 Inspector 看到（方便调试），又不会被外部脚本乱改。</p><div class="alert alert-tip"><p class="alert-title"><span class="alert-icon">💡</span>技巧</p><p>这个坑还有个更隐蔽的版本：<code>GetComponent</code> 写在 <code>Start()</code> 而不是 <code>Awake()</code>。如果别的脚本在 <code>Awake()</code> 里访问 <code>playerMovement.rb</code>，拿到的就是 <code>null</code>。<strong>依赖注入的初始化要放 <code>Awake()</code></strong>。</p></div><hr><h2 id="另一个已经埋下的隐患">另一个已经埋下的隐患</h2><p>翻转用的是 <code>transform.localScale.x = -1</code>。这在现在没问题，但等后面加上<strong>攻击、受伤、阴影</strong>时会出事：</p><ul><li>子物体（比如武器、影子）会跟着一起镜像，可能跑到角色另一边</li><li><code>localScale</code> 为负时，某些情况下碰撞检测的方向会反</li><li>动画里如果有位移曲线，负缩放会让位移方向反转</li></ul><p>更稳的做法是<strong>只翻 <code>SpriteRenderer.flipX</code></strong>，物理碰撞体保持不动（前提是碰撞体本身左右对称）。我暂时留着现在的写法，等遇到问题再改——正好可以记录「什么时候它真的会坏」。</p><hr><h2 id="今天的成果">今天的成果</h2><ul><li>✅ 场景里有了一个不掉、不歪、能响应键盘的骑士</li><li>✅ 走 / 停切换有动画，朝向能正确翻转</li><li>✅ 42 行代码，理解了 <code>FixedUpdate</code>、<code>velocity</code> 赋值、<code>GetAxis</code> 的平滑与归一化</li><li>✅ 记下 2 个待改点：<code>public</code> + <code>Start()</code> 覆盖引用的矛盾、<code>localScale</code> 翻转的隐患</li></ul><p><strong>明天计划</strong>：地图瓦片。这个工程的地形分了 7 层 Tilemap（<code>Ground</code> / <code>Collision-Low</code> / <code>Collision-High</code> / <code>Non-Collision-Low</code> / <code>Non-Collision-High</code> / <code>Rocks</code> / <code>MountainBoundary</code>），还有一套 「走进山体自动改变遮挡关系」的脚本——那部分很有意思，明天专门写。</p><hr><h2 id="数值速查">数值速查</h2><div class="table-wrap"><table><thead><tr><th>参数</th><th>值</th><th>位置</th></tr></thead><tbody><tr><td>移动速度</td><td><code>5</code></td><td>PlayerMovement.speed</td></tr><tr><td>初始朝向</td><td><code>1</code>（右）</td><td>PlayerMovement.facingDirection</td></tr><tr><td>重力</td><td><code>0</code></td><td>Rigidbody2D.gravityScale</td></tr><tr><td>旋转约束</td><td>Freeze Rotation</td><td>Rigidbody2D.constraints</td></tr><tr><td>碰撞检测</td><td>Continuous</td><td>Rigidbody2D.collisionDetection</td></tr><tr><td>碰撞体尺寸</td><td>0.40 × 0.53</td><td>CapsuleCollider2D.size</td></tr><tr><td>角色 Sorting Order</td><td><code>10</code></td><td>SpriteRenderer</td></tr><tr><td>相机</td><td>正交，Size <code>5</code></td><td>Main Camera</td></tr><tr><td>像素密度</td><td>100 PPU</td><td>Warrior_Blue.png 导入设置</td></tr></tbody></table></div></div>
+  <footer class="post-footer">
+    <div class="post-tags"><a class="tag" href="../tags/index.html#tag-unity">Unity</a><a class="tag" href="../tags/index.html#tag-游戏开发">游戏开发</a><a class="tag" href="../tags/index.html#tag-arpg">ARPG</a><a class="tag" href="../tags/index.html#tag-学习日志">学习日志</a></div>
+    <p class="post-source"><a href="https://github.com/daydaydream000/daydaydream000.github.io/blob/main/posts/arpg-day1-player.md">在 GitHub 上查看源文件</a></p>
+  </footer>
+</article>
+<nav class="post-nav" aria-label="上下篇"><a class="post-nav-item prev" href="../post/arpg-day2-tilemap.html"><span class="post-nav-label">← 更新的一篇</span><span class="post-nav-title">ARPG 学习日志 Day 2：七层瓦片与「钻山洞」</span></a><a class="post-nav-item next" href="../post/dino-unity.html"><span class="post-nav-label">更早的一篇 →</span><span class="post-nav-title">小恐龙：一个 Unity 2D 无尽跑酷的代码拆解</span></a></nav>
+</div>
+    <aside class="col col-right"><nav class="card-panel toc-card" aria-label="文章目录" data-reveal="0"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span>文章目录</span></h2><div class="toc-list"><a class="" href="#为什么开这个坑">为什么开这个坑</a><a class="" href="#今天的目标人物能走">今天的目标：人物能走</a><a class="" href="#第一步搭一个不会掉下去的骑士">第一步：搭一个不会掉下去的骑士</a><a class="" href="#第二步42-行代码搞定移动">第二步：42 行代码搞定移动</a><a class="toc-h3" href="#为什么物理写在-fixedupdate">为什么物理写在 FixedUpdate？</a><a class="toc-h3" href="#为什么用-velocity-而不是-addforce">为什么用 velocity 而不是 AddForce？</a><a class="toc-h3" href="#inputgetaxis-帮我做了三件事">Input.GetAxis 帮我做了三件事</a><a class="" href="#第三步翻转的两个坑">第三步：翻转的两个坑</a><a class="toc-h3" href="#坑一翻转要翻-transform不是-spriterenderer">坑一：翻转要翻 transform，不是 SpriteRenderer</a><a class="toc-h3" href="#坑二不要每帧都翻转">坑二：不要每帧都翻转</a><a class="" href="#第四步动画状态机">第四步：动画状态机</a><a class="" href="#今天踩到的第一个坑">今天踩到的第一个坑</a><a class="" href="#另一个已经埋下的隐患">另一个已经埋下的隐患</a><a class="" href="#今天的成果">今天的成果</a><a class="" href="#数值速查">数值速查</a></div></nav><section class="card-panel" data-reveal="3"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>站点统计</span></h2><ul class="stat-list"><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span class="stat-label">文章</span><span class="stat-value">5</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span class="stat-label">标签</span><span class="stat-value">7</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span class="stat-label">总字数</span><span class="stat-value">10,843</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="stat-label">最近更新</span><span class="stat-value">2026-10-11</span></li></ul></section></aside>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>转载请注明出处</p>
+  <nav class="footer-nav" aria-label="页脚导航">
+    <a href="../index.html">首页</a>
+    <a href="../tags/index.html">标签</a>
+    <a href="../about.html">关于</a>
+    <a href="../rss.xml">RSS</a>
+    <a href="https://github.com/daydaydream000">GitHub</a>
+    <a href="https://github.com/daydaydream000/daydaydream000.github.io">源码</a>
+    <a href="mailto:daydaydream000@users.noreply.github.com">邮件</a>
+  </nav>
+  <p class="footer-note">本站是纯静态站点，由 build.py 生成，托管于 GitHub Pages。</p>
+</footer>
+
+<a class="back-to-top" id="back-to-top" href="#" aria-label="回到顶部" title="回到顶部">
+  <svg class="i" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</a>
+
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="搜索文章">
+    <div class="search-head">
+      <svg class="i" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off"
+             spellcheck="false" aria-label="搜索关键词">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<script src="../assets/search-index.js" defer></script>
+<script src="../assets/app.js?v=ffe2833a95" defer></script>
+</body>
+</html>

@@ -1,0 +1,140 @@
+<svg viewBox="0 0 1200 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 草地渐变 -->
+    <linearGradient id="d1-grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8FCB5E"/>
+      <stop offset="100%" stop-color="#5FA23A"/>
+    </linearGradient>
+    <linearGradient id="d1-grass2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7CBB50"/>
+      <stop offset="100%" stop-color="#4E8C2F"/>
+    </linearGradient>
+    <!-- 骑士铠甲（蓝） -->
+    <linearGradient id="d1-armor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7FB6E8"/>
+      <stop offset="50%" stop-color="#4A8FD4"/>
+      <stop offset="100%" stop-color="#2E6BA8"/>
+    </linearGradient>
+    <!-- 键盘按键 -->
+    <linearGradient id="d1-key" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#D8E4EC"/>
+    </linearGradient>
+    <!-- 天空背景 -->
+    <linearGradient id="d1-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#BFE3F5"/>
+      <stop offset="100%" stop-color="#E8F6E0"/>
+    </linearGradient>
+    <!-- 影子 -->
+    <radialGradient id="d1-shadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#2A4A1A" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#2A4A1A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="420" fill="url(#d1-sky)"/>
+
+  <!-- 远景山丘 -->
+  <path d="M0,300 Q150,220 320,290 Q470,230 620,295 Q780,225 940,292 Q1080,240 1200,300 L1200,420 L0,420 Z"
+        fill="#9CCB72" opacity="0.45"/>
+
+  <!-- 草地条带（瓦片感：横向分块） -->
+  <g>
+    <rect x="0" y="320" width="1200" height="100" fill="url(#d1-grass)"/>
+    <!-- 瓦片接缝 -->
+    <g stroke="#4E8C2F" stroke-opacity="0.35" stroke-width="2">
+      <line x1="100" y1="320" x2="100" y2="420"/>
+      <line x1="200" y1="320" x2="200" y2="420"/>
+      <line x1="300" y1="320" x2="300" y2="420"/>
+      <line x1="400" y1="320" x2="400" y2="420"/>
+      <line x1="500" y1="320" x2="500" y2="420"/>
+      <line x1="600" y1="320" x2="600" y2="420"/>
+      <line x1="700" y1="320" x2="700" y2="420"/>
+      <line x1="800" y1="320" x2="800" y2="420"/>
+      <line x1="900" y1="320" x2="900" y2="420"/>
+      <line x1="1000" y1="320" x2="1000" y2="420"/>
+      <line x1="1100" y1="320" x2="1100" y2="420"/>
+    </g>
+    <!-- 草簇 -->
+    <g stroke="#3F7A26" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7">
+      <path d="M60,352 q4,-10 8,0"/><path d="M66,352 q4,-12 8,0"/>
+      <path d="M360,368 q4,-10 8,0"/><path d="M366,368 q4,-12 8,0"/>
+      <path d="M840,346 q4,-10 8,0"/><path d="M846,346 q4,-12 8,0"/>
+      <path d="M1090,372 q4,-10 8,0"/><path d="M1096,372 q4,-12 8,0"/>
+    </g>
+  </g>
+
+  <!-- 骑士影子 -->
+  <ellipse cx="600" cy="356" rx="46" ry="12" fill="url(#d1-shadow)"/>
+
+  <!-- 骑士（正面站立，蓝衣） -->
+  <g transform="translate(600, 250)">
+    <!-- 腿 -->
+    <rect x="-18" y="58" width="15" height="34" rx="4" fill="#2E5A8C"/>
+    <rect x="4" y="58" width="15" height="34" rx="4" fill="#2E5A8C"/>
+    <!-- 靴 -->
+    <rect x="-20" y="86" width="19" height="12" rx="4" fill="#4A3A2A"/>
+    <rect x="2" y="86" width="19" height="12" rx="4" fill="#4A3A2A"/>
+    <!-- 身体（铠甲） -->
+    <rect x="-26" y="6" width="52" height="58" rx="12" fill="url(#d1-armor)"/>
+    <!-- 肩甲 -->
+    <ellipse cx="-30" cy="18" rx="15" ry="13" fill="#5EA0DC"/>
+    <ellipse cx="30" cy="18" rx="15" ry="13" fill="#5EA0DC"/>
+    <!-- 胸甲高光 -->
+    <rect x="-14" y="16" width="28" height="8" rx="4" fill="#A8D2F5" opacity="0.65"/>
+    <!-- 手臂 -->
+    <rect x="-40" y="24" width="13" height="34" rx="6" fill="#3B7CC0"/>
+    <rect x="27" y="24" width="13" height="34" rx="6" fill="#3B7CC0"/>
+    <!-- 头盔 -->
+    <rect x="-20" y="-30" width="40" height="40" rx="12" fill="#6FB0E8"/>
+    <!-- 面罩缝 -->
+    <rect x="-15" y="-12" width="30" height="6" rx="3" fill="#22364A"/>
+    <!-- 羽饰 -->
+    <path d="M0,-32 q-16,-26 6,-34 q-2,18 10,26 Z" fill="#E8552F"/>
+    <path d="M6,-30 q-10,-20 8,-26 q0,14 8,20 Z" fill="#F58A4B"/>
+  </g>
+
+  <!-- 左侧：键盘按键（WASD） -->
+  <g transform="translate(150, 210)">
+    <g fill="url(#d1-key)" stroke="#9FB4C4" stroke-width="2.5">
+      <rect x="30" y="0" width="46" height="46" rx="10"/>
+      <rect x="0" y="52" width="46" height="46" rx="10"/>
+      <rect x="52" y="52" width="46" height="46" rx="10"/>
+      <rect x="104" y="52" width="46" height="46" rx="10"/>
+    </g>
+    <g font-family="ui-monospace, monospace" font-size="22" font-weight="700" fill="#3B5A72" text-anchor="middle">
+      <text x="53" y="32">W</text>
+      <text x="23" y="84">A</text>
+      <text x="75" y="84">S</text>
+      <text x="127" y="84">D</text>
+    </g>
+  </g>
+
+  <!-- 右侧：移动方向箭头 -->
+  <g transform="translate(980, 230)" fill="none" stroke="#3E7A2A" stroke-width="8"
+     stroke-linecap="round" stroke-linejoin="round" opacity="0.85">
+    <path d="M0,40 L0,-40"/>
+    <path d="M-24,10 L0,-40 L24,10"/>
+  </g>
+  <g transform="translate(880, 300)" fill="none" stroke="#3E7A2A" stroke-width="7"
+     stroke-linecap="round" stroke-linejoin="round" opacity="0.6">
+    <path d="M-40,0 L40,0"/>
+    <path d="M-14,-20 L40,0 L-14,20"/>
+  </g>
+
+  <!-- 速度线 -->
+  <g stroke="#FFFFFF" stroke-opacity="0.5" stroke-width="3" stroke-linecap="round">
+    <line x1="300" y1="180" x2="380" y2="180"/>
+    <line x1="330" y1="210" x2="400" y2="210"/>
+    <line x1="820" y1="160" x2="900" y2="160"/>
+  </g>
+
+  <!-- 左上角标签 -->
+  <g transform="translate(40, 44)">
+    <rect x="0" y="0" width="150" height="40" rx="20" fill="#2E6BA8" opacity="0.9"/>
+    <text x="75" y="27" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20"
+          font-weight="700" fill="#FFFFFF" text-anchor="middle">DAY 1</text>
+  </g>
+  <text x="212" y="72" font-family="ui-sans-serif, system-ui, sans-serif" font-size="22"
+        font-weight="700" fill="#2E5A8C">人物控制</text>
+</svg>

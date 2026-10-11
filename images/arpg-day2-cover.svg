@@ -1,0 +1,157 @@
+<svg viewBox="0 0 1200 420" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="d2-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#B9DFF2"/>
+      <stop offset="100%" stop-color="#EAF7E2"/>
+    </linearGradient>
+    <linearGradient id="d2-water" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4FA8D8"/>
+      <stop offset="100%" stop-color="#2C74A8"/>
+    </linearGradient>
+    <linearGradient id="d2-ground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8FCB5E"/>
+      <stop offset="100%" stop-color="#5A9C35"/>
+    </linearGradient>
+    <linearGradient id="d2-cliff" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#A8763F"/>
+      <stop offset="100%" stop-color="#7A5228"/>
+    </linearGradient>
+    <linearGradient id="d2-top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#9BD968"/>
+      <stop offset="100%" stop-color="#6DB03F"/>
+    </linearGradient>
+    <radialGradient id="d2-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFE9A8" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#FFE9A8" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="d2-armor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7FB6E8"/>
+      <stop offset="50%" stop-color="#4A8FD4"/>
+      <stop offset="100%" stop-color="#2E6BA8"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="420" fill="url(#d2-sky)"/>
+
+  <!-- 远处的山 -->
+  <path d="M0,250 L140,150 L260,250 L400,130 L560,250 L720,160 L880,250 L1040,140 L1200,250 L1200,420 L0,420 Z"
+        fill="#B5DDA0" opacity="0.5"/>
+
+  <!-- 水面（分成山体两侧，避免山体像是从水里长出来） -->
+  <rect x="0" y="286" width="470" height="56" fill="url(#d2-water)"/>
+  <rect x="650" y="286" width="550" height="56" fill="url(#d2-water)"/>
+  <g stroke="#BFE4F5" stroke-width="3" stroke-linecap="round" opacity="0.65" fill="none">
+    <path d="M60,306 q18,-9 36,0 q18,9 36,0"/>
+    <path d="M300,318 q18,-9 36,0 q18,9 36,0"/>
+    <path d="M900,304 q18,-9 36,0 q18,9 36,0"/>
+    <path d="M1080,316 q18,-9 36,0 q18,9 36,0"/>
+  </g>
+
+  <!-- 草地 -->
+  <rect x="0" y="336" width="1200" height="84" fill="url(#d2-ground)"/>
+  <g stroke="#4E8C2F" stroke-opacity="0.3" stroke-width="2">
+    <line x1="120" y1="336" x2="120" y2="420"/>
+    <line x1="240" y1="336" x2="240" y2="420"/>
+    <line x1="360" y1="336" x2="360" y2="420"/>
+    <line x1="480" y1="336" x2="480" y2="420"/>
+    <line x1="600" y1="336" x2="600" y2="420"/>
+    <line x1="720" y1="336" x2="720" y2="420"/>
+    <line x1="840" y1="336" x2="840" y2="420"/>
+    <line x1="960" y1="336" x2="960" y2="420"/>
+    <line x1="1080" y1="336" x2="1080" y2="420"/>
+  </g>
+
+  <!-- 中央：山体剖面（展示 Elevation 机制） -->
+  <g>
+    <!-- 山体崖壁 -->
+    <path d="M470,336 L470,170 Q560,132 650,170 L650,336 Z" fill="url(#d2-cliff)"/>
+    <!-- 崖壁纹理 -->
+    <g stroke="#5E3D1C" stroke-opacity="0.35" stroke-width="2.5" fill="none">
+      <path d="M500,200 q30,10 60,0"/>
+      <path d="M520,240 q40,12 80,0"/>
+      <path d="M495,280 q45,12 90,0"/>
+    </g>
+    <!-- 山顶草地 -->
+    <path d="M470,170 Q560,132 650,170 Q560,196 470,170 Z" fill="url(#d2-top)"/>
+    <!-- 洞口（发光） -->
+    <ellipse cx="560" cy="300" rx="46" ry="52" fill="#2A1A0C"/>
+    <ellipse cx="560" cy="300" rx="40" ry="46" fill="url(#d2-glow)" opacity="0.5"/>
+    <!-- 洞口轮廓 -->
+    <path d="M514,336 L514,292 Q560,250 606,292 L606,336" fill="none" stroke="#5E3D1C" stroke-width="4"/>
+  </g>
+
+  <!-- 洞口里的骑士（变小 + 半透明，表示走进山体） -->
+  <g transform="translate(560, 292) scale(0.62)" opacity="0.75">
+    <rect x="-18" y="58" width="15" height="34" rx="4" fill="#2E5A8C"/>
+    <rect x="4" y="58" width="15" height="34" rx="4" fill="#2E5A8C"/>
+    <rect x="-26" y="6" width="52" height="58" rx="12" fill="url(#d2-armor)"/>
+    <ellipse cx="-30" cy="18" rx="15" ry="13" fill="#5EA0DC"/>
+    <ellipse cx="30" cy="18" rx="15" ry="13" fill="#5EA0DC"/>
+    <rect x="-20" y="-30" width="40" height="40" rx="12" fill="#6FB0E8"/>
+    <rect x="-15" y="-12" width="30" height="6" rx="3" fill="#22364A"/>
+    <path d="M0,-32 q-16,-26 6,-34 q-2,18 10,26 Z" fill="#E8552F"/>
+  </g>
+
+  <!-- 山脚外的骑士（正常大小，带影子） -->
+  <ellipse cx="330" cy="372" rx="42" ry="11" fill="#2A4A1A" opacity="0.3"/>
+  <g transform="translate(330, 270) scale(0.9)">
+    <rect x="-18" y="58" width="15" height="34" rx="4" fill="#2E5A8C"/>
+    <rect x="4" y="58" width="15" height="34" rx="4" fill="#2E5A8C"/>
+    <rect x="-20" y="86" width="19" height="12" rx="4" fill="#4A3A2A"/>
+    <rect x="2" y="86" width="19" height="12" rx="4" fill="#4A3A2A"/>
+    <rect x="-26" y="6" width="52" height="58" rx="12" fill="url(#d2-armor)"/>
+    <ellipse cx="-30" cy="18" rx="15" ry="13" fill="#5EA0DC"/>
+    <ellipse cx="30" cy="18" rx="15" ry="13" fill="#5EA0DC"/>
+    <rect x="-40" y="24" width="13" height="34" rx="6" fill="#3B7CC0"/>
+    <rect x="27" y="24" width="13" height="34" rx="6" fill="#3B7CC0"/>
+    <rect x="-20" y="-30" width="40" height="40" rx="12" fill="#6FB0E8"/>
+    <rect x="-15" y="-12" width="30" height="6" rx="3" fill="#22364A"/>
+    <path d="M0,-32 q-16,-26 6,-34 q-2,18 10,26 Z" fill="#E8552F"/>
+  </g>
+
+  <!-- 右侧：图层堆叠示意 -->
+  <g transform="translate(790, 60)">
+    <g font-family="ui-monospace, monospace" font-size="15" font-weight="700">
+      <!-- 每层是一个错开的扁矩形 -->
+      <g>
+        <rect x="40" y="0" width="290" height="30" rx="7" fill="#F2B7C6" stroke="#C4808F" stroke-width="2"/>
+        <text x="60" y="21" fill="#7A3548">Non-Collision-High  ·  15</text>
+      </g>
+      <g>
+        <rect x="30" y="36" width="290" height="30" rx="7" fill="#E8A0A8" stroke="#B87C84" stroke-width="2"/>
+        <text x="50" y="57" fill="#7A3038">Collision-High  ·  15</text>
+      </g>
+      <g>
+        <rect x="20" y="72" width="290" height="30" rx="7" fill="#A8C8E8" stroke="#7C9CB8" stroke-width="2"/>
+        <text x="40" y="93" fill="#2E4A68">Collision-Low  ·  0</text>
+      </g>
+      <g>
+        <rect x="10" y="108" width="290" height="30" rx="7" fill="#B8D8A8" stroke="#8CB87C" stroke-width="2"/>
+        <text x="30" y="129" fill="#33502A">Non-Collision-Low  ·  0</text>
+      </g>
+      <g>
+        <rect x="0" y="144" width="290" height="30" rx="7" fill="#9BD968" stroke="#6DB03F" stroke-width="2"/>
+        <text x="20" y="165" fill="#2F5A1E">Ground  ·  -1</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- 标注线：洞口（引到右下，避开图层堆叠区） -->
+  <g stroke="#7A5228" stroke-width="2.5" stroke-dasharray="6 5" fill="none">
+    <path d="M612,322 L858,366"/>
+  </g>
+  <g transform="translate(864, 350)">
+    <rect x="0" y="0" width="206" height="34" rx="8" fill="#FFF6E0" stroke="#D8B878" stroke-width="2"/>
+    <text x="103" y="23" font-family="ui-sans-serif, system-ui, sans-serif" font-size="16"
+          font-weight="700" fill="#7A5228" text-anchor="middle">Trigger 切碰撞体</text>
+  </g>
+
+  <!-- 左上角标签 -->
+  <g transform="translate(40, 44)">
+    <rect x="0" y="0" width="150" height="40" rx="20" fill="#2E7D4F" opacity="0.92"/>
+    <text x="75" y="27" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20"
+          font-weight="700" fill="#FFFFFF" text-anchor="middle">DAY 2</text>
+  </g>
+  <text x="212" y="72" font-family="ui-sans-serif, system-ui, sans-serif" font-size="22"
+        font-weight="700" fill="#2F5A1E">地图瓦片</text>
+</svg>
