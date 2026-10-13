@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" font-family="ui-sans-serif, system-ui, sans-serif">
+  <defs>
+    <!-- 背景渐变 -->
+    <linearGradient id="d3-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a2438"/>
+      <stop offset="60%" stop-color="#243354"/>
+      <stop offset="100%" stop-color="#1a2438"/>
+    </linearGradient>
+    <!-- 地面渐变 -->
+    <linearGradient id="d3-grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3d6b35"/>
+      <stop offset="100%" stop-color="#2d5028"/>
+    </linearGradient>
+    <!-- 相机光晕 -->
+    <radialGradient id="d3-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6ea8d4" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#6ea8d4" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 相机镜头 -->
+    <radialGradient id="d3-lens" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#c8dff0" stop-opacity="0.2"/>
+      <stop offset="80%" stop-color="#4a8ab8" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#4a8ab8" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 追踪箭头 -->
+    <marker id="d3-arr" markerWidth="8" markerHeight="6" refX="6" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6ea8d4" opacity="0.7"/>
+    </marker>
+    <!-- 检测圆虚线 -->
+    <stroke-dasharray="6 4" id="d3-dash"/>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="1200" height="420" fill="url(#d3-bg)"/>
+
+  <!-- ======== 左侧：相机跟随示意 ======== -->
+  <!-- 标签 -->
+  <text x="160" y="36" font-size="17" font-weight="700" fill="#6ea8d4" text-anchor="middle">虚拟相机 Cinemachine</text>
+
+  <!-- 相机视野框（大框表示相机） -->
+  <rect x="40" y="52" width="280" height="210" rx="8"
+        fill="url(#d3-lens)" stroke="#6ea8d4" stroke-width="2.5" opacity="0.8"/>
+
+  <!-- 相机图标（镜头圆环） -->
+  <circle cx="180" cy="157" r="48" fill="none" stroke="#6ea8d4" stroke-width="4"/>
+  <circle cx="180" cy="157" r="32" fill="none" stroke="#6ea8d4" stroke-width="2" opacity="0.5"/>
+  <circle cx="180" cy="157" r="14" fill="#6ea8d4" opacity="0.6"/>
+  <!-- 镜头十字 -->
+  <line x1="180" y1="121" x2="180" y2="193" stroke="#6ea8d4" stroke-width="1.5" opacity="0.4"/>
+  <line x1="144" y1="157" x2="216" y2="157" stroke="#6ea8d4" stroke-width="1.5" opacity="0.4"/>
+
+  <!-- 虚拟相机 虚线连接目标 -->
+  <line x1="222" y1="135" x2="290" y2="110" stroke="#6ea8d4" stroke-width="1.5"
+        stroke-dasharray="5 4" marker-end="url(#d3-arr)" opacity="0.6"/>
+  <text x="258" y="118" font-size="12" fill="#6ea8d4" opacity="0.7">Follow</text>
+
+  <!-- 玩家在视野内 -->
+  <!-- 地面 -->
+  <rect x="40" y="215" width="280" height="47" rx="4" fill="url(#d3-grass)"/>
+  <!-- 玩家胶囊（绿色） -->
+  <rect x="130" y="175" width="28" height="38" rx="10" fill="#5ba85a"/>
+  <circle cx="144" cy="183" r="7" fill="#7fc87f"/> <!-- 头 -->
+  <!-- 地面草线 -->
+  <path d="M50,215 q15,-6 30,0 q15,6 30,0 q15,-6 30,0 q15,6 30,0 q15,-6 30,0 q15,6 30,0"
+        stroke="#6db860" stroke-width="2" fill="none" opacity="0.6"/>
+
+  <!-- 相机 Damping 示意：虚线拖尾 -->
+  <line x1="130" y1="194" x2="80" y2="240" stroke="#6ea8d4" stroke-width="1.5"
+        stroke-dasharray="4 5" opacity="0.35"/>
+  <text x="76" y="255" font-size="11" fill="#6ea8d4" opacity="0.5">阻尼跟随</text>
+
+  <!-- Confiner 边界 -->
+  <rect x="40" y="52" width="280" height="210" rx="8"
+        fill="none" stroke="#6ea8d4" stroke-width="1"
+        stroke-dasharray="10 5" opacity="0.4"/>
+  <text x="290" y="68" font-size="12" fill="#6ea8d4" opacity="0.7">Confiner 边界</text>
+
+  <!-- 底部标注 -->
+  <rect x="40" y="278" width="280" height="110" rx="6" fill="#2d3d5c" opacity="0.7"/>
+  <text x="60" y="302" font-size="13" fill="#a0c4e0" font-weight="600">Virtual Camera</text>
+  <text x="60" y="322" font-size="11" fill="#7090b0">  Follow = Player</text>
+  <text x="60" y="339" font-size="11" fill="#7090b0">  Orthographic Size = 3.5</text>
+  <text x="60" y="356" font-size="11" fill="#7090b0">  Damping X/Y = 0.5</text>
+  <text x="60" y="373" font-size="11" fill="#7090b0">  Confiner = PolygonCollider2D</text>
+
+  <!-- ======== 中间分隔 ======== -->
+  <line x1="390" y1="20" x2="390" y2="400" stroke="#3a5070" stroke-width="1.5" stroke-dasharray="8 6" opacity="0.4"/>
+
+  <!-- ======== 右侧：敌人状态机 ======== -->
+  <!-- 标签 -->
+  <text x="810" y="36" font-size="17" font-weight="700" fill="#e09050" text-anchor="middle">敌人 AI：状态机</text>
+
+  <!-- 检测圈 -->
+  <circle cx="810" cy="168" r="90" fill="none" stroke="#e09050" stroke-width="2"
+          stroke-dasharray="7 5" opacity="0.5"/>
+  <circle cx="810" cy="168" r="90" fill="url(#d3-glow)"/>
+
+  <!-- 地面 -->
+  <rect x="620" y="215" width="380" height="47" rx="4" fill="url(#d3-grass)"/>
+  <path d="M630,215 q15,-6 30,0 q15,6 30,0 q15,-6 30,0 q15,6 30,0 q15,-6 30,0 q15,6 30,0 q15,-6 30,0 q15,6 30,0 q15,-6 30,0 q15,6 30,0 q15,-6 30,0 q15,6 30,0"
+        stroke="#6db860" stroke-width="2" fill="none" opacity="0.6"/>
+
+  <!-- 敌人 Torch（朝左，facingDirection=-1） -->
+  <!-- 身体 -->
+  <rect x="778" y="152" width="28" height="38" rx="10" fill="#d07828"/>
+  <!-- 头 -->
+  <circle cx="792" cy="160" r="8" fill="#e89040"/>
+  <!-- 火把火焰 -->
+  <ellipse cx="775" cy="140" rx="6" ry="10" fill="#f0c030"/>
+  <ellipse cx="775" cy="136" rx="4" ry="7" fill="#f8e060"/>
+  <ellipse cx="775" cy="133" rx="2.5" ry="5" fill="#fff0a0"/>
+  <!-- Torch 棒子 -->
+  <rect x="772" y="148" width="6" height="20" rx="2" fill="#8b5a2b"/>
+  <!-- 朝左翻转后的样子（localScale.x 负） -->
+  <rect x="774" y="152" width="28" height="38" rx="10" fill="#d07828" opacity="0.35"/>
+  <text x="792" y="198" font-size="10" fill="#e09050" text-anchor="middle" opacity="0.7">Enemy</text>
+
+  <!-- 玩家（小，在圈内） -->
+  <rect x="814" y="178" width="20" height="28" rx="7" fill="#5ba85a"/>
+  <circle cx="824" cy="185" r="6" fill="#7fc87f"/>
+  <text x="824" y="212" font-size="10" fill="#7fc87f" text-anchor="middle" opacity="0.7">Player</text>
+
+  <!-- 检测圈说明 -->
+  <line x1="894" y1="125" x2="900" y2="95" stroke="#e09050" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.5"/>
+  <text x="904" y="90" font-size="12" fill="#e09050" opacity="0.7">CircleCollider2D</text>
+  <text x="904" y="106" font-size="11" fill="#c07040" opacity="0.6">  radius=1.44 (Trigger)</text>
+
+  <!-- 状态机图示 -->
+  <rect x="630" y="278" width="520" height="122" rx="6" fill="#2d3d5c" opacity="0.7"/>
+
+  <!-- Idle 状态 -->
+  <rect x="650" y="292" width="100" height="54" rx="8"
+        fill="#3d5060" stroke="#6a8a9a" stroke-width="2"/>
+  <text x="700" y="314" font-size="13" font-weight="600" fill="#8ab8cc" text-anchor="middle">Idle</text>
+  <text x="700" y="332" font-size="11" fill="#5a8090" text-anchor="middle">原地站立</text>
+
+  <!-- 转换箭头 Idle → Chasing -->
+  <path d="M752,319 L790,319" stroke="#e09050" stroke-width="2"
+        fill="none" marker-end="url(#d3-arr)" opacity="0.8"/>
+  <text x="771" y="313" font-size="11" fill="#e09050" opacity="0.8" text-anchor="middle">进入检测圈</text>
+
+  <!-- Chasing 状态 -->
+  <rect x="792" y="292" width="100" height="54" rx="8"
+        fill="#4a3020" stroke="#e09050" stroke-width="2"/>
+  <text x="842" y="314" font-size="13" font-weight="600" fill="#e8a860" text-anchor="middle">Chasing</text>
+  <text x="842" y="332" font-size="11" fill="#c08040" text-anchor="middle">追击玩家</text>
+
+  <!-- 转换箭头 Chasing → Idle -->
+  <path d="M894,319 L930,319" stroke="#7090a0" stroke-width="2"
+        fill="none" stroke-dasharray="5 4" opacity="0.6"/>
+  <text x="912" y="313" font-size="11" fill="#7090a0" opacity="0.7" text-anchor="middle">离开检测圈</text>
+
+  <!-- Exit -->
+  <rect x="932" y="300" width="56" height="38" rx="6"
+        fill="#2a3a4a" stroke="#4a6070" stroke-width="1.5"/>
+  <text x="960" y="323" font-size="12" fill="#6080a0" text-anchor="middle">Exit</text>
+
+  <!-- OnCollisionEnter 标注 -->
+  <rect x="650" y="358" width="200" height="28" rx="5"
+        fill="#3a2820" stroke="#c05030" stroke-width="1.5"/>
+  <text x="750" y="376" font-size="12" fill="#e07050" text-anchor="middle">OnCollisionEnter2D → damage</text>
+
+  <!-- ChangeState 代码片段 -->
+  <text x="870" y="363" font-size="11" fill="#8ab8cc" opacity="0.9">ChangeState(EnemyState.Chasing)</text>
+  <text x="870" y="379" font-size="11" fill="#e8a860" opacity="0.9">rb.velocity = dir * speed  ← ⚠ bug</text>
+
+  <!-- 底部一行总注 -->
+  <text x="600" y="412" font-size="11" fill="#5a7080" text-anchor="middle">Day 3 · Cinemachine 相机跟随 + Enemy_Movement 状态机 · ARPGbegin 工程</text>
+</svg>
