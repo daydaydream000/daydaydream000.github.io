@@ -33,6 +33,10 @@ draft: false
 
 ## 第一步：搭一个不会掉下去的骑士
 
+这是主角，用的是素材包里的 `Warrior_Blue`（蓝衣骑士）：
+
+<img src="images/arpg/warrior-idle.png" alt="" class="arpg-thumb" loading="lazy" decoding="async">
+
 我先在场景里创建角色，然后挂上这几个组件：
 
 | 组件 | 作用 | 关键设置 |
@@ -169,6 +173,10 @@ if (horizontal > 0 && transform.localScale.x < 0 ||
 ---
 
 ## 第四步：动画状态机
+
+走路时切到这张：
+
+<img src="images/arpg/warrior-walk.png" alt="" class="arpg-thumb" loading="lazy" decoding="async">
 
 Animator Controller 里我建了两个状态：`idle` 和 `walk`，两个 float 参数：`horizontal` 和 `vertical`。
 

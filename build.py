@@ -386,9 +386,17 @@ def _link(match: re.Match) -> str:
 
 
 def _image(match: re.Match, ctx: RenderContext) -> str:
-    alt, src, title = html.unescape(match.group(1)), html.unescape(match.group(2)), match.group(3)
+    raw_alt, raw_src, raw_title = match.group(1), match.group(2), match.group(3)
+    alt = html.unescape(raw_alt)
+    src = html.unescape(raw_src)
+    title = html.unescape(raw_title) if raw_title else ""
+    # kramdown-style class: ![alt](src "title"){.class}
+    css_class = ""
+    cls_match = re.search(rb"\{([^}]+)\}\s*$", title.encode("utf-8"))
+    if cls_match:
+        css_class = cls_match.group(1).decode("utf-8").strip()
+        title = title[: cls_match.start()].rstrip()
     resolved = ctx.resolve_image(src)
-    # 占位符已在 store 里被占用了编号，这里直接生成最终 img 标签字符串
     attrs = [
         f'src="{esc_attr(resolved)}"',
         f'alt="{esc_attr(alt)}"',
@@ -397,9 +405,9 @@ def _image(match: re.Match, ctx: RenderContext) -> str:
     ]
     if title:
         attrs.append(f'title="{esc_attr(title)}"')
+    if css_class:
+        attrs.append(f'class="{esc_attr(css_class)}"')
     return f"<img {' '.join(attrs)}>"
-
-
 def _image_figure(alt: str, img_tag: str) -> str:
     if not alt.strip():
         return f'<p class="post-image">{img_tag}</p>'
@@ -729,7 +737,37 @@ class Doc:
         self.url = f"{self.dir}/{self.slug}.html" if self.dir else f"{self.slug}.html"
 
         self.ctx = RenderContext(path)
-        self.html = render_markdown(strip_leading_title(body, self.title), self.ctx)
+        # 预处理：扫原始 markdown 里的 <img src="...">（HTML 写法不经过 markdown 解析）
+        # 让 inline HTML 引用的本地图片也能被复制并改写路径
+        for raw_src in re.findall(r'<img\s[^>]*src="([^"]+)"', body):
+            self.ctx.resolve_image(html.unescape(raw_src))
+        raw_html = render_markdown(strip_leading_title(body, self.title), self.ctx)
+        # 后处理：把 inline HTML 里的 <img src="raw"> 替换为 resolve 后的 URL。
+        # 只改写 raw 路径（还没 @@ROOT@@ 前缀、不是外链/绝对路径）的 src，
+        # 避免重复 resolve 已经被改写的链接。
+        def _rewrite_img(match: "re.Match[str]") -> str:
+            attrs = match.group(0)
+            def _src(m: "re.Match[str]") -> str:
+                s = html.unescape(m.group(1))
+                if s.startswith(ROOT_TOKEN) or s.startswith(("http://", "https://", "data:", "/")):
+                    return m.group(0)
+                return f'src="{self.ctx.resolve_image(s)}"'
+            return re.sub(r'src="([^"]+)"', _src, attrs)
+        self.html = re.sub(r'<img\s[^>]*>', _rewrite_img, raw_html)
+        # 把带 arpg-thumb class 的 inline img 包成 figure（限制宽度、居中）
+        def _wrap_thumb(match):
+            attrs = match.group(0)
+            if 'arpg-thumb' not in attrs:
+                return attrs
+            alt_m = re.search(r'alt="([^"]*)"', attrs)
+            alt = html.unescape(alt_m.group(1)) if alt_m else ''
+            return (
+                '<figure class="post-figure arpg-thumb">'
+                + attrs +
+                f'<figcaption>{esc(alt)}</figcaption>'
+                + '</figure>'
+            )
+        self.html = re.sub(r'<img\s[^>]*>', _wrap_thumb, self.html)
         self.toc = self.ctx.toc
         self.images = self.ctx.images
         self.plain = strip_markup(self.html)

@@ -1,0 +1,92 @@
+<svg viewBox="0 0 1200 380" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="d4d-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#CFE5F4"/>
+      <stop offset="100%" stop-color="#E8F1DC"/>
+    </linearGradient>
+    <linearGradient id="d4d-grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8FCB5E"/>
+      <stop offset="100%" stop-color="#5A9C35"/>
+    </linearGradient>
+    <radialGradient id="d4d-radar" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFD45A" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#FFD45A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="380" fill="url(#d4d-sky)"/>
+  <rect x="0" y="300" width="1200" height="80" fill="url(#d4d-grass)"/>
+  <g stroke="#4E8C2F" stroke-opacity="0.25" stroke-width="2">
+    <line x1="100" y1="300" x2="100" y2="380"/>
+    <line x1="220" y1="300" x2="220" y2="380"/>
+    <line x1="340" y1="300" x2="340" y2="380"/>
+    <line x1="460" y1="300" x2="460" y2="380"/>
+    <line x1="580" y1="300" x2="580" y2="380"/>
+    <line x1="700" y1="300" x2="700" y2="380"/>
+    <line x1="820" y1="300" x2="820" y2="380"/>
+    <line x1="940" y1="300" x2="940" y2="380"/>
+    <line x1="1060" y1="300" x2="1060" y2="380"/>
+  </g>
+
+  <!-- 中央：火把哥布林（敌人） -->
+  <g transform="translate(600, 250)">
+    <ellipse cx="0" cy="88" rx="42" ry="11" fill="#2A4A1A" opacity="0.3"/>
+    <g transform="scale(0.85)">
+      <!-- 火把火焰 -->
+      <path d="M-35,-65 q-12,-22 5,-32 q-2,15 9,22 Z" fill="#FFC850"/>
+      <path d="M-37,-70 q-10,-18 4,-26 q-1,12 7,18 Z" fill="#FF9430"/>
+      <!-- 哥布林本体 -->
+      <rect x="-15" y="48" width="13" height="28" rx="3" fill="#7A2E40"/>
+      <rect x="3" y="48" width="13" height="28" rx="3" fill="#7A2E40"/>
+      <rect x="-22" y="5" width="44" height="48" rx="10" fill="#A04050"/>
+      <ellipse cx="-25" cy="15" rx="13" ry="11" fill="#C25060"/>
+      <ellipse cx="25" cy="15" rx="13" ry="11" fill="#C25060"/>
+      <rect x="-18" y="-25" width="36" height="36" rx="10" fill="#B85060"/>
+      <ellipse cx="-8" cy="-15" rx="3" ry="4" fill="#1A1A1A"/>
+      <ellipse cx="8" cy="-15" rx="3" ry="4" fill="#1A1A1A"/>
+      <rect x="-34" y="20" width="11" height="28" rx="5" fill="#8A3848"/>
+      <rect x="23" y="20" width="11" height="28" rx="5" fill="#8A3848"/>
+      <!-- 火把杆 -->
+      <rect x="-44" y="-25" width="4" height="40" rx="1" fill="#3A1F0F"/>
+    </g>
+  </g>
+
+  <!-- 黄色检测圆（detectionPoint, radius=5） -->
+  <circle cx="600" cy="250" r="220" fill="url(#d4d-radar)"/>
+  <circle cx="600" cy="250" r="220" fill="none" stroke="#E8A830" stroke-width="3" stroke-dasharray="8 6" opacity="0.9"/>
+  <circle cx="600" cy="250" r="160" fill="none" stroke="#E8A830" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.4"/>
+  <circle cx="600" cy="250" r="80" fill="none" stroke="#E8A830" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.4"/>
+
+  <!-- 左侧：玩家（蓝衣骑士，已经走进检测范围） -->
+  <ellipse cx="320" cy="338" rx="36" ry="9" fill="#2A4A1A" opacity="0.3"/>
+  <g transform="translate(320, 250) scale(0.78)">
+    <rect x="-15" y="48" width="13" height="28" rx="3" fill="#2E5A8C"/>
+    <rect x="3" y="48" width="13" height="28" rx="3" fill="#2E5A8C"/>
+    <rect x="-13" y="72" width="16" height="10" rx="3" fill="#4A3A2A"/>
+    <rect x="2" y="72" width="16" height="10" rx="3" fill="#4A3A2A"/>
+    <rect x="-22" y="5" width="44" height="48" rx="10" fill="#4A8FD4"/>
+    <ellipse cx="-25" cy="15" rx="13" ry="11" fill="#5EA0DC"/>
+    <ellipse cx="25" cy="15" rx="13" ry="11" fill="#5EA0DC"/>
+    <rect x="-17" y="-25" width="34" height="34" rx="10" fill="#6FB0E8"/>
+    <rect x="-13" y="-10" width="26" height="5" rx="2" fill="#22364A"/>
+    <path d="M0,-27 q-14,-22 5,-29 q-2,15 9,22 Z" fill="#E8552F"/>
+  </g>
+  <text x="320" y="358" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14"
+        font-weight="700" fill="#1A4070" text-anchor="middle">玩家（被检测到）</text>
+
+  <!-- 右侧：玩家（未进入检测范围） -->
+  <ellipse cx="980" cy="338" rx="30" ry="8" fill="#2A4A1A" opacity="0.3"/>
+  <g transform="translate(980, 260) scale(0.6)" opacity="0.55">
+    <rect x="-22" y="5" width="44" height="48" rx="10" fill="#4A8FD4"/>
+    <rect x="-17" y="-25" width="34" height="34" rx="10" fill="#6FB0E8"/>
+    <path d="M0,-27 q-14,-22 5,-29 q-2,15 9,22 Z" fill="#E8552F"/>
+  </g>
+  <text x="980" y="358" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14"
+        font-weight="700" fill="#666" text-anchor="middle">范围外</text>
+
+  <!-- 顶部说明 -->
+  <text x="600" y="50" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18"
+        font-weight="700" fill="#2F5A1E" text-anchor="middle">每帧 OverlapCircleAll(detectionPoint, 5, playerLayer) 主动扫描</text>
+  <text x="600" y="76" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14"
+        fill="#666" text-anchor="middle">敌人不再傻站着等玩家撞进来 —— 玩家进圈就被锁定，状态 → Chasing</text>
+</svg>

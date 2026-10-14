@@ -984,6 +984,40 @@ html.notice-off .notice-card { display: none; }
   font-size: .82rem;
   color: var(--text-soft);
 }
+/* 小型角色/图标配图：限制最大宽度、居中、保留像素感 */
+.post-content figure.arpg-thumb {
+  max-width: 200px;
+  margin: 1rem auto 1.4rem;
+}
+.post-content figure.arpg-thumb img {
+  image-rendering: pixelated;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+  padding: 8px;
+}
+.post-content .arpg-asset-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: .8rem;
+  margin: 1rem 0 1.4rem;
+  padding: .8rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.post-content .arpg-asset-row figure { margin: 0; text-align: center; }
+.post-content .arpg-asset-row figure img {
+  display: block;
+  width: 100%;
+  max-height: 110px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.post-content .arpg-asset-row figcaption {
+  margin-top: .35rem;
+  font-size: .75rem;
+  color: var(--text-soft);
+}
 
 .post-content .highlight { background: var(--accent-soft); color: var(--accent-strong); padding: 0 .2em; border-radius: 4px; }
 

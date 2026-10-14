@@ -27,7 +27,13 @@ slug: arpg-day4-enemy-attack
 
 问题很明显：敌人自己不动，玩家主动撞进去才能触发。如果敌人是个巡逻兵，它站在原地不动，玩家路过才能感知到，灵活性为零。
 
+<img src="images/arpg/torch-red-idle.png" alt="" class="arpg-thumb" loading="lazy" decoding="async">
+
 ### Day 4 的方案：OverlapCircleAll 主动检测
+
+火把哥布林不再傻站着等，每帧主动扫一圈（黄色虚线圈就是检测区，玩家走进去就会被它发现）：
+
+![Day 4 的 OverlapCircleAll 主动检测示意](images/arpg-day4-detection.svg)
 
 ```csharp
 private void CheckForPlayer()
@@ -205,6 +211,10 @@ Attack_Right ── isAttacking=false ──► Exit
 ---
 
 ## Enemy_Combat.Attack()：攻击判定
+
+攻击触发时，武器前端那个红点会扫一圈，碰到玩家就扣血：
+
+![武器前端的 OverlapCircleAll 攻击判定（红点 = attackPoint，浅红圈 = weaponRange）](images/arpg-day4-attack.svg)
 
 ```csharp
 public class Enemy_Combat : MonoBehaviour {

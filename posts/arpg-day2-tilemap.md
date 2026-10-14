@@ -18,7 +18,20 @@ draft: false
 
 ## 七层地图：每一层都有理由
 
-场景里 `Elevation_Base` 底下挂着 8 个子物体（7 个 Tilemap + 1 个 Sprite）：
+场景里 `Elevation_Base` 底下挂着 8 个子物体（7 个 Tilemap + 1 个 Sprite）。
+
+几个素材长这样：
+
+<div class="arpg-asset-row">
+  <figure><img src="images/arpg/ground-tile.png" alt="平地瓦片" loading="lazy"><figcaption>平地（草地）</figcaption></figure>
+  <figure><img src="images/arpg/mountain-tile.png" alt="山体瓦片" loading="lazy"><figcaption>山体（高度层）</figcaption></figure>
+  <figure><img src="images/arpg/water.png" alt="水面" loading="lazy"><figcaption>水面</figcaption></figure>
+  <figure><img src="images/arpg/rock.png" alt="水中石头" loading="lazy"><figcaption>水中的石头</figcaption></figure>
+  <figure><img src="images/arpg/tree.png" alt="树" loading="lazy"><figcaption>树</figcaption></figure>
+  <figure><img src="images/arpg/bridge.png" alt="桥" loading="lazy"><figcaption>桥</figcaption></figure>
+</div>
+
+分层的对照表：
 
 | 图层 | 类型 | Sorting Order | 碰撞 | 职责 |
 |------|------|---------------|------|------|
@@ -68,7 +81,13 @@ draft: false
 
 ## 核心机制：用 Trigger 换碰撞体
 
-这个工程最巧妙的地方来了。它没有写复杂的遮挡计算，而是用**两个 Trigger + 一组碰撞体开关**实现的。代码只有 27 行：
+这个工程最巧妙的地方来了。它没有写复杂的遮挡计算，而是用**两个 Trigger + 一组碰撞体开关**实现的。
+
+可以这么直观地理解：左边的骑士在山脚（`Non-Collision-Low`），右边的骑士已经走进山体（`Non-Collision-High`），山体图层的物理碰撞被关掉，角色自然能穿过去：
+
+![钻山洞示意：左侧山脚骑士，右侧走进山体内部](images/arpg-day2-elevation-scene.svg)
+
+代码只有 27 行：
 
 **Elevation_Entry.cs**（站在入口区域时执行）：
 
@@ -146,6 +165,15 @@ GetComponent<SpriteRenderer>().sortingOrder = 10;   // 角色回到 Low 层
 ---
 
 ## Grid 与瓦片资源
+
+素材里还有些非地形物件（房子、塔、金矿、羊），暂时没用上，先存着：
+
+<div class="arpg-asset-row">
+  <figure><img src="images/arpg/house-blue.png" alt="蓝方小屋" loading="lazy"><figcaption>蓝方小屋</figcaption></figure>
+  <figure><img src="images/arpg/castle.png" alt="蓝方城堡" loading="lazy"><figcaption>蓝方城堡</figcaption></figure>
+  <figure><img src="images/arpg/goldmine.png" alt="金矿" loading="lazy"><figcaption>金矿</figcaption></figure>
+  <figure><img src="images/arpg/sheep.png" alt="羊" loading="lazy"><figcaption>羊</figcaption></figure>
+</div>
 
 整个地形共用一个 `Grid`，参数是最朴素的：
 

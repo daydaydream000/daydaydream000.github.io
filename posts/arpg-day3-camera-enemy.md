@@ -17,6 +17,10 @@ slug: arpg-day3-camera-enemy
 
 ## 场景里的相机结构
 
+Cinemachine 的核心是「让虚拟相机跟实物角色，相机本体交给 CinemachineBrain 接管」。从游戏画面看，相机永远把蓝衣骑士放在屏幕中心：
+
+<img src="images/arpg/warrior-idle.png" alt="" class="arpg-thumb" loading="lazy" decoding="async">
+
 之前 Day 2 讲 Tilemap 时跳过了相机部分。这次从场景文件里还原出完整的相机层级：
 
 ```
@@ -80,6 +84,10 @@ PolygonCollider2D fileID 137846008
 
 ### 场景里的敌人实体
 
+场景里站着一个红衣火把哥布林 `Enemy_Torch`：
+
+<img src="images/arpg/torch-red-idle.png" alt="" class="arpg-thumb" loading="lazy" decoding="async">
+
 ```
 Enemy_Torch  position (-0.16, 3.48)
 ├── Enemy_Movement     speed=5
@@ -117,6 +125,10 @@ private void OnTriggerExit2D(Collider2D collision) {
 **一个细节**：`if (player == null)` 这个判断只出现在 `OnTriggerEnter2D` 里，`OnTriggerExit2D` 里没有。这意味着一旦 `player` 被赋值过一次，它就永远不会变成 null——即使玩家后来被销毁（HP 归零后 `SetActive(false)`），敌人依然记得最后看到的位置。这个设计对「追到目标消失的地方然后发呆」的行为来说恰好是对的，但如果以后要做「玩家死亡→重生」机制，这里需要加 null 检查。
 
 ### 追击逻辑（Update）
+
+`Update` 里进入 Chasing 分支后敌人会朝玩家走：
+
+<img src="images/arpg/torch-red-walk.png" alt="" class="arpg-thumb" loading="lazy" decoding="async">
 
 ```csharp
 void Update() {
@@ -262,6 +274,10 @@ public class PlayerHealth : MonoBehaviour {
     }
 }
 ```
+
+HP 归零后玩家会「消失」，而不是播放死亡动画——这一块在 Tiny Swords 素材里有骷髅和尸体的图，暂时没接上：
+
+<img src="images/arpg/skull.png" alt="" class="arpg-thumb" loading="lazy" decoding="async">
 
 `TextUpdate` 动画定义在 `HP Text.controller` 里，是一个从任意状态（无 Exit Time 限制）进入的过渡到 Idle 的动画，大概是文字缩放或抖动的效果，用来提示 HP 发生了变化。
 
