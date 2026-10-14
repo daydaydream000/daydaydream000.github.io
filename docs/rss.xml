@@ -26,6 +26,127 @@ git commit -m "post: 新文章"
 git push</code></pre></div><p>目录分工也很直白：</p><div class="table-wrap"><table><thead><tr><th>路径</th><th>用途</th></tr></thead><tbody><tr><td><code>posts/</code></td><td>文章源文件（Markdown）</td></tr><tr><td><code>pages/</code></td><td>独立页面，比如「关于」</td></tr><tr><td><code>images/</code></td><td>文章中引用的图片，构建时自动复制</td></tr><tr><td><code>assets/</code></td><td>手写的 CSS 与 JavaScript</td></tr><tr><td><code>templates/</code></td><td>页面模板</td></tr><tr><td><code>docs/</code></td><td>生成结果，也是 Pages 的发布目录</td></tr></tbody></table></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>生成器只用 Python 标准库，没有第三方依赖；换台机器 clone 下来就能跑。</p></div><h2 id="写在最后">写在最后</h2><blockquote><p>种一棵树最好的时间是十年前，其次是现在。</p></blockquote><p>开始记录吧，欢迎常来坐坐。</p>]]></content:encoded>
     </item>
     <item>
+      <title>ARPG 学习日志 Day 4：敌人主动感知与攻击系统</title>
+      <link>https://daydaydream000.github.io/post/arpg-day4-enemy-attack.html</link>
+      <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day4-enemy-attack.html</guid>
+      <pubDate>Wed, 14 Oct 2026 23:59:00 +0000</pubDate>
+      <author>daydaydream000@users.noreply.github.com (DayDayDream)</author>
+      <category>Unity</category><category>ARPG</category><category>游戏开发</category><category>敌人AI</category><category>状态机</category><category>源码分析</category>
+      <description>拆解 Enemy_Movement 从 Trigger 被动感知升级到 OverlapCircleAll 主动检测、Attack_Cooldown 冷却系统、Attacking 状态，以及 Enemy_Combat.Attack() 的 OverlapCircleAll 攻击判定，并记录由此暴露的 5 个 bug。</description>
+      <content:encoded><![CDATA[<h2 id="一句话说清这天的内容">一句话说清这天的内容</h2><p>把敌人的感知从「被玩家撞进来才反应」升级成「主动扫描周围、发现就追、追上了就攻击」，并加上了攻击冷却时间防止连击过快。</p><hr><h2 id="感知系统的演进从被动到主动">感知系统的演进：从被动到主动</h2><h3 id="day-3-的方案trigger-被动检测">Day 3 的方案：Trigger 被动检测</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// Day 3 — 敌人挂一个 CircleCollider2D (IsTrigger=true)
+// 玩家走进圆 → OnTriggerEnter → 追
+// 玩家走出圆 → OnTriggerExit → 停</code></pre></div><p>问题很明显：敌人自己不动，玩家主动撞进去才能触发。如果敌人是个巡逻兵，它站在原地不动，玩家路过才能感知到，灵活性为零。</p><h3 id="day-4-的方案overlapcircleall-主动检测">Day 4 的方案：OverlapCircleAll 主动检测</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void CheckForPlayer()
+{
+    // 主动在 detectionPoint 周围画一个圆，查所有碰到的 LayerMask 物体
+    Collider2D[] hits = Physics2D.OverlapCircleAll(
+        detectionPoint.position,     // 检测中心（可偏离敌人本体）
+        playerDetectRange,           // 检测半径 5
+        playerLayer                  // 只检测 Player 层
+    );
+
+    if (hits.Length &gt; 0) {
+        player = hits[0].transform;
+        // ... 后续判断距离、决定是否攻击
+    } else {
+        rb.velocity = Vector2.zero;
+        ChangeState(EnemyState.Idle);
+    }
+}</code></pre></div><p><code>OverlapCircleAll</code> 在检测圆内查找所有碰撞体，<code>playerLayer</code> 过滤掉地板、道具等非玩家物体。<code>detectionPoint</code> 是一个 <code>Transform</code> 字段——可以绑在敌人的「头部」或「武器前端」，让检测区不完全等于敌人的物理中心，增加了美术调整的空间。</p><p><code>OnDrawGizmosSelected()</code> 让这个检测区在编辑器里可见：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnDrawGizmosSelected()
+{
+    Gizmos.color = Color.yellow;
+    Gizmos.DrawWireSphere(detectionPoint.position, playerDetectRange);
+}</code></pre></div><p>只要在 Inspector 里选中敌人 GameObject，Scene 视图就会显示一个黄色线圈，表示实际的感知范围。</p><hr><h2 id="状态机从三个到四个">状态机：从三个到四个</h2><h3 id="状态枚举">状态枚举</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public enum EnemyState {
+    Idle,      // 原地不动，等待检测
+    Chasing,   // 追向玩家
+    Attacking  // 攻击中，停住播放动画
+}</code></pre></div><h3 id="checkforplayer状态转换决策点">CheckForPlayer：状态转换决策点</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void CheckForPlayer()
+{
+    Collider2D[] hits = Physics2D.OverlapCircleAll(detectionPoint.position, playerDetectRange, playerLayer);
+
+    if (hits.Length &gt; 0) {
+        player = hits[0].transform;
+
+        if (Vector2.Distance(transform.position, player.transform.position) &lt;= attackRange
+            &amp;&amp; attackCooldownTimer &lt;= 0)
+        {
+            // 在攻击范围内 + 冷却已好 → 攻击
+            attackCooldownTimer = attackCooldown;   // 重置冷却
+            ChangeState(EnemyState.Attacking);
+        }
+        else if (Vector2.Distance(transform.position, player.position) &gt; attackRange)
+        {
+            // 在检测范围内但不在攻击范围 → 追
+            ChangeState(EnemyState.Chasing);
+        }
+    } else {
+        rb.velocity = Vector2.zero;
+        ChangeState(EnemyState.Idle);
+    }
+}</code></pre></div><p><strong>一个细节</strong>：<code>player.transform.position</code> 和 <code>player.position</code> 在这里混用了——前者通过 Transform 属性访问，后者通过 cached <code>player</code> 字段访问，功能相同但风格不统一。如果 <code>player</code> 是 null（比如被销毁了），<code>player.position</code> 会抛 NullReferenceException，而 <code>player.transform.position</code> 也会抛，只是堆栈略有不同。</p><hr><h2 id="攻击冷却系统">攻击冷却系统</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public float attackCooldown = 2;
+
+// Update
+void Update() {
+    if (attackCooldownTimer &gt; 0) {
+        attackCooldownTimer -= Time.deltaTime;   // 每帧倒计时
+    }
+
+    if (enemyState == EnemyState.Chasing) {
+        Chase();
+    } else if (enemyState == EnemyState.Attacking) {
+        rb.velocity = Vector3.zero;              // 停下，准备挨打
+    }
+}</code></pre></div><p>冷却时间 2 秒，Timer 用 <code>Time.deltaTime</code>（<code>Update</code> 里正确）。进入 Attacking 时 <code>rb.velocity = Vector3.zero</code>（注意用了 <code>Vector3.zero</code> 而不是 <code>Vector2.zero</code>，不过 <code>Rigidbody2D.velocity</code> 接受 <code>Vector2</code>，<code>Vector3.zero</code> 自动转 <code>(0,0,0)</code> → <code>(0,0)</code>，不影响功能）。</p><hr><h2 id="chase-方法">Chase 方法</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">void Chase() {
+    if (player.position.x &gt; transform.position.x &amp;&amp; facingDirection == -1 ||
+        player.position.x &lt; transform.position.x &amp;&amp; facingDirection == 1)
+    {
+        Flip();
+    }
+    Vector2 direction = (player.position - transform.position).normalized;
+    rb.velocity = direction * speed;   // ← Day 3 的 bug 已修复！
+}</code></pre></div><p>Day 3 的 <code>rb.velocity = direction</code>（没有乘 <code>speed</code>）在这里已经修正成了 <code>direction * speed</code>，速度变成 2 单位/秒（<code>speed=2</code>）。</p><hr><h2 id="changestate-方法attacking-加入后的变化">ChangeState 方法：Attacking 加入后的变化</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void ChangeState(EnemyState newState) {
+    // 关闭旧状态动画
+    if (enemyState == EnemyState.Idle)   anim.SetBool("isIdle", false);
+    else if (enemyState == EnemyState.Chasing)   anim.SetBool("isChasing", false);
+    else if (enemyState == EnemyState.Attacking) anim.SetBool("isAttacking", false);
+
+    enemyState = newState;
+
+    // 开启新状态动画
+    if (enemyState == EnemyState.Chasing)   anim.SetBool("isChasing", true);
+    else if (enemyState == EnemyState.Idle)   anim.SetBool("isIdle", true);
+    else if (enemyState == EnemyState.Attacking) anim.SetBool("isAttacking", true);
+}</code></pre></div><p>三个 <code>if-else-if</code> 分支，Day 3 提过的扩展性问题依然存在——新增状态时容易漏掉旧状态的「关闭」。</p><hr><h2 id="enemycontroller-动画状态机">Enemy.controller 动画状态机</h2><div class="code-block"><div class="code-head"><span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code>Entry
+  ├── isChasing=true ───────────────────────► Run
+  └── isAttacking=true ───────────────────► Attack_Right
+                                              │
+                                              └── isAttacking=false ──► Exit
+
+Idle ── isIdle=false ──► Exit
+Run  ── isChasing=false ──► Exit
+Attack_Right ── isAttacking=false ──► Exit</code></pre></div><p><strong>子状态机已移除</strong>（Day 3 的 Sub State Machine 在 Day 4 里被拉平了）。</p><div class="table-wrap"><table><thead><tr><th>状态</th><th>Anim</th><th>位置</th><th>Transition</th></tr></thead><tbody><tr><td>Idle</td><td>Idle.anim</td><td>(420,100)</td><td>isIdle=false → Exit</td></tr><tr><td>Run</td><td>Run.anim</td><td>(455,187)</td><td>isChasing=false → Exit</td></tr><tr><td>Attack_Right</td><td>Attack_Right.anim</td><td>(380,-30)</td><td>isAttacking=false → Exit</td></tr><tr><td>Attack_Down</td><td>Attack_Down.anim</td><td>(210,290)</td><td>无（孤立状态）</td></tr><tr><td>Attack_Up</td><td>Attack_Up.anim</td><td>(620,320)</td><td>无（孤立状态）</td></tr><tr><td>Original</td><td>Original.anim</td><td>(489,-109)</td><td>无（孤立状态）</td></tr></tbody></table></div><p>三个 Attack 状态都存在，但只有 <code>Attack_Right</code> 被 Entry Transition 引用了。另外两个 <code>Attack_Down</code> 和 <code>Attack_Up</code> 是孤立的——可能是分方向攻击的前期预留，也可能忘记删。</p><p><code>Attack_Right</code> 的动画播放完（exit time ≈ 0.58）后，<code>isAttacking=false</code> 触发，状态机通过 Exit 退出。然后 <code>ChangeState</code> 被调用，把 <code>isAttacking</code> 设为 false——但注意，<code>ChangeState</code> 只是设置 Animator 参数，<strong>不会触发下一次 <code>CheckForPlayer</code></strong>，所以攻击结束后敌人会停住，直到下一帧 <code>Update</code> 里 <code>CheckForPlayer</code> 被调用，才会重新决定下一步是追还是等。</p><hr><h2 id="enemy_combatattack攻击判定">Enemy_Combat.Attack()：攻击判定</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class Enemy_Combat : MonoBehaviour {
+    public int damage = 1;
+    public Transform attackPoint;     // 攻击判定中心
+    public float weaponRange;         // 攻击范围
+    public LayerMask playerLayer;
+
+    // 旧方法：靠碰撞被动触发（已不再被主动调用）
+    private void OnCollisionEnter2D(Collision2D collision) {
+        if (collision.gameObject.tag == "Player") {
+            collision.gameObject.GetComponent&lt;PlayerHealth&gt;().ChangeHealth(-damage);
+        }
+    }
+
+    // 新方法：主动发起攻击
+    public void Attack() {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(
+            attackPoint.position, weaponRange, playerLayer);
+        if (hits.Length &gt; 0) {
+            hits[0].GetComponent&lt;PlayerHealth&gt;().ChangeHealth(-damage);
+        }
+    }
+}</code></pre></div><p><code>Attack()</code> 方法由动画事件触发（在 Attack_Right 动画的某一帧调用），在 <code>attackPoint</code>（武器前端）画一个 <code>weaponRange</code> 半径的圆，查到玩家就扣血。</p><p><strong><code>OnCollisionEnter2D</code> 现在是死代码</strong>：Day 3 用它实现「碰到就扣血」，现在改成了主动 <code>Attack()</code> 方法调用，这条 <code>OnCollisionEnter2D</code> 不会再被触发了（除非有人在 Inspector 里把 <code>Attack()</code> 注释掉、重新依赖碰撞）。</p><p><code>hits[0]</code> 永远只打最近的一个玩家——如果多个玩家在攻击范围内，只有第一个会被打。这是合理的 for 单机 ARPG，但多人模式需要改成循环所有命中者。</p><hr><h2 id="待改进的地方">待改进的地方</h2><h3 id="会影响玩法的">会影响玩法的</h3><ol><li><strong>Attack_Down / Attack_Up 两个状态孤立</strong>：只定义了动画，没有 Entry Transition，永远不会触发。可能是为上下攻击预留但还没接好，或者可以删掉。</li><li><strong><code>isAttacking</code> 永远不会被重置为 false</strong>：<code>ChangeState(EnemyState.Attacking)</code> 把 <code>isAttacking</code> 设为 true，但 Attacking 状态结束后，状态机靠 Exit Transition 自动退出。问题在于：<code>ChangeState</code> 只在进入 Attacking 时调用一次，<strong>没有代码在退出 Attacking 时把 <code>isAttacking</code> 设为 false</strong>——这条逻辑其实依赖了「Animator 的 Exit Transition 会自动把参数还原为默认值」这个隐含假设。如果 bool 参数的 default 不是 false（比如之前手动改成 true），Exit Transition 后会保持 true 而不会自动清零。</li><li><strong><code>player</code> 可能为 null 抛异常</strong>：<code>CheckForPlayer</code> 里 <code>hits[0].transform</code> 赋值后，如果玩家对象被销毁，<code>player.position</code> 访问会抛 NullReferenceException。没有 null 检查。</li></ol><h3 id="结构性问题">结构性问题</h3><ol start="4"><li><strong><code>OnDrawGizmosSelected</code> 依赖 Inspector 引用</strong>：<code>detectionPoint</code> 如果在 Inspector 里漏填，运行时报空引用；如果填了空对象也报空引用。应该加 <code>if (detectionPoint == null) return;</code> 保护。</li><li><strong><code>Vector3.zero</code> vs <code>Vector2.zero</code> 混用</strong>：<code>rb.velocity = Vector3.zero</code> 在 <code>Update</code> 里写成 <code>Vector3</code> 而非 <code>Vector2</code>，语义上不准确但功能正确（隐式转换）。</li><li><strong>Attack 方法只打 <code>hits[0]</code></strong>：多人模式下其他玩家不会被波及。如果不打算支持多人，这个没问题；如果要支持，需要循环 <code>hits</code>。</li></ol><hr><h2 id="小结">小结</h2><p>这天的核心升级是「被动 → 主动感知」：</p><p><strong>感知层</strong>：<code>OverlapCircleAll</code> + <code>LayerMask</code> 替代了 <code>OnTriggerEnter/Exit</code>，敌人可以在任意时刻主动扫描周围，不依赖玩家去撞。<code>detectionPoint</code> 作为一个 Transform 锚点，让美术可以在子物体上调整检测中心，而不是必须让检测区和敌人中心重合。</p><p><strong>状态机</strong>：Idle / Chasing / Attacking 三个状态，<code>CheckForPlayer</code> 每帧做决策、倒计时管理冷却。进入 Attacking 时速度清零、动画播放、冷却重置；动画结束后状态机 Exit、<code>CheckForPlayer</code> 下一帧重新决定是追还是停。</p><p><strong>攻击判定</strong>：<code>Enemy_Combat.Attack()</code> 由动画事件触发，用 <code>OverlapCircleAll</code> 做武器前端检测，命中后调用 <code>PlayerHealth.ChangeHealth()</code>。<code>OnCollisionEnter2D</code> 变成了死代码。</p><p>最大的设计演进是：Day 3 的「玩家主动触发」变成了 Day 4 的「敌人主动判断」，这是从「玩家是主体」到「敌人是主体」的设计思路转变。</p>]]></content:encoded>
+    </item>
+    <item>
       <title>ARPG 学习日志 Day 3：虚拟相机与敌人的初级 AI</title>
       <link>https://daydaydream000.github.io/post/arpg-day3-camera-enemy.html</link>
       <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day3-camera-enemy.html</guid>

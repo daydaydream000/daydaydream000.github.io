@@ -1,0 +1,201 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" font-family="ui-sans-serif, system-ui, sans-serif">
+  <defs>
+    <!-- 背景 -->
+    <linearGradient id="d4-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1e2e"/>
+      <stop offset="100%" stop-color="#151a2a"/>
+    </linearGradient>
+    <!-- 地面 -->
+    <linearGradient id="d4-grass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3d6b35"/>
+      <stop offset="100%" stop-color="#2d5028"/>
+    </linearGradient>
+    <!-- 检测圆 -->
+    <radialGradient id="d4-detect" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4a8ad4" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#4a8ad4" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 攻击圆 -->
+    <radialGradient id="d4-attack" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e05030" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#e05030" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 箭头 -->
+    <marker id="d4-arr" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#5a8ab0" opacity="0.8"/>
+    </marker>
+    <marker id="d4-arr2" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#e05030" opacity="0.9"/>
+    </marker>
+    <marker id="d4-arr3" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+      <polygon points="0 0, 7 2.5, 0 5" fill="#6aba50" opacity="0.9"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="420" fill="url(#d4-bg)"/>
+
+  <!-- ======== 标题 ======== -->
+  <text x="600" y="34" font-size="18" font-weight="700" fill="#6a9ac8" text-anchor="middle">ARPG 学习日志 Day 4 · 敌人主动感知与攻击系统</text>
+  <text x="600" y="52" font-size="12" fill="#4a6a88" text-anchor="middle">OverlapCircleAll 主动检测 · Attack_Cooldown · Attack() 攻击判定</text>
+
+  <!-- ======== 左侧：OverlapCircleAll 检测示意 ======== -->
+  <!-- 标签 -->
+  <text x="175" y="74" font-size="14" font-weight="600" fill="#4a8ad4" text-anchor="middle">OverlapCircleAll 主动感知</text>
+
+  <!-- 敌人 + 检测圆 -->
+  <circle cx="175" cy="178" r="80" fill="url(#d4-detect)" stroke="#4a8ad4" stroke-width="2"
+          stroke-dasharray="7 5" opacity="0.7"/>
+  <!-- detectionPoint 锚点 -->
+  <circle cx="175" cy="165" r="5" fill="#4a8ad4" opacity="0.8"/>
+  <line x1="175" y1="170" x2="175" y2="185" stroke="#4a8ad4" stroke-width="2" opacity="0.6"/>
+
+  <!-- 敌人 Torch（朝左） -->
+  <rect x="155" y="162" width="24" height="32" rx="8" fill="#d07828"/>
+  <circle cx="167" cy="169" r="7" fill="#e89040"/>
+  <ellipse cx="152" cy="152" rx="5" ry="9" fill="#f0c030"/>
+  <ellipse cx="152" cy="149" rx="3" ry="6" fill="#f8e060"/>
+  <rect x="149" y="158" width="5" height="18" rx="2" fill="#8b5a2b"/>
+  <text x="167" y="202" font-size="10" fill="#d09050" text-anchor="middle">Enemy</text>
+
+  <!-- 玩家在检测圆内 -->
+  <rect x="234" y="172" width="18" height="24" rx="6" fill="#5ba85a"/>
+  <circle cx="243" cy="179" r="5" fill="#7fc87f"/>
+  <text x="243" y="204" font-size="10" fill="#5ba85a" text-anchor="middle">Player</text>
+
+  <!-- 标注：检测半径 -->
+  <line x1="175" y1="178" x2="255" y2="178" stroke="#4a8ad4" stroke-width="1.5"
+        stroke-dasharray="4 4" opacity="0.6"/>
+  <line x1="255" y1="173" x2="255" y2="183" stroke="#4a8ad4" stroke-width="1.5" opacity="0.6"/>
+  <text x="215" y="173" font-size="11" fill="#4a8ad4" opacity="0.8">playerDetectRange=5</text>
+
+  <!-- LayerMask 说明 -->
+  <rect x="40" y="222" width="270" height="78" rx="6" fill="#1e2d40" opacity="0.8"/>
+  <text x="175" y="244" font-size="12" font-weight="600" fill="#4a8ad4" text-anchor="middle">关键参数</text>
+  <text x="55" y="264" font-size="11" fill="#7090b0">  detectionPoint   Transform 锚点位置</text>
+  <text x="55" y="280" font-size="11" fill="#7090b0">  playerDetectRange  5 单位半径</text>
+  <text x="55" y="296" font-size="11" fill="#7090b0">  playerLayer       LayerMask 过滤</text>
+
+  <!-- OnDrawGizmosSelected 说明 -->
+  <rect x="40" y="308" width="270" height="40" rx="6" fill="#1e2d40" opacity="0.8"/>
+  <text x="175" y="329" font-size="12" font-weight="600" fill="#c8a030" text-anchor="middle">OnDrawGizmosSelected 编辑器可见</text>
+  <text x="55" y="342" font-size="11" fill="#a08020">  Scene 视图中黄色线圈显示检测范围</text>
+
+  <!-- ======== 中间分隔线 ======== -->
+  <line x1="390" y1="65" x2="390" y2="390" stroke="#2a3a50" stroke-width="1.5" stroke-dasharray="8 6" opacity="0.5"/>
+  <line x1="790" y1="65" x2="790" y2="390" stroke="#2a3a50" stroke-width="1.5" stroke-dasharray="8 6" opacity="0.5"/>
+
+  <!-- ======== 中间：状态机 ======== -->
+  <text x="590" y="74" font-size="14" font-weight="600" fill="#9ab0c0" text-anchor="middle">四状态机 · CheckForPlayer 每帧决策</text>
+
+  <!-- 地面 -->
+  <rect x="400" y="195" width="400" height="40" rx="4" fill="url(#d4-grass)"/>
+  <path d="M410,195 q15,-5 30,0 q15,5 30,0 q15,-5 30,0 q15,5 30,0 q15,-5 30,0 q15,5 30,0 q15,-5 30,0 q15,5 30,0 q15,-5 30,0 q15,5 30,0 q15,-5 30,0 q15,5 30,0 q15,-5 30,0"
+        stroke="#6db860" stroke-width="2" fill="none" opacity="0.5"/>
+
+  <!-- 敌人 + Attack 攻击圆 -->
+  <circle cx="590" cy="152" r="55" fill="url(#d4-attack)" stroke="#e05030" stroke-width="2"
+          stroke-dasharray="5 4" opacity="0.6"/>
+  <rect x="570" y="136" width="22" height="30" rx="7" fill="#d07828"/>
+  <circle cx="581" cy="143" r="6" fill="#e89040"/>
+  <ellipse cx="567" cy="126" rx="4" ry="8" fill="#f0c030"/>
+  <ellipse cx="567" cy="123" rx="3" ry="5" fill="#f8e060"/>
+  <rect x="564" y="132" width="5" height="16" rx="2" fill="#8b5a2b"/>
+
+  <!-- 玩家 -->
+  <rect x="634" y="144" width="16" height="22" rx="5" fill="#5ba85a"/>
+  <circle cx="642" cy="151" r="5" fill="#7fc87f"/>
+
+  <!-- attackRange 标注 -->
+  <line x1="592" y1="155" x2="630" y2="155" stroke="#e05030" stroke-width="1.5"
+        stroke-dasharray="3 3" opacity="0.7"/>
+  <text x="611" y="150" font-size="10" fill="#e05030" opacity="0.8">attackRange</text>
+
+  <!-- 状态节点 -->
+  <!-- Idle -->
+  <rect x="405" y="260" width="88" height="50" rx="8"
+        fill="#1e2d40" stroke="#5a8ab0" stroke-width="2"/>
+  <text x="449" y="281" font-size="13" font-weight="600" fill="#7ab0d0" text-anchor="middle">Idle</text>
+  <text x="449" y="298" font-size="10" fill="#4a7a98" text-anchor="middle">原地等待</text>
+
+  <!-- Chasing -->
+  <rect x="525" y="260" width="88" height="50" rx="8"
+        fill="#1e3020" stroke="#6aba50" stroke-width="2"/>
+  <text x="569" y="281" font-size="13" font-weight="600" fill="#8ad870" text-anchor="middle">Chasing</text>
+  <text x="569" y="298" font-size="10" fill="#5a9840" text-anchor="middle">追击玩家</text>
+
+  <!-- Attacking -->
+  <rect x="645" y="260" width="88" height="50" rx="8"
+        fill="#2e1e18" stroke="#e05030" stroke-width="2"/>
+  <text x="689" y="281" font-size="13" font-weight="600" fill="#e87850" text-anchor="middle">Attacking</text>
+  <text x="689" y="298" font-size="10" fill="#a04028" text-anchor="middle">攻击动画</text>
+
+  <!-- CheckForPlayer 标注 -->
+  <rect x="530" y="325" width="120" height="28" rx="5" fill="#1a2840" opacity="0.8"/>
+  <text x="590" y="344" font-size="11" fill="#8ab0d0" text-anchor="middle">CheckForPlayer()</text>
+
+  <!-- 转换箭头 -->
+  <!-- Idle → Chasing -->
+  <path d="M495,285 L523,285" stroke="#6aba50" stroke-width="2" fill="none"
+        marker-end="url(#d4-arr3)" opacity="0.8"/>
+  <text x="509" y="279" font-size="10" fill="#6aba50" opacity="0.8" text-anchor="middle">检测到玩家</text>
+
+  <!-- Chasing → Attacking -->
+  <path d="M615,285 L643,285" stroke="#e05030" stroke-width="2" fill="none"
+        marker-end="url(#d4-arr2)" opacity="0.8"/>
+  <text x="629" y="279" font-size="10" fill="#e05030" opacity="0.8" text-anchor="middle">进入攻击范围</text>
+
+  <!-- Attacking → Idle (动画结束后) -->
+  <path d="M735,285 L760,285 L760,225 L770,225" stroke="#5a8ab0" stroke-width="1.5"
+        fill="none" stroke-dasharray="4 4" opacity="0.5"/>
+  <text x="750" y="254" font-size="10" fill="#5a8ab0" opacity="0.6">冷却中</text>
+
+  <!-- Cooldown 标注 -->
+  <rect x="735" y="248" width="110" height="26" rx="5" fill="#2a1a10" opacity="0.7"/>
+  <text x="790" y="266" font-size="11" fill="#e08040" text-anchor="middle">Cooldown=2s</text>
+
+  <!-- ======== 右侧：Attack() 方法 ======== -->
+  <text x="990" y="74" font-size="14" font-weight="600" fill="#e06040" text-anchor="middle">Enemy_Combat.Attack()</text>
+
+  <!-- attackPoint + weaponRange -->
+  <circle cx="990" cy="168" r="60" fill="url(#d4-attack)" stroke="#e05030" stroke-width="2"
+          stroke-dasharray="5 4" opacity="0.6"/>
+  <!-- 敌人 -->
+  <rect x="972" y="152" width="20" height="28" rx="7" fill="#d07828"/>
+  <circle cx="982" cy="159" r="6" fill="#e89040"/>
+  <ellipse cx="969" cy="141" rx="4" ry="7" fill="#f0c030"/>
+  <ellipse cx="969" cy="138" rx="2.5" ry="5" fill="#f8e060"/>
+  <!-- attackPoint 锚点 -->
+  <circle cx="1042" cy="168" r="5" fill="#e05030"/>
+  <line x1="992" y1="162" x2="1037" y2="166" stroke="#e05030" stroke-width="2" stroke-dasharray="4 3" opacity="0.7"/>
+  <text x="1015" y="156" font-size="10" fill="#e06040" opacity="0.8">attackPoint</text>
+
+  <!-- 玩家 -->
+  <rect x="1044" y="155" width="16" height="22" rx="5" fill="#5ba85a"/>
+  <circle cx="1052" cy="162" r="5" fill="#7fc87f"/>
+
+  <!-- weaponRange 标注 -->
+  <line x1="990" y1="172" x2="1042" y2="172" stroke="#e05030" stroke-width="1.5"
+        stroke-dasharray="3 3" opacity="0.7"/>
+  <text x="1016" y="168" font-size="10" fill="#e05030" opacity="0.8">weaponRange</text>
+
+  <!-- 代码块 -->
+  <rect x="870" y="215" width="300" height="175" rx="8" fill="#0e1420" opacity="0.85"/>
+  <text x="890" y="240" font-size="12" font-weight="600" fill="#e06040">Attack() 攻击判定</text>
+  <text x="888" y="260" font-size="11" fill="#8ab8d0">public void Attack() {</text>
+  <text x="900" y="277" font-size="11" fill="#7090b0">hits = OverlapCircleAll(</text>
+  <text x="908" y="292" font-size="10" fill="#6090a8">  attackPoint.pos,</text>
+  <text x="908" y="306" font-size="10" fill="#6090a8">  weaponRange, playerLayer</text>
+  <text x="900" y="320" font-size="11" fill="#7090b0">);</text>
+  <text x="900" y="335" font-size="11" fill="#c0d0e0">if(hits[0] != null)</text>
+  <text x="908" y="350" font-size="11" fill="#e0a060">  ChangeHealth(-damage);</text>
+  <text x="900" y="365" font-size="11" fill="#7090b0">  hits[0].GetComponent</text>
+  <text x="908" y="380" font-size="10" fill="#6090a8">  &lt;PlayerHealth&gt;()</text>
+  <text x="888" y="393" font-size="11" fill="#8ab8d0">}</text>
+
+  <!-- 动画事件标注 -->
+  <rect x="870" y="398" width="300" height="22" rx="5" fill="#2a1a10" opacity="0.8"/>
+  <text x="1020" y="414" font-size="11" fill="#e08040" text-anchor="middle">由动画事件 Attack_Right 第 N 帧触发</text>
+
+  <!-- ======== 底部 ======== -->
+  <text x="600" y="412" font-size="11" fill="#3a5060" text-anchor="middle">Day 4 · 主动感知 + Attack_Cooldown + Attack() 攻击判定 · ARPGbegin 工程</text>
+</svg>
