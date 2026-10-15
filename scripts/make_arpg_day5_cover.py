@@ -1,0 +1,160 @@
+"""
+Day 5 封面 SVG：玩家挥剑 + 武器判定 + 敌人扣血 + 击退 + 协程恢复
+"""
+import os
+import subprocess
+
+SVG = r"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#bce0ff"/>
+      <stop offset="1" stop-color="#e8f5ff"/>
+    </linearGradient>
+    <linearGradient id="grass" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#9edb6c"/>
+      <stop offset="1" stop-color="#5fa841"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect x="0" y="0" width="1200" height="400" fill="url(#sky)"/>
+  <path d="M0,290 L1200,290 L1200,400 L0,400 Z" fill="url(#grass)"/>
+  <!-- 远山 -->
+  <path d="M0,290 L200,180 L400,250 L600,170 L800,240 L1000,180 L1200,260 L1200,290 Z" fill="#7bb661" opacity="0.55"/>
+
+  <!-- 标题 -->
+  <text x="600" y="48" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="26" font-weight="700" fill="#1a3d28">ARPG 学习日志 Day 5：玩家挥剑与敌人的受击反馈</text>
+  <text x="600" y="76" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="14" fill="#3a4a3a">Player_Combat · Enemy_Health · Knockback 协程</text>
+
+  <!-- ============== 左：玩家挥剑 ============== -->
+  <g transform="translate(140, 220)">
+    <!-- 玩家蓝衣骑士 -->
+    <g transform="translate(0, 0)">
+      <!-- 身体 -->
+      <ellipse cx="0" cy="35" rx="22" ry="12" fill="#3b3b3b" opacity="0.25"/>
+      <rect x="-12" y="-20" width="24" height="34" fill="#3a6da3" rx="2"/>
+      <rect x="-14" y="10" width="28" height="14" fill="#4a4a4a" rx="2"/>
+      <rect x="-12" y="22" width="8" height="14" fill="#3a3a3a"/>
+      <rect x="4" y="22" width="8" height="14" fill="#3a3a3a"/>
+      <!-- 头 -->
+      <rect x="-10" y="-36" width="20" height="18" fill="#d8b78b" rx="2"/>
+      <rect x="-12" y="-40" width="24" height="6" fill="#1f4a7a" rx="1"/>
+      <path d="M-2,-44 Q4,-58 14,-50" fill="none" stroke="#4ba3c7" stroke-width="3"/>
+      <ellipse cx="-4" cy="-30" rx="2" ry="2" fill="#1a1a1a"/>
+    </g>
+    <!-- 挥出的剑 -->
+    <g transform="translate(28, -8) rotate(-30)">
+      <rect x="0" y="-2" width="50" height="4" fill="#cfd6dc" rx="1"/>
+      <rect x="50" y="-3" width="3" height="6" fill="#7a5230"/>
+      <rect x="53" y="-1.5" width="14" height="3" fill="#5a3a20"/>
+    </g>
+    <!-- 武器判定圆 -->
+    <circle cx="60" cy="-5" r="40" fill="none" stroke="#e23a3a" stroke-width="2" stroke-dasharray="4 3"/>
+    <text x="60" y="-50" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#c43131" font-weight="600">OverlapCircleAll</text>
+    <text x="60" y="-36" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#c43131">attackPoint · range=1</text>
+    <!-- 标签 -->
+    <text x="0" y="68" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#1a3d28">玩家挥剑</text>
+    <text x="0" y="86" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a3a">Attack() → Animator 事件</text>
+  </g>
+
+  <!-- 箭头：挥剑 → 扣血 -->
+  <g stroke="#1a3d28" stroke-width="2" fill="none">
+    <path d="M280,220 L380,220" stroke-dasharray="5 4"/>
+    <path d="M380,220 L370,214 M380,220 L370,226" stroke-linecap="round"/>
+  </g>
+  <text x="330" y="206" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12" fill="#1a3d28" font-weight="600">DealDamage</text>
+
+  <!-- ============== 中：敌人扣血 ============== -->
+  <g transform="translate(490, 220)">
+    <!-- 敌人火把哥布林 -->
+    <ellipse cx="0" cy="38" rx="22" ry="12" fill="#3b3b3b" opacity="0.25"/>
+    <rect x="-14" y="-20" width="28" height="34" fill="#a55a3a" rx="2"/>
+    <rect x="-16" y="10" width="32" height="14" fill="#5a4030" rx="2"/>
+    <rect x="-12" y="22" width="8" height="14" fill="#3a2a20"/>
+    <rect x="4" y="22" width="8" height="14" fill="#3a2a20"/>
+    <rect x="-12" y="-36" width="24" height="18" fill="#c9c97a" rx="2"/>
+    <rect x="-14" y="-40" width="28" height="6" fill="#7a8a3a" rx="1"/>
+    <ellipse cx="-4" cy="-30" rx="2" ry="2" fill="#1a1a1a"/>
+    <ellipse cx="6" cy="-30" rx="2" ry="2" fill="#1a1a1a"/>
+    <!-- 扣血飘字 -->
+    <g transform="translate(15, -50)">
+      <text font-family="ui-sans-serif, sans-serif" font-size="24" font-weight="800" fill="#e23a3a" stroke="#fff" stroke-width="3" paint-order="stroke">-1</text>
+    </g>
+    <!-- 血量条 -->
+    <g transform="translate(-20, -78)">
+      <rect x="0" y="0" width="40" height="6" fill="#1a1a1a" rx="2"/>
+      <rect x="1" y="1" width="26" height="4" fill="#e23a3a" rx="1"/>
+      <text x="20" y="-4" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#1a1a1a">HP 2/3</text>
+    </g>
+    <!-- ChangeHealth 标签 -->
+    <text x="0" y="68" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#1a3d28">敌人扣血</text>
+    <text x="0" y="86" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a3a">Enemy_Health.ChangeHealth(-1)</text>
+  </g>
+
+  <!-- 箭头：扣血 → 敌人回击 -->
+  <g stroke="#1a3d28" stroke-width="2" fill="none">
+    <path d="M630,220 L730,220" stroke-dasharray="5 4"/>
+    <path d="M730,220 L720,214 M730,220 L720,226" stroke-linecap="round"/>
+  </g>
+  <text x="680" y="206" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12" fill="#1a3d28" font-weight="600">回击</text>
+
+  <!-- ============== 右：击退 + 协程 ============== -->
+  <g transform="translate(900, 220)">
+    <!-- 敌人攻击姿势 -->
+    <ellipse cx="0" cy="38" rx="22" ry="12" fill="#3b3b3b" opacity="0.25"/>
+    <rect x="-14" y="-20" width="28" height="34" fill="#a55a3a" rx="2"/>
+    <rect x="-16" y="10" width="32" height="14" fill="#5a4030" rx="2"/>
+    <rect x="-12" y="22" width="8" height="14" fill="#3a2a20"/>
+    <rect x="4" y="22" width="8" height="14" fill="#3a2a20"/>
+    <rect x="-12" y="-36" width="24" height="18" fill="#c9c97a" rx="2"/>
+    <ellipse cx="-4" cy="-30" rx="2" ry="2" fill="#1a1a1a"/>
+    <ellipse cx="6" cy="-30" rx="2" ry="2" fill="#1a1a1a"/>
+    <!-- 击退方向箭头 -->
+    <g stroke="#e23a3a" stroke-width="3" fill="none" stroke-linecap="round">
+      <path d="M-10,-12 L-50,-22"/>
+      <path d="M-50,-22 L-40,-26 M-50,-22 L-44,-16"/>
+    </g>
+    <text x="-30" y="-32" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#c43131" font-weight="600">knockback</text>
+    <text x="-30" y="-20" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#c43131">force · stunTime</text>
+    <!-- 玩家被击退（半透明） -->
+    <g transform="translate(-80, 0)" opacity="0.5">
+      <ellipse cx="0" cy="35" rx="22" ry="12" fill="#3b3b3b" opacity="0.25"/>
+      <rect x="-12" y="-20" width="24" height="34" fill="#3a6da3" rx="2"/>
+      <rect x="-12" y="-36" width="20" height="18" fill="#d8b78b" rx="2"/>
+    </g>
+    <!-- 协程 -->
+    <g transform="translate(20, -60)">
+      <rect x="0" y="0" width="120" height="34" fill="#fff8e1" stroke="#b48a2a" rx="4"/>
+      <text x="60" y="14" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" font-weight="700" fill="#5a3a20">Coroutine</text>
+      <text x="60" y="27" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#5a3a20">WaitForSeconds(stunTime)</text>
+    </g>
+    <text x="0" y="68" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#1a3d28">击退 + 协程</text>
+    <text x="0" y="86" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a3a">isKnockback → 恢复控制</text>
+  </g>
+
+  <!-- 底部时序 -->
+  <g transform="translate(0, 340)">
+    <rect x="60" y="0" width="1080" height="40" fill="#1a3d28" rx="4" opacity="0.06"/>
+    <text x="600" y="20" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">Slash → Attack() → 动画事件 DealDamage → ChangeHealth(-1) → 敌人回击 → Knockback + 协程 → 0.5s 后恢复</text>
+    <text x="600" y="36" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#3a4a3a" opacity="0.7">一整套「打→被打→恢复」的循环在 Player_Combat 53 行 / Enemy_Health 25 行 / Knockback 协程 24 行里</text>
+  </g>
+</svg>
+"""
+
+out = r'D:\1\mypro\daydaydream000.github.io\images\arpg-day5-cover.svg'
+with open(out, 'w', encoding='utf-8') as f:
+    f.write(SVG)
+print(f'Written: {out}')
+
+# 同时复制到 docs/
+import shutil
+shutil.copy(out, out.replace('\\images\\', '\\docs\\assets\\images\\'))
+
+# 用 Edge 截图
+png = r'C:\Users\lishen\AppData\Local\Temp\ddopt\day5-cover.png'
+ch = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+subprocess.run([ch, '--headless', '--disable-gpu', '--hide-scrollbars',
+                f'--screenshot={png}', '--window-size=1200,400',
+                f'file:///{out.replace(chr(92), "/")}'],
+               capture_output=True)
+print(f'Screenshot: {png}')

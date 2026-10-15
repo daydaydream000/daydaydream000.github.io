@@ -26,6 +26,103 @@ git commit -m "post: 新文章"
 git push</code></pre></div><p>目录分工也很直白：</p><div class="table-wrap"><table><thead><tr><th>路径</th><th>用途</th></tr></thead><tbody><tr><td><code>posts/</code></td><td>文章源文件（Markdown）</td></tr><tr><td><code>pages/</code></td><td>独立页面，比如「关于」</td></tr><tr><td><code>images/</code></td><td>文章中引用的图片，构建时自动复制</td></tr><tr><td><code>assets/</code></td><td>手写的 CSS 与 JavaScript</td></tr><tr><td><code>templates/</code></td><td>页面模板</td></tr><tr><td><code>docs/</code></td><td>生成结果，也是 Pages 的发布目录</td></tr></tbody></table></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>生成器只用 Python 标准库，没有第三方依赖；换台机器 clone 下来就能跑。</p></div><h2 id="写在最后">写在最后</h2><blockquote><p>种一棵树最好的时间是十年前，其次是现在。</p></blockquote><p>开始记录吧，欢迎常来坐坐。</p>]]></content:encoded>
     </item>
     <item>
+      <title>ARPG 学习日志 Day 5：玩家挥剑与敌人的受击反馈</title>
+      <link>https://daydaydream000.github.io/post/arpg-day5-player-combat.html</link>
+      <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day5-player-combat.html</guid>
+      <pubDate>Thu, 15 Oct 2026 23:59:00 +0000</pubDate>
+      <author>daydaydream000@users.noreply.github.com (DayDayDream)</author>
+      <category>Unity</category><category>ARPG</category><category>游戏开发</category><category>战斗系统</category><category>击退</category><category>状态机</category>
+      <description>给玩家加 Player_Combat（OverlapCircleAll 武器判定 + cooldown 冷却），给敌人加 Enemy_Health（血量 + ChangeHealth），把 Enemy_Combat 升级成「攻击 + 击退 + 眩晕」，并用协程让 PlayerMovement.Knockback 恢复控制权。记录 4 个新踩的坑：input 与 cooldown 错位、isKnockback 没归零的边角、多 enemy 命中只取第一个、协程在 GameObject Destroy 后继续跑。</description>
+      <content:encoded><![CDATA[<h2 id="一句话说清这天的内容">一句话说清这天的内容</h2><p>把「敌人能打我」补成完整的「我也能打敌人，而且真有反馈」：玩家按 Slash 挥剑 → 武器范围检测 → 命中扣血；敌人被攻击后回击玩家 → 玩家被击退 + 短暂眩晕、不能操作 → 协程倒数恢复控制。</p><hr><h2 id="四个脚本的关系">四个脚本的关系</h2><p>Day 4 末尾敌人能主动追、能打了，但玩家这边完全是被挨打的。今天把玩家武装起来：</p><div class="table-wrap"><table><thead><tr><th>脚本</th><th>角色</th><th>行数</th><th>关键能力</th></tr></thead><tbody><tr><td><code>PlayerMovement</code></td><td>改</td><td>42→66</td><td>+ <code>isKnockback</code> 标志、<code>Knockback()</code>、<code>KnockbackCounter()</code> 协程、Slash 输入</td></tr><tr><td><code>Player_Combat</code></td><td>新</td><td>53</td><td><code>Attack()</code> 冷却、<code>DealDamage()</code> 武器范围</td></tr><tr><td><code>Enemy_Health</code></td><td>新</td><td>25</td><td><code>currentHealth</code>/<code>maxHealth</code>、<code>ChangeHealth(int)</code></td></tr><tr><td><code>Enemy_Combat</code></td><td>改</td><td>16→37</td><td>攻击时调 <code>PlayerMovement.Knockback()</code>，注释掉 OnCollisionEnter 旧版</td></tr></tbody></table></div><p><strong>调用链</strong>（玩家打敌人）：<code>Slash 输入 → PlayerMovement → Player_Combat.Attack() → anim.SetBool("isAttacking", true) → 动画事件触发 DealDamage() → OverlapCircleAll → Enemy_Health.ChangeHealth(-1)</code></p><p><strong>调用链</strong>（敌人打玩家）：<code>Enemy_Combat.Attack() → OverlapCircleAll → PlayerHealth.ChangeHealth + PlayerMovement.Knockback(transform, force, stunTime) → 协程倒数恢复</code></p><hr><h2 id="玩家挥剑player_combat-53-行">玩家挥剑：Player_Combat 53 行</h2><p>三个 public 字段是 Inspector 里挂的：</p><ul><li><code>attackPoint</code>：武器根部的 Transform（一般是子物体，跟随挥剑动画移动）</li><li><code>weaponRange</code>：判定半径，Inspector 拖动调</li><li><code>enemyLayer</code>：LayerMask，只检测这一层（避免误伤其他 collider）</li><li><code>damage</code>：单次伤害</li><li><code>cooldown = 2f</code>：攻击间隔</li></ul><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public Animator anim;
+public float cooldown = 2f;
+private float timer;
+
+private void Update()
+{
+    if (timer &gt; 0) timer -= Time.deltaTime;
+}
+
+public void Attack()
+{
+    if (timer &lt;= 0)
+    {
+        anim.SetBool("isAttacking", true);
+        timer = cooldown;
+    }
+}</code></pre></div><h3 id="设计动画-判定的解耦">设计：动画 + 判定的解耦</h3><p><code>Attack()</code> 只做「开始挥剑」的事：设动画 bool + 重置 cooldown。<strong>真正的伤害判定不在 <code>Attack()</code> 里</strong>，而在 <code>DealDamage()</code>，由 <strong>Animator 的事件</strong> 在挥剑动画到某一帧时调用。</p><p>这是 ARPG / 格斗游戏的标准做法：动画决定「什么时候砍到」，代码决定「砍到谁、扣多少血」。如果以后改动画师调了攻击节奏，只需要重做动画事件，不用动脚本。</p><img src="https://daydaydream000.github.io/assets/images/arpg-day5-anim-events.svg" alt="Animator 事件时间轴" loading="lazy" decoding="async"><h3 id="实际判定overlapcircleall-跟前两篇一样">实际判定：OverlapCircleAll 跟前两篇一样</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void DealDamage()
+{
+    Collider2D[] enemies = Physics2D.OverlapCircleAll(
+        attackPoint.position, weaponRange, enemyLayer
+    );
+    if (enemies.Length &gt; 0)
+    {
+        enemies[0].GetComponent&lt;Enemy_Health&gt;().ChangeHealth(-damage);
+    }
+}</code></pre></div><p>跟 Day 4 敌人攻击、Day 3 主动感知用的是同一个 API（<code>Physics2D.OverlapCircleAll</code>），区别只在：</p><ul><li>中心：<code>attackPoint</code>（跟着剑走，不是敌人身体中心）</li><li>范围：<code>weaponRange</code>（1 个单位，敌人攻击是 0.5）</li><li>过滤：<code>enemyLayer</code>（敌人攻击过滤 <code>playerLayer</code>）</li></ul><h3 id="坑-1enemies0-只取第一个">💡 坑 1：enemies[0] 只取第一个</h3><p>当前实现只打 <code>enemies[0]</code>。如果一次挥剑范围里有两个敌人（贴脸排排站），第二个没事。</p><p><strong>为什么这么写</strong>：教程先做一打一，多目标以后用 <code>for</code> 循环遍历。完整版会写成：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">foreach (var e in enemies) e.GetComponent&lt;Enemy_Health&gt;().ChangeHealth(-damage);</code></pre></div><p>但那样写前要先想清楚：会不会一击秒两个算不算「连击」？需不需要「只打最近一个」？这是设计问题不是技术问题。</p><h3 id="收尾">收尾</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void FinishAttacking()
+{
+    anim.SetBool("isAttacking", false);
+}</code></pre></div><p><code>FinishAttacking()</code> 由 Animator 事件在挥剑动画的最后一帧调用，把 bool 设回 false。<strong>关键</strong>：<code>Attack()</code> 不设回 false，因为冷却 2 秒期间角色还在做收招动作。结束判定只听动画事件。</p><hr><h2 id="敌人血量enemy_health-25-行">敌人血量：Enemy_Health 25 行</h2><p>比想象中短——因为血量这事的核心逻辑就是「<code>+=</code> 一个数，然后判断 &lt;= 0」。</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public int currentHealth;
+public int maxHealth;
+
+private void Start()
+{
+    currentHealth = maxHealth;
+}
+
+public void ChangeHealth(int amount)
+{
+    currentHealth += amount;
+    if (currentHealth &gt; maxHealth) currentHealth = maxHealth;
+    if (currentHealth &lt;= 0)
+    {
+        Destroy(gameObject);
+    }
+}</code></pre></div><h3 id="设计changehealth-接正负数">设计：ChangeHealth 接正负数</h3><p><code>ChangeHealth(-damage)</code> 扣血、<code>ChangeHealth(+potion)</code> 加血——<strong>一个方法搞定两种操作</strong>。比拆成 <code>TakeDamage()</code> 和 <code>Heal()</code> 两个方法少了一半调用点，调用方也不必记哪个是哪个。</p><h3 id="坑-2destroygameobject-是瞬间的">💡 坑 2：Destroy(gameObject) 是瞬间的</h3><p><code>Destroy(gameObject)</code> 不是「死亡动画播完再消失」，是「这一帧就从场景里移除」。后果：</p><ul><li>正在播放的死亡动画会突然中断</li><li>协程、<code>OnDestroy</code> 之类的清理逻辑要小心</li></ul><p>现在还没死亡动画，所以看不出问题。下一天加 <code>Dying</code> 状态时就要做：先播完动画再 <code>Destroy</code>。</p><h3 id="坑-3currenthealth-没设初始值">💡 坑 3：currentHealth 没设初始值</h3><p><code>maxHealth</code> 在 Inspector 里设了，<code>currentHealth</code> 没设。<code>Start()</code> 里会 <code>currentHealth = maxHealth</code>，所以运行起来没问题。<strong>但是</strong>：在 <code>Start()</code> 跑之前的那一帧（比如 <code>Awake</code> 阶段），<code>currentHealth</code> 是 0。</p><p>如果哪个脚本在 <code>Awake</code> 里调用了 <code>ChangeHealth(0)</code>（测一下边界），会立刻 <code>currentHealth &lt;= 0</code> → Destroy 自己。概率极低但理论上会触发。生产代码常加一行兜底：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public int currentHealth = 1;  // 兜底，防止 Start 之前被误杀</code></pre></div><hr><h2 id="击退-眩晕playermovement-多了-24-行">击退 + 眩晕：PlayerMovement 多了 24 行</h2><p>这是 Day 5 最值得讲的「状态切换」代码：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private bool isKnockback;  // 旧代码里没有
+
+private void Update()
+{
+    if (Input.GetButtonDown("Slash"))
+    {
+        player_Combat.Attack();
+    }
+}
+
+void FixedUpdate()
+{
+    if (isKnockback == false)  // 关键：被击退时跳过整段移动
+    {
+        float horizontal = Input.GetAxis("Horizontal");
+        // ... 老的移动代码
+        rb.velocity = new Vector2(horizontal, vertical) * speed;
+    }
+}
+
+public void Knockback(Transform enemy, float force, float stunTime)
+{
+    isKnockback = true;
+    Vector2 direction = (transform.position - enemy.position).normalized;
+    rb.velocity = direction * force;
+    StartCoroutine(KnockbackCounter(stunTime));
+}
+
+IEnumerator KnockbackCounter(float stunTime)
+{
+    yield return new WaitForSeconds(stunTime);
+    rb.velocity = Vector2.zero;
+    isKnockback = false;
+}</code></pre></div><h3 id="状态切换bool-标志-vs-状态机">状态切换：bool 标志 vs 状态机</h3><p>之前 Day 3 讨论过敌人用 enum 状态机（Idle / Chasing / Attacking），为什么玩家这里用一个简单 bool？</p><img src="https://daydaydream000.github.io/assets/images/arpg-day5-knockback.svg" alt="Knockback 时序" loading="lazy" decoding="async"><ul><li>玩家只有「正常」和「被击退」两种移动模式，bool 就够</li><li>敌人有 3+ 个状态互相跳转，enum + switch 更清晰</li><li><strong>能用简单结构就先用简单的</strong>，等不够用再升级</li></ul><h3 id="关键if-isknockback-false-守门">关键：if (isKnockback == false) 守门</h3><p>被击退的 0.5 秒里，玩家按 WASD 是不应该动的——但 Unity 不会自动帮你停。<strong>用 <code>FixedUpdate</code> 顶部的 <code>if</code> 把整段移动代码包起来</strong>，包括翻转、animator 参数、<code>rb.velocity</code> 赋值，全跳过。</p><p>只在协程结束后（<code>isKnockback = false</code>）才恢复控制权。</p><h3 id="knockbackcounter-协程">KnockbackCounter 协程</h3><p><code>WaitForSeconds(stunTime)</code> 是真实时间，不是帧数。<code>stunTime = 0.5</code> 就是 0.5 秒，跨帧稳定。</p><h3 id="坑-4协程在-gameobject-destroy-后继续跑">💡 坑 4：协程在 GameObject Destroy 后继续跑</h3><p><code>KnockbackCounter</code> 倒数完会执行 <code>rb.velocity = Vector2.zero</code>。但如果玩家在被击退期间被秒杀（比如敌人一下打 100 血），<code>gameObject</code> 被 <code>Destroy</code> 了——协程会怎样？</p><p>Unity 的协程在 GameObject 销毁时会<strong>自动停止</strong>，所以不会报错。但是 <code>StartCoroutine</code> 内部用的是 <code>IEnumerator</code>，如果你在编辑器里手动 stop coroutine 但 GameObject 没销毁，<strong>会留下半截协程</strong>。</p><p>生产代码里可以加保护：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">IEnumerator KnockbackCounter(float stunTime)
+{
+    yield return new WaitForSeconds(stunTime);
+    if (this == null) yield break;  // 防御 GameObject 已销毁
+    rb.velocity = Vector2.zero;
+    isKnockback = false;
+}</code></pre></div><p>（实际 Unity 的协程已经会处理，但显式判断让逻辑更清晰。）</p><hr><h2 id="武器判定可视化ondrawgizmosselected">武器判定可视化：OnDrawGizmosSelected</h2><p>两个脚本都有：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnDrawGizmosSelected()
+{
+    Gizmos.color = Color.red;
+    Gizmos.DrawWireSphere(attackPoint.position, weaponRange);
+}</code></pre></div><p><strong>只在 Inspector 选中本物体时</strong>才画。在场景视图里选中 Player 能看到一个红圈代表挥剑范围、选中 Enemy 能看到它的攻击范围。<strong>不选中就不画</strong>——避免在大型场景里画一堆 Gizmos 把场景视图搞糊。</p><hr><h2 id="整体设计思路">整体设计思路</h2><h3 id="1-一次完整战斗的时序">1. 一次完整战斗的时序</h3><p>玩家按 Slash → 1 帧后 <code>Attack()</code> 被调用 → 动画开始播 → 0.2 秒后（动画某一帧）<code>DealDamage()</code> 被事件触发 → 敌人扣 1 血（如果还活着）→ 敌人状态机切到 Chasing → 敌人靠近 → 敌人 Attack() → 玩家扣 1 血 + Knockback → 0.5 秒眩晕 → 玩家恢复控制</p><h3 id="2-状态机-vs-bool-标志的取舍">2. 状态机 vs bool 标志的取舍</h3><div class="table-wrap"><table><thead><tr><th></th><th>bool 标志</th><th>enum 状态机</th></tr></thead><tbody><tr><td>适用</td><td>2 种状态</td><td>3+ 种状态</td></tr><tr><td>调试</td><td>难看（看不到当前是哪个状态）</td><td>直观（<code>state == Chasing</code>）</td></tr><tr><td>扩展</td><td>加一个状态要加一个 bool</td><td>加一个值就行</td></tr><tr><td>互斥保证</td><td>手动维护</td><td>手动维护</td></tr></tbody></table></div><p>教程前期多用 bool 没问题，Day 3 敌人已经从 bool 升级到了 enum。今天玩家用 bool，因为只有 2 个状态。</p><h3 id="3-animator-事件比-update-检测更省">3. Animator 事件比 Update 检测更省</h3><p>如果用 <code>Update</code> 检测「动画播到 50% 就 DealDamage」，得手动算时间窗口。<strong>用 Animator 事件</strong>（在动画时间轴上点一下插一个回调）让美术自己控制攻击判定点，改动画不用动代码。</p><hr><h2 id="五个明天要补的洞">五个明天要补的洞</h2><ol><li><strong>玩家挥剑动画不转向</strong>：当前 <code>PlayerMovement</code> 的 Flip 逻辑在 <code>FixedUpdate</code>，而挥剑是 <code>Update</code> 触发的——左键挥剑瞬间面朝方向还是上次的。要让 <code>Player_Combat.Attack()</code> 触发时主动 Flip 一次。</li><li><strong>死亡没有动画</strong>：<code>Destroy(gameObject)</code> 一瞬间消失，没有「倒下」过渡。</li><li><strong>多敌人连击</strong>：<code>enemies[0]</code> 只取第一个，要加 <code>foreach</code>。</li><li><strong>击退方向锁死</strong>：<code>isKnockback</code> 期间角色朝向也锁了（因为 Flip 被 <code>if</code> 包含）。被击退时角色应该面朝敌人飞出去的方向。</li><li><strong>血量条</strong>：现在只能脑内算「还有几血」，玩家看不到自己或敌人的血量。要加 World Space Canvas 血条。</li></ol><hr><h2 id="一句话总结">一句话总结</h2><p>今天补完了「能打有反馈」的下半部分：<strong>Player_Combat 用 Animator 事件在动画峰值做 OverlapCircleAll</strong>，<strong>Enemy_Health 用 ChangeHealth(int) 一招吃正负数</strong>，<strong>PlayerMovement.Knockback + 协程</strong>把「被击中」做成一个明确的「失能期」。整套循环的输入、判定、反馈三件套都齐了。</p>]]></content:encoded>
+    </item>
+    <item>
       <title>ARPG 学习日志 Day 4：敌人主动感知与攻击系统</title>
       <link>https://daydaydream000.github.io/post/arpg-day4-enemy-attack.html</link>
       <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day4-enemy-attack.html</guid>
