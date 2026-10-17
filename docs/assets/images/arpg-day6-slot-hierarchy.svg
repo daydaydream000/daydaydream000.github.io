@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bgs" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef2f5"/>
+      <stop offset="1" stop-color="#dbe4ea"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgs)"/>
+
+  <text x="600" y="40" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a2a33">StatsSlot：一个可复用的面板槽</text>
+  <text x="600" y="62" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#2a3a44">预制体 = 九宫格底图 + 铺满父级的 TMP 子物体；面板用 GridLayoutGroup 来排它</text>
+
+  <!-- 左：层级树 -->
+  <g transform="translate(48, 92)">
+    <rect x="0" y="0" width="600" height="188" rx="5" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="16" y="26" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#1a3d28">场景层级（SampleScene）</text>
+
+    <text x="24" y="52" font-family="ui-monospace, monospace" font-size="12" fill="#1a3d28">StatsCanvas</text>
+    <text x="150" y="52" font-family="ui-monospace, monospace" font-size="10.5" fill="#5a3a20">Canvas · CanvasScaler(1920×1080) · GraphicRaycaster · CanvasGroup α=0</text>
+
+    <path d="M32,58 L32,72 L40,72" fill="none" stroke="#1a3d28" stroke-width="1.2"/>
+    <text x="48" y="76" font-family="ui-monospace, monospace" font-size="12" fill="#1a3d28">StatsPanel</text>
+    <text x="150" y="76" font-family="ui-monospace, monospace" font-size="10.5" fill="#c43131">← StatsUI 脚本挂在这里</text>
+
+    <path d="M56,82 L56,98 L64,98" fill="none" stroke="#1a3d28" stroke-width="1.2"/>
+    <text x="72" y="102" font-family="ui-monospace, monospace" font-size="12" fill="#1a3d28">Banner</text>
+    <text x="150" y="102" font-family="ui-monospace, monospace" font-size="10.5" fill="#5a3a20">标题底图（Image）</text>
+
+    <path d="M56,108 L56,124 L64,124" fill="none" stroke="#1a3d28" stroke-width="1.2"/>
+    <text x="72" y="128" font-family="ui-monospace, monospace" font-size="12" fill="#1a3d28">TextPanel</text>
+    <text x="170" y="128" font-family="ui-monospace, monospace" font-size="10.5" fill="#1a7a3a">GridLayoutGroup · cell 300×100</text>
+
+    <path d="M80,134 L80,150 L88,150" fill="none" stroke="#1a3d28" stroke-width="1.2"/>
+    <text x="96" y="154" font-family="ui-monospace, monospace" font-size="12" fill="#1a3d28">StatsSlot</text>
+    <text x="200" y="154" font-family="ui-monospace, monospace" font-size="10.5" fill="#5a3a20">预制体实例 · statsSlots[0]</text>
+
+    <text x="120" y="176" font-family="ui-monospace, monospace" font-size="11" fill="#5a3a20">├ Image（sliced 九宫格）　└ StarText（TMP，锚点拉伸铺满父级）</text>
+  </g>
+
+  <!-- 右：槽的外观 + 说明 -->
+  <g transform="translate(676, 92)">
+    <rect x="0" y="0" width="476" height="188" rx="5" fill="#1e2a22"/>
+    <text x="20" y="26" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#f0e0b8">运行时长这样</text>
+
+    <rect x="40" y="48" width="180" height="46" rx="4" fill="#3a5a44" stroke="#7fbf8f" stroke-dasharray="4 3"/>
+    <text x="130" y="77" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" fill="#ffffff">Damage: 1</text>
+
+    <rect x="256" y="48" width="180" height="46" rx="4" fill="#3a5a44" stroke="#7fbf8f" stroke-dasharray="4 3"/>
+    <text x="346" y="77" text-anchor="middle" font-family="ui-monospace, monospace" font-size="14" fill="#ffffff">Speed: 5</text>
+
+    <text x="40" y="118" font-family="ui-monospace, monospace" font-size="10.5" fill="#9fb8a4">底图 Image 用九宫格（Type=Sliced）</text>
+    <text x="40" y="136" font-family="ui-monospace, monospace" font-size="10.5" fill="#9fb8a4">文字由子物体 StarText 提供，脚本只改它的 text</text>
+    <text x="40" y="160" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8c870">占位文案 'Strenth: 00'（拼写错了，Start 后立刻被覆盖）</text>
+    <text x="40" y="178" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8a0a0">GetComponentInChildren&lt;TMP_Text&gt;() 取的就是这个子物体</text>
+  </g>
+
+  <!-- 底部坑 -->
+  <g transform="translate(0, 296)">
+    <rect x="48" y="0" width="1104" height="88" rx="5" fill="#ffffff" stroke="#c43131" stroke-opacity="0.6"/>
+    <text x="64" y="24" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#8a2a20">💡 预制体里的 RectTransform 会被 LayoutGroup 覆写</text>
+    <text x="64" y="46" font-family="ui-monospace, monospace" font-size="11.5" fill="#5a2a20">StatsSlot.prefab 存的是 AnchoredPosition(-72.83, 87.89) / SizeDelta(145.66, 37.889)</text>
+    <text x="64" y="66" font-family="ui-monospace, monospace" font-size="11.5" fill="#1a5a30">场景里这两个值被 GridLayoutGroup 改成了 0 —— 位置和尺寸由布局组算，不由预制体说了算</text>
+    <text x="64" y="84" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#3a2a20">所以「在预制体里把槽对齐好」是徒劳的，对齐要交给 TextPanel 的 GridLayoutGroup</text>
+  </g>
+</svg>

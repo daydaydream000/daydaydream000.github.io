@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bgf" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgf)"/>
+
+  <text x="600" y="38" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">数值的读取方式：从多份副本到单一数据源</text>
+  <text x="600" y="60" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">重构只做了一件事——把 public 字段的读取换成 StatsManger.Instance.xxx，调用点一行都没挪</text>
+
+  <!-- 重构前 -->
+  <g transform="translate(48, 84)">
+    <rect x="0" y="0" width="520" height="130" rx="5" fill="#ffffff" stroke="#c43131" stroke-opacity="0.5"/>
+    <text x="14" y="24" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#8a2a20">重构前：每个脚本自带一份</text>
+    <text x="14" y="50" font-family="ui-monospace, monospace" font-size="11.5" fill="#1a3d28">PlayerMovement</text>
+    <text x="506" y="50" text-anchor="end" font-family="ui-monospace, monospace" font-size="11.5" fill="#c43131">* speed</text>
+    <text x="14" y="76" font-family="ui-monospace, monospace" font-size="11.5" fill="#1a3d28">PlayerHealth</text>
+    <text x="506" y="76" text-anchor="end" font-family="ui-monospace, monospace" font-size="11.5" fill="#c43131">currentHealth</text>
+    <text x="14" y="102" font-family="ui-monospace, monospace" font-size="11.5" fill="#1a3d28">Player_Combat</text>
+    <text x="506" y="102" text-anchor="end" font-family="ui-monospace, monospace" font-size="11.5" fill="#c43131">damage / weaponRange</text>
+    <text x="14" y="122" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#8a2a20">3 份副本，改一处要记得同步另外几处</text>
+  </g>
+
+  <g stroke="#1a3d28" stroke-width="2" fill="none">
+    <path d="M572,150 L624,150" stroke-dasharray="5 4"/>
+    <path d="M624,150 L615,145 M624,150 L615,155" stroke-linecap="round"/>
+  </g>
+
+  <!-- 重构后 -->
+  <g transform="translate(632, 84)">
+    <rect x="0" y="0" width="520" height="130" rx="5" fill="#ffffff" stroke="#1a7a3a" stroke-opacity="0.55"/>
+    <text x="14" y="24" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#1a5a30">重构后：全部读同一个单例</text>
+    <text x="14" y="50" font-family="ui-monospace, monospace" font-size="11.5" fill="#1a3d28">PlayerMovement</text>
+    <text x="506" y="50" text-anchor="end" font-family="ui-monospace, monospace" font-size="11" fill="#1a7a3a">StatsManger.Instance.speed</text>
+    <text x="14" y="76" font-family="ui-monospace, monospace" font-size="11.5" fill="#1a3d28">PlayerHealth</text>
+    <text x="506" y="76" text-anchor="end" font-family="ui-monospace, monospace" font-size="11" fill="#1a7a3a">StatsManger.Instance.currentHealth</text>
+    <text x="14" y="102" font-family="ui-monospace, monospace" font-size="11.5" fill="#1a3d28">Player_Combat</text>
+    <text x="506" y="102" text-anchor="end" font-family="ui-monospace, monospace" font-size="11" fill="#1a7a3a">StatsManger.Instance.damage</text>
+    <text x="14" y="122" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#1a5a30">1 个数据源，UI 与战斗逻辑看到的是同一组数</text>
+  </g>
+
+  <!-- 对比小结 -->
+  <g transform="translate(48, 232)">
+    <rect x="0" y="0" width="12" height="12" rx="2" fill="#c43131"/>
+    <text x="20" y="11" font-family="ui-sans-serif, sans-serif" font-size="12" fill="#5a2a20">改一个数值：要在 3 个 Inspector 之间来回找，漏掉一个就「表里不一」</text>
+  </g>
+  <g transform="translate(632, 232)">
+    <rect x="0" y="0" width="12" height="12" rx="2" fill="#1a7a3a"/>
+    <text x="20" y="11" font-family="ui-sans-serif, sans-serif" font-size="12" fill="#1a5a30">改一个数值：只动 StatsManger 一处，所有引用自动生效</text>
+  </g>
+
+  <!-- 代码前后对照 -->
+  <g transform="translate(48, 262)">
+    <rect x="0" y="0" width="1104" height="118" rx="5" fill="#1e2a22"/>
+    <text x="16" y="24" font-family="ui-monospace, monospace" font-size="11.5" fill="#e8a0a0">// 重构前（PlayerMovement.cs）</text>
+    <text x="16" y="46" font-family="ui-monospace, monospace" font-size="12.5" fill="#e8f0e8">rb.velocity = new Vector2(horizontal, vertical) * speed;</text>
+    <text x="16" y="74" font-family="ui-monospace, monospace" font-size="11.5" fill="#9fd8a8">// 重构后（同一个调用点，只是取值来源变了）</text>
+    <text x="16" y="96" font-family="ui-monospace, monospace" font-size="12.5" fill="#e8f0e8">rb.velocity = new Vector2(horizontal, vertical) * StatsManger.Instance.speed;</text>
+    <text x="1088" y="24" text-anchor="end" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#7f9b86">变量名一个没改，只换了「去哪儿拿数」</text>
+  </g>
+</svg>

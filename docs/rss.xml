@@ -26,6 +26,114 @@ git commit -m "post: 新文章"
 git push</code></pre></div><p>目录分工也很直白：</p><div class="table-wrap"><table><thead><tr><th>路径</th><th>用途</th></tr></thead><tbody><tr><td><code>posts/</code></td><td>文章源文件（Markdown）</td></tr><tr><td><code>pages/</code></td><td>独立页面，比如「关于」</td></tr><tr><td><code>images/</code></td><td>文章中引用的图片，构建时自动复制</td></tr><tr><td><code>assets/</code></td><td>手写的 CSS 与 JavaScript</td></tr><tr><td><code>templates/</code></td><td>页面模板</td></tr><tr><td><code>docs/</code></td><td>生成结果，也是 Pages 的发布目录</td></tr></tbody></table></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>生成器只用 Python 标准库，没有第三方依赖；换台机器 clone 下来就能跑。</p></div><h2 id="写在最后">写在最后</h2><blockquote><p>种一棵树最好的时间是十年前，其次是现在。</p></blockquote><p>开始记录吧，欢迎常来坐坐。</p>]]></content:encoded>
     </item>
     <item>
+      <title>ARPG 学习日志 Day 6：属性系统重构与暂停式属性面板</title>
+      <link>https://daydaydream000.github.io/post/arpg-day6-stats-ui.html</link>
+      <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day6-stats-ui.html</guid>
+      <pubDate>Fri, 16 Oct 2026 23:59:00 +0000</pubDate>
+      <author>daydaydream000@users.noreply.github.com (DayDayDream)</author>
+      <category>Unity</category><category>ARPG</category><category>游戏开发</category><category>属性系统</category><category>单例</category><category>UI</category><category>时间缩放</category>
+      <description>把散在 PlayerMovement / PlayerHealth / Player_Combat 三份 Inspector 里的数值收拢成 StatsManger 单例，再新建 StatsUI + StatsSlot 预制体做一个按 Esc 打开的属性面板。记录这一天的坑：类名把 Manager 拼成 Manger、StatsUI 与它控制的 CanvasGroup 不在同一个物体上、Time.timeScale = 0 会把 WaitForSeconds 协程一起冻住、布局组覆写预制体位姿、以及占位文案拼错却看不见。</description>
+      <content:encoded><![CDATA[<h2 id="一句话说清这天的内容">一句话说清这天的内容</h2><p>做两件事：先把「速度、伤害、血量、武器范围、击退力」这些数字从三个脚本的 Inspector 里抽出来，集中到唯一的 <code>StatsManger</code>（单例）；再新建 <code>StatsUI</code> + <code>StatsSlot</code> 预制体，做一个按 Esc 打开的属性面板——打开时把 <code>Time.timeScale</code> 设成 0，整个游戏暂停，让玩家从容看数字。</p><hr><h2 id="脚本关系">脚本关系</h2><div class="table-wrap"><table><thead><tr><th>脚本</th><th>角色</th><th>关键能力</th></tr></thead><tbody><tr><td><code>StatsManger</code></td><td>新</td><td>单例 <code>Instance</code>、三组 <code>[Header]</code> 字段</td></tr><tr><td><code>StatsUI</code></td><td>新</td><td>Esc 开关面板、<code>Time.timeScale</code> 时停、<code>statsSlots[i]</code> 写文字</td></tr><tr><td><code>PlayerHealth</code></td><td>改</td><td>血量字段搬走，改成读 <code>StatsManger.Instance.currentHealth</code></td></tr><tr><td><code>PlayerMovement</code></td><td>改</td><td>速度改成读 <code>StatsManger.Instance.speed</code>，其余不变</td></tr><tr><td><code>Player_Combat</code></td><td>改</td><td><code>damage</code> / <code>weaponRange</code> / 击退参数全部改成读单例</td></tr></tbody></table></div><figure class="post-figure"><img src="https://daydaydream000.github.io/assets/images/arpg-day6-stats-flow.svg" alt="数值的读取方式：从多份副本到单一数据源" loading="lazy" decoding="async"><figcaption>重构前后对照：调用点一行没挪，只是「去哪儿拿数」变了</figcaption></figure><p><strong>调用链</strong>（打开面板）：</p><p><code>Esc 按下 → Input.GetButtonDown("ToggleStats") → StatsUI.Update() → Time.timeScale = 0 + statsCanvas.alpha = 1 + statsOpen = true</code></p><p><strong>调用链</strong>（面板启动时填值）：</p><p><code>Start() → UpdateAllStats() → UpdateDamage() + UpdateSpeed() → statsSlots[i].GetComponentInChildren&lt;TMP_Text&gt;().text = "Damage: " + StatsManger.Instance.damage</code></p><hr><h2 id="先有唯一数据源才有只依赖一个引用的-ui">先有唯一数据源，才有只依赖一个引用的 UI</h2><p>Day 5 结束时，数值的分布是这样的：</p><ul><li><code>PlayerMovement.speed</code> —— 移动速度</li><li><code>PlayerHealth.maxHealth</code> / <code>currentHealth</code> —— 血量</li><li><code>Player_Combat.damage</code> / <code>weaponRange</code> —— 伤害与武器范围</li><li><code>Enemy_Combat</code> / <code>Enemy_Knockback</code> 参数里还散着击退力、眩晕时间</li></ul><p>这带来一个很具体的麻烦：<code>Player_Combat</code> 调用 <code>Enemy_Knockback.Knockback()</code> 时传的击退力、击退时长、眩晕时间，全都是从敌人自己身上取的，跟玩家那套数值没有统一出处。<strong>改一个「击退力度」要在两个脚本的 Inspector 之间来回找</strong>，漏掉一个就出现「表里不一」。</p><p>更要紧的是下一个需求：要做属性面板。面板要显示 damage 和 speed——它去哪拿？如果还是各脚本各管各的，面板就得同时持有 <code>PlayerMovement</code>、<code>Player_Combat</code>、<code>PlayerHealth</code> 三个引用，任何一个改名或者换挂载点都会断。</p><p>所以顺序很清楚：<strong>先有唯一数据源，才有 UI</strong>。</p><hr><h2 id="statsmanger收拢全部数值的单例">StatsManger：收拢全部数值的单例</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class StatsManger : MonoBehaviour
+{
+    public static StatsManger Instance;
+
+    [Header("Combat Stats")]
+    public int damage;
+    public float weaponRange;
+    public float knockbackForce;
+    public float knockbackTime;
+    public float stunTime;
+
+    [Header("Movement Stats")]
+    public float speed;
+
+    [Header("Health Stats")]
+    public int maxHealth;
+    public int currentHealth;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+}</code></pre></div><h3 id="设计-1单例解决的是「到处都要拿同一份数」">设计 1：单例解决的是「到处都要拿同一份数」</h3><p>没有单例的话，想让 <code>Player_Combat</code> 拿到速度，只能 <code>FindObjectOfType&lt;PlayerMovement&gt;()</code> 或者挂 public 引用。<code>FindObjectOfType</code> 每次调用扫全场，public 引用则是「谁都要在 Inspector 里拖一根线」。</p><p>单例把它变成一行：<code>StatsManger.Instance.speed</code>。<strong>代码里任何地方、任何时刻、不需要持有引用</strong>，只要场景里有这个对象就行。</p><h3 id="设计-2header-是给-inspector-用的不是给代码用的">设计 2：<code>[Header]</code> 是给 Inspector 用的，不是给代码用的</h3><p><code>damage</code>、<code>speed</code>、<code>maxHealth</code> 这些字段用了 <code>public</code> 而不是 <code>[SerializeField] private</code>。原因很直接：<strong>它们要在 Inspector 里拖数值调玩法</strong>，public 是最省事的写法。<code>[Header("Combat Stats")]</code> 则是给 Inspector 分组——十来个字段挤在一起，不分组的后果是「改速度的时候把眩晕时间也改了」。</p><p>这套东西是教程阶段的合理选择；等数值多到需要配表，就会换成 ScriptableObject。</p><h3 id="设计-3awake-里判空重复的销毁自己">设计 3：<code>Awake</code> 里判空，重复的销毁自己</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">if (Instance == null) { Instance = this; }
+else { Destroy(gameObject); }</code></pre></div><p>场景只放了一个 StatsManager，但这段代码的意义是<strong>防止未来有人不小心放了第二个</strong>。先把 <code>Instance</code> 占了，后来的自己销毁——这样 <code>StatsManger.Instance</code> 永远指向第一个。</p><figure class="post-figure"><img src="https://daydaydream000.github.io/assets/images/arpg-day6-slot-hierarchy.svg" alt="StatsSlot 层级与面板结构" loading="lazy" decoding="async"><figcaption>面板结构：StatsCanvas(α=0) → StatsPanel(挂 StatsUI) → TextPanel(GridLayoutGroup) → StatsSlot ×2</figcaption></figure><h3 id="坑-1类名把-manager-拼成了-manger">💡 坑 1：类名把 Manager 拼成了 Manger</h3><p>文件叫 <code>StatsManger.cs</code>，类名也是 <code>StatsManger</code>——<strong>少了一个 a</strong>。这不是我手误，是教程源码里就这么拼的，我照抄了。</p><p>它不会编译报错，因为类名和文件名一致。但它会<strong>蔓延</strong>：现在项目里到处都是 <code>StatsManger.Instance.xxx</code>，一共 11 处引用。等哪天想改对，就得一次改干净（脚本名 + 类名 + 全部引用），改一半的局面是编译不过。</p><p><strong>教训</strong>：从教程抄代码时，类名和变量名的拼写要过一遍脑子。<code>isKnockack</code>（Day 5 留下的，少一个 b）也是同一个毛病。这些拼写错误在编辑器里不报错，只会让人以后搜索的时候找不到东西。</p><hr><h2 id="statsuiesc-开关-时停">StatsUI：Esc 开关 + 时停</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class StatsUI : MonoBehaviour
+{
+    public GameObject[] statsSlots;
+    public CanvasGroup statsCanvas;
+    private bool statsOpen = false;
+
+    private void Start()
+    {
+        UpdateAllStats();
+    }
+
+    private void Update()
+    {
+        if (Input.GetButtonDown("ToggleStats"))
+        {
+            if (statsOpen)
+            {
+                Time.timeScale = 1.0f;
+                statsCanvas.alpha = 0;
+                statsOpen = false;
+            }
+            else
+            {
+                Time.timeScale = 0;
+                statsCanvas.alpha = 1;
+                statsOpen = true;
+            }
+        }
+    }
+
+    public void UpdateDamage()
+    {
+        statsSlots[0].GetComponentInChildren&lt;TMP_Text&gt;().text = "Damage: " + StatsManger.Instance.damage;
+    }
+
+    public void UpdateSpeed()
+    {
+        statsSlots[1].GetComponentInChildren&lt;TMP_Text&gt;().text = "Speed: " + StatsManger.Instance.speed;
+    }
+
+    private void UpdateAllStats()
+    {
+        UpdateDamage();
+        UpdateSpeed();
+    }
+}</code></pre></div><h3 id="设计一个-bool-同时翻转三样东西">设计：一个 bool 同时翻转三样东西</h3><p><code>statsOpen</code> 不是单纯的「面板开着没开」，它是<strong>三件事的共同开关</strong>：</p><div class="table-wrap"><table><thead><tr><th>变量</th><th>关</th><th>开</th></tr></thead><tbody><tr><td><code>statsOpen</code></td><td><code>false</code></td><td><code>true</code></td></tr><tr><td><code>Time.timeScale</code></td><td><code>1.0f</code></td><td><code>0</code></td></tr><tr><td><code>statsCanvas.alpha</code></td><td><code>0</code></td><td><code>1</code></td></tr></tbody></table></div><p>三者必须一起变。如果只把 alpha 设成 1 忘了 timeScale，面板出来了但游戏还在跑，敌人照样打你；如果只设 timeScale 忘了 alpha，游戏停了但屏幕上什么都没有——玩家会以为游戏卡死了。</p><p><strong>把「暂停」和「显示面板」绑成一个动作</strong>，是这个面板最核心的设计。</p><figure class="post-figure"><img src="https://daydaydream000.github.io/assets/images/arpg-day6-panel-toggle.svg" alt="Esc 开关：一个 bool 同时翻转三个东西" loading="lazy" decoding="async"><figcaption>关闭态与打开态的三个变量必须同步翻转</figcaption></figure><h3 id="为什么用-alpha-而不是-setactive">为什么用 alpha 而不是 SetActive</h3><p>把面板物体 <code>SetActive(false)</code> 也能隐藏，但 <code>CanvasGroup.alpha</code> 有两点好处：</p><ol><li><strong>可以补间</strong>。以后想加淡入淡出，只要在协程里 lerp <code>alpha</code>，<code>SetActive</code> 做不到（一关就整个消失）。</li><li><strong>不影响布局</strong>。<code>SetActive(false)</code> 的对象会从 GridLayoutGroup 的布局计算里消失，再打开时位置会重算；<code>alpha = 0</code> 的对象还在原位待着。</li></ol><p>面板的 CanvasGroup 初始 alpha 在场景里就是 0——<strong>第一次打开之前，它一直是「隐形但存在」的状态</strong>。</p><h3 id="坑-2statsui-和它控制的-canvasgroup-不在同一个物体上">💡 坑 2：StatsUI 和它控制的 CanvasGroup 不在同一个物体上</h3><p><code>StatsUI</code> 挂在 <strong>StatsPanel</strong> 上，但它控制的 <code>statsCanvas</code> 指的是父物体 <strong>StatsCanvas</strong> 上的 CanvasGroup。字段是 <code>public CanvasGroup statsCanvas;</code>，靠 Inspector 拖引用绑定的——<strong>不是 <code>GetComponent</code> 拿的</strong>。</p><p>场景层级是这样的：</p><p><code>StatsCanvas</code>（Canvas + CanvasScaler + GraphicRaycaster + <strong>CanvasGroup</strong>）└ <code>StatsPanel</code>（<strong>StatsUI</strong>）　└ <code>TextPanel</code>（GridLayoutGroup）　　└ <code>StatsSlot</code> ×2（预制体实例）</p><p>后果：如果谁图省事把 <code>statsCanvas</code> 改成 <code>GetComponent&lt;CanvasGroup&gt;()</code>，会拿到 <code>null</code>——因为 StatsPanel 自己身上没有 CanvasGroup，只有它的父级有。<strong>跨层级引用必须显式拖线</strong>。</p><h3 id="坑-3timetimescale-0-冻的是时间不是输入">💡 坑 3：<code>Time.timeScale = 0</code> 冻的是时间，不是输入</h3><p>这是今天最值得写的一条。<code>Time.timeScale = 0</code> 之后：</p><div class="table-wrap"><table><thead><tr><th>受影响</th><th>不受影响</th></tr></thead><tbody><tr><td><code>FixedUpdate</code> 不再被调用</td><td><code>Update</code> 仍然每帧执行</td></tr><tr><td><code>Time.deltaTime</code> 变成 0</td><td><code>Time.unscaledDeltaTime</code> 正常</td></tr><tr><td><code>WaitForSeconds</code> 永久等待</td><td><code>WaitForSecondsRealtime</code> 正常</td></tr><tr><td>物理、动画</td><td>输入（<code>Input.GetButtonDown</code>）</td></tr></tbody></table></div><p><strong>关键推论：Update 照跑，所以 Esc 还能被读到</strong>——否则面板就再也关不掉了。这是这个设计能成立的前提。</p><p>但代价是：<strong>如果你在正被击退的那段眩晕时间里按了 Esc，<code>KnockbackCounter</code> 协程会被冻住</strong>。因为协程里 <code>yield return new WaitForSeconds(stunTime)</code> 用的是缩放后的时间，<code>timeScale = 0</code> 意味着它永远不会往下走。等你关掉面板（timeScale 恢复 1.0f），协程才继续倒数。</p><p>实际表现是：暂停期间玩家角色定在原地，关掉面板后继续被击飞完剩下的时间。不算 bug，但如果不理解 <code>WaitForSeconds</code> 与 <code>timeScale</code> 的关系，会以为协程坏了。</p><p><strong>要绕开的话</strong>，把协程里的等待换成：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">yield return new WaitForSecondsRealtime(stunTime);</code></pre></div><p><code>WaitForSecondsRealtime</code> 不读 <code>timeScale</code>，暂停期间也会照常倒数。</p><h3 id="坑-4updatedamage-updatespeed-是-public但没人调">💡 坑 4：<code>UpdateDamage</code> / <code>UpdateSpeed</code> 是 public，但没人调</h3><p>两个方法都是 <code>public</code>，看起来像是给外部改数值后刷新用的——<strong>但全项目除了 <code>UpdateAllStats()</code> 之外没有任何地方调用它们</strong>。</p><p>而 <code>UpdateAllStats()</code> 只在 <code>Start()</code> 里被调一次。也就是说：<strong>面板上的数字是启动那一刻的快照，之后永远不变</strong>。</p><p>现在看不出问题，因为这一版还没有任何「升级属性」的玩法。但只要加上吃道具加速度，面板就会显示旧值。正确做法是让 <code>StatsManger</code> 在数值变化时抛事件，<code>StatsUI</code> 订阅：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// StatsManger 里
+public event System.Action OnStatsChanged;
+public void SetDamage(int v) { damage = v; OnStatsChanged?.Invoke(); }</code></pre></div><p>Day 6 先不做，记在文末的洞里。</p><hr><h2 id="面板槽statsslot-预制体">面板槽：StatsSlot 预制体</h2><p>面板要显示 Damage 和 Speed 两行，两行的结构完全一样，所以做成预制体。</p><p>层级：</p><div class="code-block"><div class="code-head"><span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code>StatsSlot（RectTransform + Image）
+└ StarText（TMP_Text）</code></pre></div><ul><li><strong>根物体</strong>：Layer 5（UI），<code>Image</code> 组件用九宫格（<code>m_Type: 1</code> = Sliced），负责底图</li><li><strong>子物体 StarText</strong>：锚点 <code>(0,0)–(1,1)</code> 铺满父级，<code>TMP_Text</code> 负责文字，水平居中</li></ul><p><code>StatsUI</code> 只改子物体的文字：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">statsSlots[0].GetComponentInChildren&lt;TMP_Text&gt;().text = "Damage: " + StatsManger.Instance.damage;</code></pre></div><p>用 <code>GetComponentInChildren</code>（不是 <code>GetComponent</code>）——因为 <code>TMP_Text</code> 在子物体上。这也是预制体结构决定调用方式的例子。</p><h3 id="面板怎么排这两个槽gridlayoutgroup">面板怎么排这两个槽：GridLayoutGroup</h3><p><code>TextPanel</code> 上挂了 <code>GridLayoutGroup</code>：</p><div class="code-block"><div class="code-head"><span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code>m_CellSize: {x: 300, y: 100}
+m_Spacing: {x: 0, y: 1}
+m_Constraint: 0
+m_Padding: {Left: 7, Top: 12, ...}</code></pre></div><p>每格 300×100，竖直间隔 1 像素。两个 StatsSlot 实例放进 <code>statsSlots</code> 数组（数组长度 8，<code>statsSlots[2..7]</code> 全是空的 fileID，预留）。</p><h3 id="坑-5预制体里的-recttransform-会被布局组覆写">💡 坑 5：预制体里的 RectTransform 会被布局组覆写</h3><p><code>StatsSlot.prefab</code> 里存的位姿是：</p><div class="code-block"><div class="code-head"><span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code>m_AnchoredPosition: {x: -72.83099, y: 87.88697}
+m_SizeDelta: {x: 145.66, y: 37.889}
+m_AnchorMin/Max: {0.5, 0.5}</code></pre></div><p>但场景里实例化之后，这些值都被改成了 0：</p><div class="code-block"><div class="code-head"><span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code>m_AnchoredPosition: {x: 0, y: 0}
+m_SizeDelta: {x: 0, y: 0}
+m_AnchorMin/Max: {0, 0}</code></pre></div><p>原因是 <strong>GridLayoutGroup 接管了子物体的位置和尺寸</strong>。布局组每帧算好格子，直接写回 RectTransform——预制体里辛苦对齐的数值，进场景就作废。</p><p><strong>教训</strong>：如果一个物体的父级挂了 LayoutGroup，就不要再手工调它自己的 AnchoredPosition / SizeDelta，那些值不会生效。想控制位置，改布局组的 <code>m_CellSize</code>、<code>m_Spacing</code>、<code>m_Padding</code>。</p><h3 id="坑-6strenth-00-是错的但你看不到">💡 坑 6：'Strenth: 00' 是错的，但你看不到</h3><p><code>StatsSlot.prefab</code> 里 StarText 的默认文字是：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">yaml</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-yaml">m_text: 'Strenth: 00'</code></pre></div><p><strong>Strenth 拼错了</strong>（应该是 Strength），而且这个槽现在放的是 Damage，跟 Strength 压根没关系。</p><p>之所以看不出问题，是因为 <code>StatsUI.Start()</code> 里紧接着 <code>UpdateAllStats()</code> 把它们覆盖成了 <code>"Damage: 1"</code> 和 <code>"Speed: 5"</code>。<strong>但如果 StatsUI 没挂、引用没拖，玩家看到的就是 <code>Strenth: 00</code></strong>。</p><p>这类「占位文案」最好写成 <code>Damage: --</code> 这种明显是占位的格式；写成看起来像真数据的 <code>Strenth: 00</code>，出问题时反而不好判断。</p><hr><h2 id="整体设计思路">整体设计思路</h2><h3 id="1-为什么先重构再做-ui">1. 为什么先重构再做 UI</h3><p>从代码量看，重构这一半几乎是「纯替换」——<code>speed</code> 变 <code>StatsManger.Instance.speed</code>，<code>currentHealth</code> 变 <code>StatsManger.Instance.currentHealth</code>，<strong>调用点的结构一行都没改</strong>。</p><p>但顺序不能反。如果先做 UI，<code>StatsUI</code> 就得同时持有三个脚本的引用，等项目变大就会长成这样：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// 每加一个要显示的属性，就多一个引用
+public PlayerMovement playerMovement;
+public Player_Combat playerCombat;
+public PlayerHealth playerHealth;
+// ... text = "" + playerCombat.damage + playerMovement.speed + playerHealth.currentHealth;</code></pre></div><p>先收拢数值，UI 就只需要认识 <code>StatsManger</code> 一个东西。<strong>重构不是「为了好看」，是为了让下一步变简单</strong>——这也是今天唯一一件「不改功能只改结构」的工作。</p><h3 id="2-单例的取舍">2. 单例的取舍</h3><div class="table-wrap"><table><thead><tr><th></th><th>单例（<code>StatsManger.Instance</code>）</th><th>public 引用</th><th><code>FindObjectOfType</code></th></tr></thead><tbody><tr><td>取值写法</td><td>一行</td><td>一行</td><td>一行</td></tr><tr><td>需要拖引用</td><td>否</td><td>每个脚本都要</td><td>否</td></tr><tr><td>查找开销</td><td>无</td><td>无</td><td>每次调用扫全场</td></tr><tr><td>可测试性</td><td>差（全局状态）</td><td>好</td><td>差</td></tr><tr><td>多实例</td><td>靠 Awake 兜底</td><td>天然支持</td><td>会拿到随机一个</td></tr></tbody></table></div><p>教程阶段选单例是对的：<strong>它的取值成本最低，而当前项目只有一个玩家</strong>。它的代价（全局状态、不好做单元测试）在这个规模下不构成问题。</p><p>真正会踩的是「多实例」：如果再有一个「敌人属于自己的 StatsManger」，单例就崩了——<code>Instance</code> 只指向第一个。到那时候就该换成「每个角色持有一份 Stats 数据对象」的结构。</p><h3 id="3-暂停面板-vs-实时面板">3. 暂停面板 vs 实时面板</h3><div class="table-wrap"><table><thead><tr><th></th><th>暂停式（<code>timeScale = 0</code>）</th><th>实时式</th></tr></thead><tbody><tr><td>玩家压力</td><td>无，慢慢看</td><td>敌人还在打</td></tr><tr><td>实现</td><td>一个 bool + 两行赋值</td><td>要处理「面板挡住视野」</td></tr><tr><td>风险</td><td>忘恢复时停 → 游戏卡死</td><td>无</td></tr><tr><td>适用</td><td>单机 RPG / 背包 / 设置</td><td>联机 / 动作游戏</td></tr></tbody></table></div><p>单机 ARPG 用暂停式是常见选择。它的最大风险是<strong>状态没恢复</strong>——比如面板打开时切场景、或者异常退出，<code>timeScale</code> 停在 0，整个游戏看起来就死了。稳妥的做法是在 <code>OnDisable</code> / <code>OnDestroy</code> 里兜底复位：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnDisable()
+{
+    Time.timeScale = 1.0f;   // 兜底：物体被禁用时一定把时间放开
+}</code></pre></div><h3 id="4-入场动画-vs-直接开关">4. 入场动画 vs 直接开关</h3><p>现在 alpha 是硬切（0 或 1），没有过渡。加淡入只要把赋值换成协程 lerp——<strong>这也是当初选 <code>CanvasGroup.alpha</code> 而不是 <code>SetActive</code> 的原因</strong>。不过要注意协程里的 <code>Time.deltaTime</code> 此时是 0（timeScale 已经是 0 了），得用 <code>Time.unscaledDeltaTime</code>：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">float t = 0;
+while (t &lt; 0.15f)
+{
+    t += Time.unscaledDeltaTime;
+    statsCanvas.alpha = Mathf.Lerp(0, 1, t / 0.15f);
+    yield return null;
+}</code></pre></div><p>这个小坑——<strong>「暂停时想播动画」必须用 unscaled 时间</strong>——和坑 3 是同一个根因。</p><hr><h2 id="明天要补的洞">明天要补的洞</h2><ol><li><strong>属性变化时面板不刷新</strong>：<code>UpdateDamage()</code> / <code>UpdateSpeed()</code> 没有外部调用者，数字是启动快照。要加事件（<code>OnStatsChanged</code>）或定时刷新。</li><li><strong>没有属性来源</strong>：现在所有数值都是 Inspector 写死的，游戏里没有任何途径改变它们。下一步要有升级 / 捡道具。</li><li><strong>敌人属性没纳入</strong>：<code>StatsManger</code> 只管玩家，敌人的 <code>damage</code> / <code>maxHealth</code> 仍然自带一套。敌人多了之后要抽成通用的 <code>Stats</code> 数据类。</li><li><strong>时停没有兜底</strong>：物体被禁用 / 场景切换时 <code>timeScale</code> 可能停在 0，要加 <code>OnDisable</code> 复位。</li><li><strong>没有淡入淡出</strong>：alpha 硬切，加补间要用 <code>Time.unscaledDeltaTime</code>。</li><li><strong>暂停时仍能挥剑</strong>：<code>timeScale = 0</code> 挡住了 <code>FixedUpdate</code> 移动，但 <code>Update</code> 里的 <code>Input.GetButtonDown("Slash")</code> 仍会触发攻击。要在面板打开时禁用 <code>Player_Combat</code>。</li></ol><hr><h2 id="一句话总结">一句话总结</h2><p>今天把「数值」这件事理顺了：<strong><code>StatsManger</code> 单例让 11 处引用有了唯一出处</strong>，<code>StatsUI</code> 用<strong>一个 bool 同时翻转 <code>timeScale</code> 与 <code>alpha</code></strong> 做出暂停式面板，<code>StatsSlot</code> 预制体 + <code>GridLayoutGroup</code> 负责排版。最值得记住的是 <code>Time.timeScale = 0</code> 的边界——它冻结 <code>FixedUpdate</code> 和 <code>WaitForSeconds</code>，却放过 <code>Update</code> 与输入，这个不对称既是面板能开关的原因，也是协程会被冻住的原因。</p>]]></content:encoded>
+    </item>
+    <item>
       <title>ARPG 学习日志 Day 5：玩家挥剑与敌人的受击反馈</title>
       <link>https://daydaydream000.github.io/post/arpg-day5-player-combat.html</link>
       <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day5-player-combat.html</guid>

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bgt" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#fff8e8"/>
+      <stop offset="1" stop-color="#f2e4c4"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgt)"/>
+
+  <text x="600" y="40" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#5a3a20">Esc 开关：一个 bool 同时翻转三个东西</text>
+  <text x="600" y="62" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a2a20">statsOpen 决定 Time.timeScale 与 CanvasGroup.alpha，三者必须一起变</text>
+
+  <!-- 关闭态 -->
+  <g transform="translate(72, 92)">
+    <rect x="0" y="0" width="470" height="190" rx="5" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.35"/>
+    <text x="16" y="28" font-family="ui-sans-serif, sans-serif" font-size="14" font-weight="700" fill="#1a3d28">关闭态（游戏进行中）</text>
+    <line x1="16" y1="42" x2="454" y2="42" stroke="#1a3d28" stroke-opacity="0.2"/>
+    <text x="16" y="68" font-family="ui-monospace, monospace" font-size="12.5" fill="#1a3d28">statsOpen</text>
+    <text x="454" y="68" text-anchor="end" font-family="ui-monospace, monospace" font-size="12.5" fill="#8a5a20">false</text>
+    <text x="16" y="106" font-family="ui-monospace, monospace" font-size="12.5" fill="#1a3d28">Time.timeScale</text>
+    <text x="454" y="106" text-anchor="end" font-family="ui-monospace, monospace" font-size="12.5" fill="#1a7a3a">1.0f</text>
+    <text x="16" y="144" font-family="ui-monospace, monospace" font-size="12.5" fill="#1a3d28">statsCanvas.alpha</text>
+    <text x="454" y="144" text-anchor="end" font-family="ui-monospace, monospace" font-size="12.5" fill="#c43131">0</text>
+    <text x="16" y="176" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a3a">Update / FixedUpdate 都在跑，游戏照常进行</text>
+  </g>
+
+  <!-- 双向箭头 -->
+  <g stroke="#5a3a20" stroke-width="2" fill="none">
+    <path d="M548,150 L640,150" stroke-dasharray="5 4"/>
+    <path d="M640,150 L631,145 M640,150 L631,155" stroke-linecap="round"/>
+    <path d="M640,214 L548,214" stroke-dasharray="5 4"/>
+    <path d="M548,214 L557,209 M548,214 L557,219" stroke-linecap="round"/>
+  </g>
+  <text x="594" y="138" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a3a20" font-weight="600">Esc 按下</text>
+  <text x="594" y="234" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a3a20" font-weight="600">再按一次</text>
+
+  <!-- 打开态 -->
+  <g transform="translate(658, 92)">
+    <rect x="0" y="0" width="470" height="190" rx="5" fill="#1e2a22" stroke="#b48a2a"/>
+    <text x="16" y="28" font-family="ui-sans-serif, sans-serif" font-size="14" font-weight="700" fill="#f0e0b8">打开态（面板显示）</text>
+    <line x1="16" y1="42" x2="454" y2="42" stroke="#f0e0b8" stroke-opacity="0.25"/>
+    <text x="16" y="68" font-family="ui-monospace, monospace" font-size="12.5" fill="#e8f0e8">statsOpen</text>
+    <text x="454" y="68" text-anchor="end" font-family="ui-monospace, monospace" font-size="12.5" fill="#e8c870">true</text>
+    <text x="16" y="106" font-family="ui-monospace, monospace" font-size="12.5" fill="#e8f0e8">Time.timeScale</text>
+    <text x="454" y="106" text-anchor="end" font-family="ui-monospace, monospace" font-size="12.5" fill="#e8a0a0">0</text>
+    <text x="16" y="144" font-family="ui-monospace, monospace" font-size="12.5" fill="#e8f0e8">statsCanvas.alpha</text>
+    <text x="454" y="144" text-anchor="end" font-family="ui-monospace, monospace" font-size="12.5" fill="#9fd8a8">1</text>
+    <text x="16" y="176" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#9fb8a4">世界冻结，但 Update 照跑——所以 Esc 还能被读到</text>
+  </g>
+
+  <!-- 底部坑 -->
+  <g transform="translate(0, 306)">
+    <rect x="72" y="0" width="1056" height="76" rx="5" fill="#ffffff" stroke="#b48a2a" stroke-opacity="0.7"/>
+    <text x="88" y="24" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#8a5a20">💡 timeScale = 0 冻结的是「时间」，不是「输入」</text>
+    <text x="88" y="46" font-family="ui-monospace, monospace" font-size="11.5" fill="#5a3a20">FixedUpdate 不再被调用；WaitForSeconds 被冻住，WaitForSecondsRealtime 不受影响；Update 仍每帧执行</text>
+    <text x="88" y="66" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a2a20">所以：玩家会停在原地（移动在 FixedUpdate），被击退的协程也会被冻住——打开面板等于直接暂停</text>
+  </g>
+</svg>
