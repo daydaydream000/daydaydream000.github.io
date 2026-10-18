@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bgl7" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+    <linearGradient id="bar7" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#8ecf6e"/>
+      <stop offset="1" stop-color="#4f9636"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgl7)"/>
+
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">升级门槛按 ×1.2 增长，怪物经验却是常数</text>
+  <text x="600" y="56" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">绿柱 = 升到该级所需经验；柱下数字 = 累计要杀多少只（每只 3 点）</text>
+
+  <text x="96" y="86" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a3a">每级所需经验</text>
+  <text x="1152" y="86" text-anchor="end" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#8a5a20">累计击杀（只）</text>
+
+  <line x1="84" y1="322" x2="1152" y2="322" stroke="#1a3d28" stroke-opacity="0.35"/>
+
+  <!-- L1 10 -->
+  <rect x="96" y="282" width="60" height="40" rx="2" fill="url(#bar7)" stroke="#1a3d28" stroke-opacity="0.35"/>
+  <text x="126" y="274" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">10</text>
+  <text x="126" y="340" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">Lv1</text>
+  <text x="126" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">4</text>
+
+  <!-- L2 12 -->
+  <rect x="201" y="274" width="60" height="48" rx="2" fill="url(#bar7)" stroke="#1a3d28" stroke-opacity="0.35"/>
+  <text x="231" y="266" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">12</text>
+  <text x="231" y="340" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">Lv2</text>
+  <text x="231" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">8</text>
+
+  <!-- L3 14 -->
+  <rect x="306" y="266" width="60" height="56" rx="2" fill="url(#bar7)" stroke="#1a3d28" stroke-opacity="0.35"/>
+  <text x="336" y="258" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">14</text>
+  <text x="336" y="340" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">Lv3</text>
+  <text x="336" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">12</text>
+
+  <!-- L4 17 -->
+  <rect x="411" y="254" width="60" height="68" rx="2" fill="url(#bar7)" stroke="#1a3d28" stroke-opacity="0.35"/>
+  <text x="441" y="246" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">17</text>
+  <text x="441" y="340" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">Lv4</text>
+  <text x="441" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">18</text>
+
+  <!-- L5 20 -->
+  <rect x="516" y="242" width="60" height="80" rx="2" fill="url(#bar7)" stroke="#1a3d28" stroke-opacity="0.35"/>
+  <text x="546" y="234" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">20</text>
+  <text x="546" y="340" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">Lv5</text>
+  <text x="546" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">25</text>
+
+  <!-- L6 24 -->
+  <rect x="621" y="226" width="60" height="96" rx="2" fill="url(#bar7)" stroke="#1a3d28" stroke-opacity="0.35"/>
+  <text x="651" y="218" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">24</text>
+  <text x="651" y="340" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">Lv6</text>
+  <text x="651" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">33</text>
+
+  <!-- L7 29 -->
+  <rect x="726" y="206" width="60" height="116" rx="2" fill="url(#bar7)" stroke="#1a3d28" stroke-opacity="0.35"/>
+  <text x="756" y="198" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">29</text>
+  <text x="756" y="340" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">Lv7</text>
+  <text x="756" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">42</text>
+
+  <!-- L8 35 -->
+  <rect x="831" y="182" width="60" height="140" rx="2" fill="url(#bar7)" stroke="#1a3d28" stroke-opacity="0.35"/>
+  <text x="861" y="174" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">35</text>
+  <text x="861" y="340" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">Lv8</text>
+  <text x="861" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">54</text>
+
+  <!-- L9 42 -->
+  <rect x="936" y="154" width="60" height="168" rx="2" fill="url(#bar7)" stroke="#1a3d28" stroke-opacity="0.35"/>
+  <text x="966" y="146" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">42</text>
+  <text x="966" y="340" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">Lv9</text>
+  <text x="966" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">68</text>
+
+  <!-- L10 50 -->
+  <rect x="1041" y="122" width="60" height="200" rx="2" fill="#b48a2a" stroke="#8a5a20" stroke-opacity="0.5"/>
+  <text x="1071" y="114" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#8a5a20">50</text>
+  <text x="1071" y="340" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">Lv10</text>
+  <text x="1071" y="358" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#8a5a20">85</text>
+
+  <text x="600" y="386" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">expToLevel = Mathf.RoundToInt(expToLevel * 1.2f)　｜　下一级门槛只和上一级有关，与 level 无关</text>
+</svg>

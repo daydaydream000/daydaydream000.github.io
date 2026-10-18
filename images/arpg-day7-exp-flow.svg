@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bge7" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bge7)"/>
+
+  <text x="600" y="36" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">经验从敌人身上走到 UI 上的完整路径</text>
+  <text x="600" y="58" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">三段职责：谁死了（Enemy_Health）→ 结算多少（ExpManager）→ 怎么显示（Slider / TMP_Text）</text>
+
+  <!-- A: Enemy_Health -->
+  <g transform="translate(40, 84)">
+    <rect x="0" y="0" width="300" height="146" rx="5" fill="#ffffff" stroke="#c43131" stroke-opacity="0.5"/>
+    <text x="14" y="24" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#8a2a20">Enemy_Health（每个敌人一份）</text>
+    <text x="14" y="50" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">maxHealth = 3</text>
+    <text x="14" y="70" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">expReward = 3</text>
+    <text x="14" y="96" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">ChangeHealth(-amount)</text>
+    <text x="14" y="116" font-family="ui-monospace, monospace" font-size="11" fill="#8a2a20">if (currentHealth &lt;= 0)</text>
+    <text x="14" y="134" font-family="ui-monospace, monospace" font-size="11" fill="#8a2a20">→ 广播 + Destroy</text>
+  </g>
+
+  <g stroke="#1a3d28" stroke-width="2" fill="none">
+    <path d="M346,156 L394,156" stroke-dasharray="5 4"/>
+    <path d="M394,156 L385,151 M394,156 L385,161" stroke-linecap="round"/>
+  </g>
+  <text x="370" y="142" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">(int)</text>
+  <text x="370" y="176" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a2a20">静态事件</text>
+
+  <!-- B: ExpManager -->
+  <g transform="translate(402, 84)">
+    <rect x="0" y="0" width="358" height="146" rx="5" fill="#ffffff" stroke="#1a7a3a" stroke-opacity="0.55"/>
+    <text x="14" y="24" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#1a5a30">ExpManager（场景里唯一一份）</text>
+    <text x="14" y="50" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">level · currentExp · expToLevel</text>
+    <text x="14" y="76" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">OnEnable  += GainExperience</text>
+    <text x="14" y="96" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">OnDisable -= GainExperience</text>
+    <text x="14" y="122" font-family="ui-monospace, monospace" font-size="11" fill="#1a5a30">currentExp += amount</text>
+    <text x="14" y="140" font-family="ui-monospace, monospace" font-size="11" fill="#1a5a30">if (&gt;= expToLevel) LevelUp()</text>
+  </g>
+
+  <g stroke="#1a3d28" stroke-width="2" fill="none">
+    <path d="M766,156 L828,156" stroke-dasharray="5 4"/>
+    <path d="M828,156 L819,151 M828,156 L819,161" stroke-linecap="round"/>
+  </g>
+  <text x="797" y="142" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">UpdateUI()</text>
+
+  <!-- C: UI -->
+  <g transform="translate(836, 84)">
+    <rect x="0" y="0" width="320" height="146" rx="5" fill="#1e2a22"/>
+    <text x="14" y="24" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#e8f0e8">ExpSlider + LEVELText</text>
+    <rect x="14" y="40" width="292" height="26" rx="3" fill="#2c3b30"/>
+    <rect x="14" y="40" width="120" height="26" rx="3" fill="#42a9a4"/>
+    <text x="26" y="58" font-family="ui-monospace, monospace" font-size="11" fill="#0d1a12">8 / 12</text>
+    <text x="14" y="92" font-family="ui-monospace, monospace" font-size="10.5" fill="#9fb8a4">maxValue = 12（本级门槛）</text>
+    <text x="14" y="110" font-family="ui-monospace, monospace" font-size="10.5" fill="#9fb8a4">value    = 8（本级已得）</text>
+    <text x="14" y="128" font-family="ui-monospace, monospace" font-size="10.5" fill="#9fb8a4">text     = "Level: 1"</text>
+    <text x="14" y="140" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#7f9b86">满 12 就清空重来</text>
+  </g>
+
+  <!-- 代码 -->
+  <g transform="translate(40, 250)">
+    <rect x="0" y="0" width="712" height="128" rx="5" fill="#1e2a22"/>
+    <text x="16" y="24" font-family="ui-monospace, monospace" font-size="11" fill="#9fd8a8">// Enemy_Health.ChangeHealth 里唯一一处「奖励」</text>
+    <text x="16" y="46" font-family="ui-monospace, monospace" font-size="11.5" fill="#e8f0e8">if (currentHealth &lt;= 0) { OnMonsterDefeated(expReward); Destroy(gameObject); }</text>
+    <text x="16" y="72" font-family="ui-monospace, monospace" font-size="11" fill="#9fd8a8">// ExpManager.GainExperience 里唯一一处「增长」</text>
+    <text x="16" y="94" font-family="ui-monospace, monospace" font-size="11.5" fill="#e8f0e8">currentExp += amount; if (currentExp &gt;= expToLevel) LevelUp(); UpdateUI();</text>
+    <text x="16" y="118" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#7f9b86">两个 if 之间隔着一个事件，谁也不需要持有对方的引用</text>
+  </g>
+
+  <g transform="translate(768, 250)">
+    <rect x="0" y="0" width="388" height="128" rx="5" fill="#fff1f0" stroke="#c43131" stroke-opacity="0.45"/>
+    <text x="14" y="24" font-family="ui-sans-serif, sans-serif" font-size="12" font-weight="700" fill="#8a2a20">断链的两种方式</text>
+    <text x="14" y="48" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a2a20">① 没有订阅者 → 调用 null 委托抛 NRE</text>
+    <text x="14" y="66" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#8a2a20">　 Destroy 永远执行不到 → 敌人血空却不死</text>
+    <text x="14" y="90" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a2a20">② ExpCanvas 被关 → OnDisable 退订</text>
+    <text x="14" y="108" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#8a2a20">　 于是回到 ①：关掉 HUD 就打死不了怪</text>
+  </g>
+</svg>

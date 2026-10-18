@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bgu7" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgu7)"/>
+
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">ExpCanvas 的实际层级：三个组件挂在哪个物体上</text>
+  <text x="600" y="56" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">ExpManager 挂在 Canvas 根物体上，Slider 与等级文字是一父两子</text>
+
+  <!-- 树 -->
+  <g transform="translate(40, 84)">
+    <rect x="0" y="0" width="448" height="44" rx="4" fill="#ffffff" stroke="#1a7a3a" stroke-opacity="0.55"/>
+    <text x="14" y="19" font-family="ui-monospace, monospace" font-size="12.5" font-weight="700" fill="#1a3d28">ExpCanvas</text>
+    <text x="14" y="36" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a2a20">Canvas · CanvasScaler · GraphicRaycaster · ExpManager</text>
+
+    <rect x="34" y="54" width="414" height="40" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="48" y="72" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#1a3d28">└ ExpSlider</text>
+    <text x="48" y="88" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a3a20">Slider · 550 × 60 · AnchoredPos (-623, 213) · Interactable ✔</text>
+
+    <rect x="68" y="104" width="380" height="30" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.22"/>
+    <text x="82" y="123" font-family="ui-monospace, monospace" font-size="11.5" fill="#3a4a3a">├ Background</text>
+
+    <rect x="68" y="140" width="380" height="30" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.22"/>
+    <text x="82" y="159" font-family="ui-monospace, monospace" font-size="11.5" fill="#3a4a3a">├ Fill Area → Fill　(rgb 66,145,155 的青绿)</text>
+
+    <rect x="68" y="176" width="380" height="42" rx="3" fill="#fff8e8" stroke="#b48a2a"/>
+    <text x="82" y="194" font-family="ui-monospace, monospace" font-size="11.5" font-weight="700" fill="#8a5a20">└ LEVELText</text>
+    <text x="82" y="210" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a5a20">锚点 (0,0)–(1,1) 铺满整条 · 字号 48 · 纯黑 · "LEVEL: 0"</text>
+
+    <text x="0" y="242" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a3a">层级顺序 Background → Fill Area → LEVELText，所以字一定盖在填充上。</text>
+    <text x="0" y="260" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a2a20">ExpManager 挂在这张 Canvas 上：Canvas 一被 SetActive(false)，OnDisable 就退订事件。</text>
+  </g>
+
+  <!-- 右：三个坑 -->
+  <g transform="translate(512, 84)">
+    <rect x="0" y="0" width="648" height="76" rx="4" fill="#ffffff" stroke="#c43131" stroke-opacity="0.4"/>
+    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#8a2a20">① Reference Resolution 打成 1920 × 108</text>
+    <text x="14" y="43" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">PlayerUI 那张是 1920 × 1080，ExpCanvas 少了一个 0</text>
+    <text x="14" y="62" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#5a2a20">Match = Width 时高度值不参与换算 —— 错得没有可见后果，但下次别照抄</text>
+
+    <rect x="0" y="88" width="648" height="76" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="14" y="110" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#1a3d28">② 等级文字是进度条的子物体</text>
+    <text x="14" y="131" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">TMP_Text 四角拉伸铺满 550 × 60 的条，字号 48、居中</text>
+    <text x="14" y="150" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#3a4a3a">条涨到哪儿，黑字就被压在哪儿 —— 不是 bug，但对比度会随进度变化</text>
+
+    <rect x="0" y="176" width="648" height="76" rx="4" fill="#ffffff" stroke="#c43131" stroke-opacity="0.4"/>
+    <text x="14" y="198" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#8a2a20">③ 经验条可以被鼠标拖着走</text>
+    <text x="14" y="219" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">Interactable 没关 · HandleRect 为空 · TargetGraphic 为空</text>
+    <text x="14" y="238" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#5a2a20">拖完 value 变了、currentExp 没变，下一次 UpdateUI 又把它拉回去</text>
+
+    <rect x="0" y="264" width="648" height="64" rx="4" fill="#1e2a22"/>
+    <text x="14" y="286" font-family="ui-monospace, monospace" font-size="11" fill="#9fd8a8">// 两行就够的修法</text>
+    <text x="14" y="306" font-family="ui-monospace, monospace" font-size="11.5" fill="#e8f0e8">expSlider.interactable = false;   canvasScaler.referenceResolution = new Vector2(1920, 1080);</text>
+    <text x="14" y="322" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#7f9b86">（或者干脆把等级文字挪出 Slider，单独放在条的右边）</text>
+  </g>
+</svg>
