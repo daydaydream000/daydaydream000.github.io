@@ -71,6 +71,7 @@ CONFIG = {
     "per_page": 10,
     "nav": [
         ("首页", "index.html", "home"),
+        ("ARPG", "arpg-progress.html", "chart"),
         ("标签", "tags/index.html", "tag"),
         ("关于", "about.html", "user"),
     ],

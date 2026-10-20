@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560">
+  <defs>
+    <linearGradient id="bgp" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#f3f8f4"/>
+      <stop offset="1" stop-color="#e3eef3"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="560" fill="url(#bgp)"/>
+
+  <text x="600" y="36" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="21" font-weight="700" fill="#183d2a">八天做了什么：一条从「能走」到「打得死、会变强」的链路</text>
+  <text x="600" y="58" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12" fill="#3c5147">每个节点是一天的交付物；颜色越深，说明那天改的东西越接近「系统」而不是「动作」</text>
+
+  <!-- 时间线 -->
+  <line x1="76" y1="112" x2="1124" y2="112" stroke="#183d2a" stroke-opacity="0.2" stroke-width="2"/>
+  <g font-family="ui-sans-serif, sans-serif">
+    <g>
+      <circle cx="110" cy="112" r="6" fill="#7fae8a"/><text x="110" y="98" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D1</text>
+      <text x="110" y="132" text-anchor="middle" font-size="9.5" fill="#3c5147">骑士能动</text>
+      <text x="110" y="146" text-anchor="middle" font-size="8.5" fill="#6a5b3a">移动 · 动画</text>
+    </g>
+    <g>
+      <circle cx="248" cy="112" r="6" fill="#7fae8a"/><text x="248" y="98" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D2</text>
+      <text x="248" y="132" text-anchor="middle" font-size="9.5" fill="#3c5147">七层地形</text>
+      <text x="248" y="146" text-anchor="middle" font-size="8.5" fill="#6a5b3a">Tilemap · 钻山洞</text>
+    </g>
+    <g>
+      <circle cx="386" cy="112" r="6" fill="#6f9f7c"/><text x="386" y="98" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D3</text>
+      <text x="386" y="132" text-anchor="middle" font-size="9.5" fill="#3c5147">相机与敌人</text>
+      <text x="386" y="146" text-anchor="middle" font-size="8.5" fill="#6a5b3a">Cinemachine · 状态机</text>
+    </g>
+    <g>
+      <circle cx="524" cy="112" r="6" fill="#6f9f7c"/><text x="524" y="98" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D4</text>
+      <text x="524" y="132" text-anchor="middle" font-size="9.5" fill="#3c5147">主动感知</text>
+      <text x="524" y="146" text-anchor="middle" font-size="8.5" fill="#6a5b3a">OverlapCircle · 冷却</text>
+    </g>
+    <g>
+      <circle cx="662" cy="112" r="6" fill="#4f8a68"/><text x="662" y="98" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D5</text>
+      <text x="662" y="132" text-anchor="middle" font-size="9.5" fill="#3c5147">能互相伤害</text>
+      <text x="662" y="146" text-anchor="middle" font-size="8.5" fill="#6a5b3a">挥剑 · 受击 · 击退</text>
+    </g>
+    <g>
+      <circle cx="800" cy="112" r="6" fill="#3f7a5c"/><text x="800" y="98" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D6</text>
+      <text x="800" y="132" text-anchor="middle" font-size="9.5" fill="#3c5147">数值有出处</text>
+      <text x="800" y="146" text-anchor="middle" font-size="8.5" fill="#6a5b3a">单例 · 暂停面板</text>
+    </g>
+    <g>
+      <circle cx="938" cy="112" r="6" fill="#2f6b4f"/><text x="938" y="98" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D7</text>
+      <text x="938" y="132" text-anchor="middle" font-size="9.5" fill="#3c5147">打怪会变强</text>
+      <text x="938" y="146" text-anchor="middle" font-size="8.5" fill="#6a5b3a">事件 · 经验 · 升级</text>
+    </g>
+    <g>
+      <circle cx="1076" cy="112" r="7" fill="#b48a2a"/><text x="1076" y="98" text-anchor="middle" font-size="10" font-weight="700" fill="#8a5a20">D8</text>
+      <text x="1076" y="132" text-anchor="middle" font-size="9.5" font-weight="700" fill="#8a5a20">技能面板骨架</text>
+      <text x="1076" y="146" text-anchor="middle" font-size="8.5" fill="#8a5a20">0 行脚本</text>
+    </g>
+  </g>
+
+  <!-- 分层 -->
+  <text x="60" y="186" font-family="ui-sans-serif, sans-serif" font-size="12" font-weight="700" fill="#183d2a">现在的五个层次（✓ 已通 / ⚠ 有缺口 / ✗ 没接）</text>
+
+  <g font-family="ui-sans-serif, sans-serif">
+    <rect x="60" y="196" width="1080" height="40" rx="3" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.18"/>
+    <text x="74" y="214" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#183d2a">① 输入 / 移动</text>
+    <text x="230" y="214" font-size="10.5" fill="#3c5147">PlayerMovement：FixedUpdate 写 rb.velocity，speed 来自 StatsManger（5）· 状态机 Idle/Run/Jump/Fall</text>
+    <text x="230" y="229" font-size="9" fill="#6a5b3a">朝向用 localScale 翻转；被打断时由 PlayerMovement.Knockback 协程接管</text>
+    <text x="1126" y="214" text-anchor="end" font-size="13" font-weight="700" fill="#2f7a4f">✓</text>
+
+    <rect x="60" y="244" width="1080" height="40" rx="3" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.18"/>
+    <text x="74" y="262" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#183d2a">② 战斗判定</text>
+    <text x="230" y="262" font-size="10.5" fill="#3c5147">Player_Combat.OverlapCircleAll（range 0.7）→ Enemy_Health.ChangeHealth（3 血）→ Enemy_Knockback + 眩晕</text>
+    <text x="230" y="277" font-size="9" fill="#8a2a20">敌人回手用的是 Enemy_Combat.damage = 0 —— 打得到，但打不掉血</text>
+    <text x="1126" y="262" text-anchor="end" font-size="13" font-weight="700" fill="#c43131">⚠</text>
+
+    <rect x="60" y="292" width="1080" height="40" rx="3" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.18"/>
+    <text x="74" y="310" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#183d2a">③ 数值 / 属性</text>
+    <text x="230" y="310" font-size="10.5" fill="#3c5147">StatsManger 单例：damage 1 · weaponRange 0.7 · speed 5 · maxHealth 20（击退 20 / 0.15s / 眩晕 0.2s）</text>
+    <text x="230" y="325" font-size="9" fill="#6a5b3a">敌人仍自带一套数值（damage / maxHealth / knockbackForce），没有并进同一个数据源</text>
+    <text x="1126" y="310" text-anchor="end" font-size="13" font-weight="700" fill="#b48a2a">⚠</text>
+
+    <rect x="60" y="340" width="1080" height="40" rx="3" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.18"/>
+    <text x="74" y="358" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#183d2a">④ 成长</text>
+    <text x="230" y="358" font-size="10.5" fill="#3c5147">Enemy_Health 静态事件 → ExpManager：currentExp += 3 · 门槛 10 起 ×1.2 · level 只加数字，不碰属性</text>
+    <text x="230" y="373" font-size="9" fill="#8a2a20">技能点没有任何数据源：面板写着「Skill Point: 10」，代码里没有这个东西</text>
+    <text x="1126" y="358" text-anchor="end" font-size="13" font-weight="700" fill="#c43131">⚠</text>
+
+    <rect x="60" y="388" width="1080" height="40" rx="3" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.18"/>
+    <text x="74" y="406" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#183d2a">⑤ 表现 / UI</text>
+    <text x="230" y="406" font-size="10.5" fill="#3c5147">ExpCanvas（HUD）· StatsCanvas（Esc 暂停面板）· SkillCanvass（技能面板空壳，没有开关）</text>
+    <text x="230" y="421" font-size="9" fill="#8a2a20">三张 Canvas 分属两套根：ExpCanvas / PlayerUI 还在场景根级，没进 UIManager</text>
+    <text x="1126" y="406" text-anchor="end" font-size="13" font-weight="700" fill="#b48a2a">⚠</text>
+  </g>
+
+  <!-- 数字 -->
+  <g transform="translate(60, 448)">
+    <rect x="0" y="0" width="256" height="60" rx="4" fill="#183d2a"/>
+    <text x="128" y="26" text-anchor="middle" font-family="ui-monospace, monospace" font-size="19" font-weight="700" fill="#e8f0e8">12 / 567</text>
+    <text x="128" y="45" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#9fb8a4">脚本数 / 总行数（.cs 含注释与空行）</text>
+
+    <rect x="274" y="0" width="256" height="60" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.22"/>
+    <text x="402" y="26" text-anchor="middle" font-family="ui-monospace, monospace" font-size="19" font-weight="700" fill="#183d2a">1 场景 · 1 敌人</text>
+    <text x="402" y="45" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#3c5147">SampleScene · Enemy_Torch（不重生）</text>
+
+    <rect x="548" y="0" width="256" height="60" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.22"/>
+    <text x="676" y="26" text-anchor="middle" font-family="ui-monospace, monospace" font-size="19" font-weight="700" fill="#183d2a">8 篇日志</text>
+    <text x="676" y="45" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#3c5147">Day 1 – Day 8，一篇一天</text>
+
+    <rect x="822" y="0" width="256" height="60" rx="4" fill="#fff6e6" stroke="#b48a2a"/>
+    <text x="950" y="26" text-anchor="middle" font-family="ui-monospace, monospace" font-size="19" font-weight="700" fill="#8a5a20">0 存档 · 0 音效</text>
+    <text x="950" y="45" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a5a20">进度只在内存里，关掉就归零</text>
+  </g>
+</svg>

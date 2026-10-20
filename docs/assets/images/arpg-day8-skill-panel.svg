@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bgl8" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#f4f7f1"/>
+      <stop offset="1" stop-color="#e6eee6"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgl8)"/>
+
+  <text x="600" y="32" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#183d2a">SkillPanel 的量法：1200 见方的面板，塞进 1080 高的参考分辨率</text>
+  <text x="600" y="54" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12.5" fill="#3c5147">下面所有数字都是场景里的实际值，按 1 : 4 画（1 像素 = 4 UI 单位）</text>
+
+  <!-- 面板 -->
+  <rect x="60" y="70" width="300" height="300" rx="4" fill="#f7f3e8" stroke="#8a7a52" stroke-width="1.5"/>
+  <text x="60" y="66" font-family="ui-monospace, monospace" font-size="9.5" fill="#6a5b3a">SkillPanel 1200 × 1200</text>
+
+  <!-- 1080 参考高度虚线 -->
+  <line x1="52" y1="85" x2="368" y2="85" stroke="#c43131" stroke-dasharray="4 3"/>
+  <line x1="52" y1="355" x2="368" y2="355" stroke="#c43131" stroke-dasharray="4 3"/>
+  <text x="372" y="88" font-family="ui-monospace, monospace" font-size="9" fill="#8a2a20">1080 顶</text>
+  <text x="372" y="358" font-family="ui-monospace, monospace" font-size="9" fill="#8a2a20">1080 底</text>
+
+  <!-- Banner -->
+  <rect x="60" y="96" width="300" height="62" fill="#d8c7a0" stroke="#8a7a52" stroke-opacity="0.6"/>
+  <text x="210" y="128" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="17" font-weight="700" fill="#2a2113">Skills Panel</text>
+  <text x="210" y="151" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#5a4a2a">1200 × 250 · 字号 120</text>
+
+  <!-- 左树 -->
+  <g>
+    <rect x="130" y="173" width="76" height="120" fill="#fbf8ef" stroke="#8a7a52" stroke-opacity="0.7"/>
+    <rect x="130" y="173" width="76" height="18" fill="#c9b688"/>
+    <text x="168" y="186" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="8.5" font-weight="700" fill="#2a2113">Combat</text>
+    <g fill="#dfe6dc" stroke="#8a9a86" stroke-opacity="0.9">
+      <rect x="136" y="196" width="18" height="18" rx="1"/><rect x="159" y="196" width="18" height="18" rx="1"/><rect x="182" y="196" width="18" height="18" rx="1"/>
+      <rect x="136" y="219" width="18" height="18" rx="1"/><rect x="159" y="219" width="18" height="18" rx="1"/><rect x="182" y="219" width="18" height="18" rx="1"/>
+      <rect x="136" y="242" width="18" height="18" rx="1"/><rect x="159" y="242" width="18" height="18" rx="1"/><rect x="182" y="242" width="18" height="18" rx="1"/>
+      <rect x="136" y="265" width="18" height="18" rx="1"/><rect x="159" y="265" width="18" height="18" rx="1"/><rect x="182" y="265" width="18" height="18" rx="1"/>
+    </g>
+    <text x="168" y="304" text-anchor="middle" font-family="ui-monospace, monospace" font-size="7.5" fill="#5a4a2a">300 × 480</text>
+  </g>
+
+  <!-- 右树 -->
+  <g>
+    <rect x="221" y="173" width="76" height="120" fill="#fbf8ef" stroke="#8a7a52" stroke-opacity="0.7"/>
+    <rect x="221" y="173" width="76" height="18" fill="#c9b688"/>
+    <text x="259" y="186" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="8.5" font-weight="700" fill="#2a2113">MAGIC</text>
+    <g fill="#dfe6dc" stroke="#8a9a86" stroke-opacity="0.9">
+      <rect x="227" y="196" width="18" height="18" rx="1"/><rect x="250" y="196" width="18" height="18" rx="1"/><rect x="273" y="196" width="18" height="18" rx="1"/>
+      <rect x="227" y="219" width="18" height="18" rx="1"/><rect x="250" y="219" width="18" height="18" rx="1"/><rect x="273" y="219" width="18" height="18" rx="1"/>
+      <rect x="227" y="242" width="18" height="18" rx="1"/><rect x="250" y="242" width="18" height="18" rx="1"/><rect x="273" y="242" width="18" height="18" rx="1"/>
+      <rect x="227" y="265" width="18" height="18" rx="1"/><rect x="250" y="265" width="18" height="18" rx="1"/><rect x="273" y="265" width="18" height="18" rx="1"/>
+    </g>
+  </g>
+
+  <!-- 技能点 -->
+  <rect x="221" y="293" width="76" height="20" fill="#c9d8c4" stroke="#7f9b86"/>
+  <rect x="222" y="294" width="18" height="18" fill="#8ba883"/>
+  <text x="294" y="307" text-anchor="end" font-family="ui-monospace, monospace" font-size="7" fill="#2a3a2a">Skill Point: 10</text>
+
+  <!-- 尺寸标注 -->
+  <line x1="130" y1="322" x2="297" y2="322" stroke="#183d2a" stroke-opacity="0.5"/>
+  <line x1="130" y1="318" x2="130" y2="326" stroke="#183d2a" stroke-opacity="0.5"/>
+  <line x1="297" y1="318" x2="297" y2="326" stroke="#183d2a" stroke-opacity="0.5"/>
+  <text x="214" y="336" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8.5" fill="#183d2a">两树间距 65</text>
+
+  <line x1="126" y1="173" x2="126" y2="293" stroke="#183d2a" stroke-opacity="0.5"/>
+  <line x1="122" y1="173" x2="130" y2="173" stroke="#183d2a" stroke-opacity="0.5"/>
+  <line x1="122" y1="293" x2="130" y2="293" stroke="#183d2a" stroke-opacity="0.5"/>
+  <text x="120" y="236" text-anchor="end" font-family="ui-monospace, monospace" font-size="8.5" fill="#183d2a">480</text>
+
+  <text x="60" y="386" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a2a20">红色虚线是 1080 高的参考屏：面板上下各多出 60，被裁掉的是九宫格底图的边。</text>
+
+  <!-- 右侧：算式 -->
+  <g transform="translate(430, 70)">
+    <rect x="0" y="0" width="734" height="118" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.28"/>
+    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="12" font-weight="700" fill="#183d2a">网格是算出来的：12 个空格子为什么正好 3 列 × 4 行</text>
+    <text x="14" y="44" font-family="ui-monospace, monospace" font-size="10.5" fill="#3c5147">CombatPanel 铺满父级：300 − 20 = 280 宽，480 − 86.8 ≈ 393 高</text>
+    <text x="14" y="64" font-family="ui-monospace, monospace" font-size="10.5" fill="#3c5147">横向：85 × 3 + 5 × 2 = 265　余 15（左右各 7.5）→ 放不下第 4 列（85 × 4 + 15 = 355）</text>
+    <text x="14" y="84" font-family="ui-monospace, monospace" font-size="10.5" fill="#3c5147">纵向：85 × 4 + 5 × 3 = 355　余 38 → UpperCenter 对齐，多出来的全在底部</text>
+    <text x="14" y="104" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a5a20">Constraint 是 Flexible：列数由容器宽度自己算出来，不是写死的 3。</text>
+
+    <rect x="0" y="130" width="734" height="96" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.28"/>
+    <text x="14" y="152" font-family="ui-sans-serif, sans-serif" font-size="12" font-weight="700" fill="#183d2a">竖直方向的位置关系（以面板中心为原点）</text>
+    <text x="14" y="174" font-family="ui-monospace, monospace" font-size="10.5" fill="#3c5147">标题条 y = +372，高 250 → 顶到 +497，离屏幕上沿 +540 还有 43</text>
+    <text x="14" y="194" font-family="ui-monospace, monospace" font-size="10.5" fill="#3c5147">树 y = −51，高 480 → 底边 −291；技能点 y = −332，高 80 → 顶边 −292</text>
+    <text x="14" y="214" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">两个数字只差 1 像素：技能点是「贴着树底边」摆上去的，不是算过去的。</text>
+
+    <rect x="0" y="238" width="734" height="88" rx="4" fill="#1e2a22"/>
+    <text x="14" y="260" font-family="ui-monospace, monospace" font-size="10.5" fill="#9fd8a8">// 现在的对齐靠手摆，改一个数字就要重摆三处</text>
+    <text x="14" y="280" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8f0e8">SkillPanel  → 1200 × 1200（比参考屏高 120）</text>
+    <text x="14" y="298" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8f0e8">CombatTree (−169, −51)　MagicTree (+196, −51)　SkillPoint (+192, −332)</text>
+    <text x="14" y="316" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#9fb8a4">三处都用绝对锚点：改成 1600 × 900 的参考，要一起改。</text>
+  </g>
+</svg>

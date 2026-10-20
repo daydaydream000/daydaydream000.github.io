@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bgu8" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef7f2"/>
+      <stop offset="1" stop-color="#dcebf2"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgu8)"/>
+
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#183d2a">收拢之后的 UI 层级：一个空物体，两个 Canvas，一堆子物体</text>
+  <text x="600" y="56" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3c5147">UIManager 自己没有任何脚本；真正决定「谁盖住谁」的是每个 Canvas 的 sortingOrder</text>
+
+  <!-- 左：层级 -->
+  <g transform="translate(36, 78)">
+    <rect x="0" y="0" width="470" height="40" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.5"/>
+    <text x="12" y="17" font-family="ui-monospace, monospace" font-size="12.5" font-weight="700" fill="#183d2a">UIManager</text>
+    <text x="12" y="33" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#6a5b3a">GameObject + Transform（不是 RectTransform）· Layer 0 · 无脚本</text>
+
+    <path d="M18,40 L18,56 M18,56 L18,72 M18,56 L250,56 L250,72" stroke="#183d2a" stroke-opacity="0.45" fill="none"/>
+
+    <rect x="0" y="72" width="230" height="52" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.3"/>
+    <text x="12" y="89" font-family="ui-monospace, monospace" font-size="11.5" font-weight="700" fill="#183d2a">StatsCanvas</text>
+    <text x="12" y="104" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#3c5147">Overlay · sort 0 · α 1 · Layer 5</text>
+    <text x="12" y="117" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a2a20">Day 6 设的 α=0 不在了</text>
+
+    <rect x="250" y="72" width="220" height="52" rx="4" fill="#fff6e6" stroke="#b48a2a"/>
+    <text x="262" y="89" font-family="ui-monospace, monospace" font-size="11.5" font-weight="700" fill="#5a3a20">SkillCanvass</text>
+    <text x="262" y="104" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a5a20">Overlay · sort 1 · α 1 · 不挡射线 · Layer 0</text>
+    <text x="262" y="117" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a5a20">名字多了个 s（Canvas → Canvass）</text>
+
+    <path d="M18,124 L18,138 M18,138 L18,156 M18,138 L250,138 L250,156" stroke="#183d2a" stroke-opacity="0.3" fill="none"/>
+    <path d="M262,124 L262,156" stroke="#b48a2a" fill="none"/>
+
+    <rect x="0" y="156" width="230" height="46" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.25"/>
+    <text x="12" y="173" font-family="ui-monospace, monospace" font-size="11" fill="#3c5147">└ StatsPanel</text>
+    <text x="12" y="188" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#3c5147">Image + StatsUI（Esc 开关 + 时停还在这里）</text>
+    <text x="12" y="199" font-family="ui-monospace, monospace" font-size="8.5" fill="#6a5b3a">├ Banner「Stats」　└ TextPanel（Grid 300×100）</text>
+
+    <rect x="250" y="156" width="220" height="46" rx="4" fill="#ffffff" stroke="#b48a2a" stroke-opacity="0.55"/>
+    <text x="262" y="173" font-family="ui-monospace, monospace" font-size="11" fill="#5a3a20">└ SkillPanel　1200 × 1200</text>
+    <text x="262" y="188" font-family="ui-monospace, monospace" font-size="8.5" fill="#5a3a20">├ Banner「Skills Panel」　├ CombatTree</text>
+    <text x="262" y="199" font-family="ui-monospace, monospace" font-size="8.5" fill="#5a3a20">├ MagicTree　└ SkillPoint（Icon + TMP）</text>
+
+    <rect x="250" y="212" width="220" height="58" rx="4" fill="#ffffff" stroke="#c43131" stroke-opacity="0.45"/>
+    <text x="262" y="228" font-family="ui-sans-serif, sans-serif" font-size="10" font-weight="700" fill="#8a2a20">没搬进来的两个</text>
+    <text x="262" y="243" font-family="ui-monospace, monospace" font-size="9" fill="#8a2a20">ExpCanvas（ExpManager 挂在上面）</text>
+    <text x="262" y="256" font-family="ui-monospace, monospace" font-size="9" fill="#8a2a20">PlayerUI（HP 文本）</text>
+    <text x="262" y="267" font-family="ui-sans-serif, sans-serif" font-size="8.5" fill="#8a2a20">两者仍在场景根级，和 UIManager 平级</text>
+
+    <text x="0" y="296" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#3c5147">层级只解决「归谁管」；它不改变渲染顺序，也不改变可见性。</text>
+    <text x="0" y="314" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#8a2a20">把两个 Canvas 变成兄弟之后，它们之间就只剩 sortingOrder 一条规则了。</text>
+  </g>
+
+  <!-- 右：参数对照 -->
+  <g transform="translate(534, 78)">
+    <rect x="0" y="0" width="630" height="150" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.3"/>
+    <text x="14" y="21" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#183d2a">两张 Canvas 的实际参数（今天在场景里逐个核对过）</text>
+
+    <text x="14" y="44" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#6a5b3a">属性</text>
+    <text x="286" y="44" font-family="ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#183d2a">StatsCanvas</text>
+    <text x="452" y="44" font-family="ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#8a5a20">SkillCanvass</text>
+    <line x1="14" y1="50" x2="616" y2="50" stroke="#183d2a" stroke-opacity="0.14"/>
+
+    <text x="14" y="66" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">Render Mode</text>
+    <text x="286" y="66" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">Screen Space - Overlay</text>
+    <text x="452" y="66" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">Screen Space - Overlay</text>
+
+    <text x="14" y="84" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">Sorting Order</text>
+    <text x="286" y="84" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">0</text>
+    <text x="452" y="84" font-family="ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#8a5a20">1</text>
+
+    <text x="14" y="102" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">Reference (W×H)</text>
+    <text x="286" y="102" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">1920 × 1080</text>
+    <text x="452" y="102" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">1920 × 1080</text>
+
+    <text x="14" y="120" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">CanvasGroup</text>
+    <text x="286" y="120" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">α 1 · 可点 · 挡射线</text>
+    <text x="452" y="120" font-family="ui-monospace, monospace" font-size="9.5" fill="#8a5a20">α 1 · 不可点 · 不挡射线</text>
+
+    <text x="14" y="138" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">Layer</text>
+    <text x="286" y="138" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">5（UI）</text>
+    <text x="452" y="138" font-family="ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#8a2a20">0（Default）</text>
+
+    <!-- 三个开关 -->
+    <rect x="0" y="158" width="630" height="94" rx="4" fill="#fff6e6" stroke="#b48a2a"/>
+    <text x="14" y="178" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#5a3a20">CanvasGroup 的三个开关，各管一件事</text>
+
+    <text x="14" y="200" font-family="ui-monospace, monospace" font-size="10" font-weight="700" fill="#8a5a20">alpha</text>
+    <text x="110" y="200" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a3a20">只管看不看得见：0 时子物体照样占位、照样能被射线打中</text>
+
+    <text x="14" y="220" font-family="ui-monospace, monospace" font-size="10" font-weight="700" fill="#8a5a20">interactable</text>
+    <text x="110" y="220" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a3a20">只管 Button / Slider 这类控件点不点得动，不影响 Graphic</text>
+
+    <text x="14" y="240" font-family="ui-monospace, monospace" font-size="10" font-weight="700" fill="#8a5a20">blocksRaycasts</text>
+    <text x="110" y="240" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a3a20">只管这个 Group 挡不挡鼠标 —— 关掉，点击会穿到下面的 UI</text>
+
+    <rect x="0" y="260" width="630" height="60" rx="4" fill="#1e2a22"/>
+    <text x="14" y="280" font-family="ui-monospace, monospace" font-size="10" fill="#9fd8a8">// 最危险的一种组合（今天差点就写成这样）</text>
+    <text x="14" y="298" font-family="ui-monospace, monospace" font-size="11" fill="#e8f0e8">alpha = 0  +  blocksRaycasts = true</text>
+    <text x="14" y="313" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#9fb8a4">看不见，鼠标却被全屏拦住 —— 玩家会以为「键坏了」</text>
+  </g>
+</svg>
