@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bg9" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef7f2"/>
+      <stop offset="1" stop-color="#dcebf2"/>
+    </linearGradient>
+    <linearGradient id="screen9" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#26323e"/>
+      <stop offset="1" stop-color="#151e27"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bg9)"/>
+
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="23" font-weight="700" fill="#183d2a">ARPG 学习日志 Day 9：把空格子变成 SkillSlot，并修掉首轮联调的三个崩溃</text>
+  <text x="600" y="58" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3c5147">4 个脚本接起技能树 · ScriptableObject 当数据 · 满级卡 4/5 · 第 25 行空引用 · Combat 禁用仍砍第一刀</text>
+
+  <!-- 左：四个脚本 -->
+  <g transform="translate(24, 78)">
+    <text x="0" y="0" font-family="ui-sans-serif, sans-serif" font-size="12" font-weight="700" fill="#183d2a">今天动到的脚本</text>
+
+    <rect x="0" y="12" width="238" height="46" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.4"/>
+    <text x="10" y="31" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#183d2a">SkillSO</text>
+    <text x="10" y="47" font-family="ui-sans-serif, sans-serif" font-size="8.5" fill="#5a4a2a">资产 · name / maxLevel / icon</text>
+
+    <rect x="0" y="64" width="238" height="46" rx="4" fill="#fff6e6" stroke="#b48a2a"/>
+    <text x="10" y="83" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#5a3a20">SkillSlot</text>
+    <text x="10" y="99" font-family="ui-sans-serif, sans-serif" font-size="8.5" fill="#8a5a20">格子：点→升→亮 + 两个静态事件</text>
+
+    <rect x="0" y="116" width="238" height="46" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.4"/>
+    <text x="10" y="135" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#183d2a">SkillTreeManager</text>
+    <text x="10" y="151" font-family="ui-sans-serif, sans-serif" font-size="8.5" fill="#5a4a2a">点数 / 解锁 / 满级连锁解锁</text>
+
+    <rect x="0" y="168" width="238" height="46" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.4"/>
+    <text x="10" y="187" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#183d2a">SkillManager</text>
+    <text x="10" y="203" font-family="ui-sans-serif, sans-serif" font-size="8.5" fill="#5a4a2a">学技能 → 改属性 / 开战斗</text>
+
+    <text x="0" y="234" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#3c5147">ToggleSkillTree 顺手接上面板开关</text>
+    <text x="0" y="250" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a2a20">24 个格子从 0 个 Button → 每个都能点</text>
+  </g>
+
+  <!-- 中：点击 → 升级 → 效果 的迷你流程 -->
+  <rect x="284" y="86" width="512" height="256" rx="6" fill="url(#screen9)"/>
+  <text x="292" y="80" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a6a72">点一下技能格子的完整链路</text>
+
+  <g font-family="ui-sans-serif, sans-serif">
+    <rect x="320" y="104" width="160" height="34" rx="4" fill="#3a4d5c"/>
+    <text x="400" y="125" text-anchor="middle" font-size="11" fill="#eaf2f6">点击 Button</text>
+
+    <rect x="320" y="150" width="160" height="34" rx="4" fill="#3a4d5c"/>
+    <text x="400" y="171" text-anchor="middle" font-size="11" fill="#eaf2f6">TryUpgradeSkill</text>
+
+    <rect x="500" y="150" width="160" height="34" rx="4" fill="#46586a"/>
+    <text x="580" y="171" text-anchor="middle" font-size="11" fill="#eaf2f6">OnAbilityPointSpent</text>
+
+    <rect x="500" y="196" width="160" height="30" rx="4" fill="#46586a"/>
+    <text x="580" y="215" text-anchor="middle" font-size="10.5" fill="#eaf2f6">扣点数 + 生效</text>
+
+    <rect x="320" y="196" width="160" height="34" rx="4" fill="#5a4a2a"/>
+    <text x="400" y="217" text-anchor="middle" font-size="11" fill="#fff0d8">if 满级 → OnSkillMaxed</text>
+
+    <rect x="320" y="242" width="160" height="34" rx="4" fill="#6a2a20"/>
+    <text x="400" y="263" text-anchor="middle" font-size="11" fill="#ffd8c8">HandleSkillMaxed</text>
+
+    <rect x="500" y="242" width="160" height="34" rx="4" fill="#3a4d5c"/>
+    <text x="580" y="263" text-anchor="middle" font-size="11" fill="#eaf2f6">逐个解锁其它格子</text>
+
+    <rect x="320" y="288" width="340" height="30" rx="4" fill="#2a3a2a" opacity="0.7"/>
+    <text x="490" y="307" text-anchor="middle" font-size="10" fill="#bfe0c4">最后 UpdateUI() 把格子刷成 5/5 —— 这里会被崩溃打断</text>
+
+    <g stroke="#9fb4c0" stroke-width="1.4" fill="none">
+      <path d="M400,138 L400,150"/>
+      <path d="M400,184 L400,196"/>
+      <path d="M480,167 L500,167"/>
+      <path d="M580,184 L580,196"/>
+      <path d="M400,230 L400,242"/>
+      <path d="M400,276 L400,288"/>
+      <path d="M480,259 L500,259"/>
+    </g>
+  </g>
+
+  <!-- 右：三个崩溃 -->
+  <g transform="translate(820, 78)">
+    <rect x="0" y="0" width="356" height="70" rx="4" fill="#fff6e6" stroke="#b48a2a"/>
+    <text x="12" y="19" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#5a3a20">① 满级后 UI 卡在 4/5</text>
+    <text x="12" y="38" font-family="ui-monospace, monospace" font-size="9.5" fill="#8a5a20">HandleSkillMaxed 遍历 24 格</text>
+    <text x="12" y="55" font-family="ui-monospace, monospace" font-size="9.5" fill="#8a5a20">空 skillSO 的 UpdateUI() 抛 NRE</text>
+    <text x="12" y="68" font-family="ui-sans-serif, sans-serif" font-size="8.5" fill="#8a5a20">把最后的 UpdateUI() 一起吞掉</text>
+
+    <rect x="0" y="78" width="356" height="64" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.32"/>
+    <text x="12" y="97" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#183d2a">② SkillManager 第 25 行空引用</text>
+    <text x="12" y="116" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">combat 字段在 Inspector 没挂</text>
+    <text x="12" y="133" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">点 "Sword Slash" → combat.enabled</text>
+
+    <rect x="0" y="150" width="356" height="64" rx="4" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.32"/>
+    <text x="12" y="169" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#183d2a">③ Combat 禁用仍砍第一刀</text>
+    <text x="12" y="188" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">Attack() 没有 enabled 守卫</text>
+    <text x="12" y="205" font-family="ui-monospace, monospace" font-size="9.5" fill="#3c5147">timer 初始 0 → 第一刀放出去</text>
+  </g>
+
+  <rect x="24" y="350" width="1152" height="26" rx="3" fill="#183d2a" opacity="0.06"/>
+  <text x="600" y="367" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#3c5147">今天写的是「让面板活起来」的逻辑：数据用 ScriptableObject 装，交互用静态事件串，崩溃全在第一次真正点下去的时候才暴露</text>
+</svg>

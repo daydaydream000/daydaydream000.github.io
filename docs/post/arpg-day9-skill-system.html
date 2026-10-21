@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARPG 学习日志 Day 9：把空格子变成 SkillSlot，并修掉首轮联调的三个崩溃 · DayDayDream</title>
+<meta name="description" content="把 Day 8 那 24 个空 RectTransform 换成真能点的 SkillSlot（Image + Button + 数据），用 SkillSO 描述技能、SkillTreeManager 管点数与解锁、SkillManager 把「学技能」接到属性与战斗上；再把首轮联调爆出来的三个崩溃逐一拆开：满级后 UI 卡在 4/5、SkillManager 第 25 行空引用、以及 Combat 初始禁用却仍能砍出第一刀。">
+<link rel="canonical" href="https://daydaydream000.github.io/post/arpg-day9-skill-system.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DayDayDream">
+<meta property="og:title" content="ARPG 学习日志 Day 9：把空格子变成 SkillSlot，并修掉首轮联调的三个崩溃">
+<meta property="og:description" content="把 Day 8 那 24 个空 RectTransform 换成真能点的 SkillSlot（Image + Button + 数据），用 SkillSO 描述技能、SkillTreeManager 管点数与解锁、SkillManager 把「学技能」接到属性与战斗上；再把首轮联调爆出来的三个崩溃逐一拆开：满级后 UI 卡在 4/5、SkillManager 第 25 行空引用、以及 Combat 初始禁用却仍能砍出第一刀。">
+<meta property="og:url" content="https://daydaydream000.github.io/post/arpg-day9-skill-system.html">
+<meta property="og:image" content="https://daydaydream000.github.io/assets/images/arpg-day9-cover.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f3f8f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="DayDayDream" href="../rss.xml">
+<link rel="stylesheet" href="../assets/style.css?v=db15b81cea">
+<script>
+/* 主题与公告状态在首次绘制前应用，避免闪烁 */
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('dsh-theme'); } catch (e) {}
+  if (saved !== 'light' && saved !== 'dark') saved = 'auto';
+  var root = document.documentElement;
+  root.dataset.theme = saved;
+  root.classList.toggle('dark', saved === 'dark' ||
+    (saved === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  try {
+    if (localStorage.getItem('dsh-notice') === 'off') root.classList.add('notice-off');
+  } catch (e) {}
+})();
+</script>
+
+</head>
+<body class="page-post">
+<div id="page-progress" aria-hidden="true"></div>
+<a class="skip-link" href="#main">跳到正文</a>
+
+<header class="topbar"><div class="topbar-inner"><a class="topbar-brand" href="../index.html"><img src="../assets/avatar.jpg" alt="" width="30" height="30"><span class="topbar-brand-text">DayDayDream</span></a><nav class="topbar-nav" aria-label="主导航"><a href="../index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg><span>首页</span></a><a href="../arpg-progress.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>ARPG</span></a><a href="../tags/index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span>标签</span></a><a href="../about.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>关于</span></a></nav><div class="topbar-tools"><button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索（按 /）"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题"><span class="icon-sun"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg></span><span class="icon-moon"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></svg></span></button></div></div></header>
+<header class="banner banner-short"><img class="banner-bg" src="../assets/banner.jpg" alt="" aria-hidden="true" decoding="async"><div class="banner-scrim"></div><div class="banner-inner"><p class="banner-title">DayDayDream</p><p class="banner-subtitle">醒着做梦，落笔成诗——记所思，存所学。</p></div></header>
+
+<main id="main" class="layout">
+  <div class="layout-inner">
+    <aside class="col col-left"><section class="card-panel profile-card" data-reveal="0"><a class="profile-avatar-link" href="../about.html" aria-label="关于我"><img class="profile-avatar" src="../assets/avatar.jpg" alt="DayDayDream" decoding="async"></a><p class="profile-name">DayDayDream</p><div class="profile-accent" aria-hidden="true"></div><p class="profile-greeting">Hello, I'm DayDayDream.</p><div class="profile-social"><a class="social-chip" href="https://github.com/daydaydream000" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener noreferrer"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.58.69.48A10.04 10.04 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/></svg></a><a class="social-chip" href="mailto:daydaydream000@users.noreply.github.com" title="邮箱" aria-label="邮箱"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></a><a class="social-chip" href="../rss.xml" title="RSS 订阅" aria-label="RSS 订阅"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18.5" r="1.4" fill="currentColor" stroke="none"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/></svg></a></div></section><section class="card-panel notice-card" id="notice" data-reveal="1"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5v3A1.5 1.5 0 0 0 5.5 15H7l1 4h2l-1-4h2l7 3.5V6.5L11 10H5.5A1.5 1.5 0 0 0 4 10.5Z"/></svg><span>公告</span></h2><p class="notice-text">欢迎来到 DayDayDream —— 醒着做梦，落笔成诗，记所思，存所学。</p><div class="notice-foot"><a class="notice-more" href="../about.html">前往关于</a><button class="notice-close" type="button" aria-label="关闭公告" title="关闭"><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></section></aside>
+    <div class="col col-main"><article class="card-panel post">
+  <header class="post-header">
+    <h1 class="post-title">ARPG 学习日志 Day 9：把空格子变成 SkillSlot，并修掉首轮联调的三个崩溃</h1>
+    <div class="post-meta"><div class="post-badges"><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><time datetime="2026-10-20">2026 年 10 月 20 日</time></span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg>约 4063 字</span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>12 分钟阅读</span><a class="badge badge-pin" href="../tags/index.html#tag-unity"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>Unity</a><a class="badge badge-pin" href="../tags/index.html#tag-arpg"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>ARPG</a><a class="badge badge-pin" href="../tags/index.html#tag-游戏开发"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>游戏开发</a><a class="badge badge-pin" href="../tags/index.html#tag-技能树"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>技能树</a><a class="badge badge-pin" href="../tags/index.html#tag-调试"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>调试</a><a class="badge badge-pin" href="../tags/index.html#tag-scriptableobject"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>ScriptableObject</a></div></div>
+  </header>
+  <div class="toc-mobile"><nav class="toc" aria-label="目录"><p class="toc-title">目录</p><div class="toc-list"><a href="#一句话说清这天的内容">一句话说清这天的内容</a><a href="#先说结论为什么「能点」比「能看」难这么多">先说结论：为什么「能点」比「能看」难这么多</a><a href="#脚本关系">脚本关系</a><a href="#一、24-个空格子-能点的-skillslot">一、24 个空格子 → 能点的 SkillSlot</a><a href="#1-skillso技能的数据外壳" class="toc-h3">1. SkillSO：技能的数据外壳</a><a href="#2-skillslot格子的灵魂" class="toc-h3">2. SkillSlot：格子的灵魂</a><a href="#3-skilltreemanager点数与解锁的中央" class="toc-h3">3. SkillTreeManager：点数与解锁的中央</a><a href="#4-skillmanager把「学技能」接到游戏上" class="toc-h3">4. SkillManager：把「学技能」接到游戏上</a><a href="#二、今天翻出来的账三个崩溃">二、今天翻出来的账：三个崩溃</a><a href="#坑-1满级后-ui-卡在-45" class="toc-h3">坑 1：满级后 UI 卡在 4/5</a><a href="#坑-2skillmanager-第-25-行空引用" class="toc-h3">坑 2：SkillManager 第 25 行空引用</a><a href="#坑-3combat-初始禁用却仍能砍出第一刀" class="toc-h3">坑 3：Combat 初始禁用，却仍能砍出第一刀</a><a href="#三、整体设计思路">三、整体设计思路</a><a href="#1-数据用-scriptableobject逻辑用-monobehaviour两件事分开" class="toc-h3">1. 数据用 ScriptableObject，逻辑用 MonoBehaviour，两件事分开</a><a href="#2-静态事件是把双刃剑" class="toc-h3">2. 静态事件是把双刃剑</a><a href="#3-enabled-不是「锁」是「暂停心跳」" class="toc-h3">3. enabled 不是「锁」，是「暂停心跳」</a><a href="#4-一整天里最该记住的一句话" class="toc-h3">4. 一整天里最该记住的一句话</a><a href="#明天要补的洞">明天要补的洞</a><a href="#一句话总结">一句话总结</a></div></nav></div>
+  <figure class="post-cover"><img src="../assets/images/arpg-day9-cover.svg" alt="ARPG 学习日志 Day 9：把空格子变成 SkillSlot，并修掉首轮联调的三个崩溃" loading="lazy" decoding="async"></figure>
+  <div class="post-content"><h2 id="一句话说清这天的内容">一句话说清这天的内容</h2><p>Day 8 把技能面板<strong>画</strong>出来了——24 个空格子、0 个 Button。今天把它<strong>做</strong>出来：用一个 <code>ScriptableObject</code>（技能数据）+ 一个 <code>SkillSlot</code>（格子组件）+ 两个 Manager（点数与生效），让「点格子 → 扣点数 → 升级 → 亮起来 → 真的改变游戏」这一整条链路第一次跑通；然后被首轮联调爆出来的三个崩溃追着修了一整晚。</p><p><strong>今天新增 4 个脚本、修改 0 个旧脚本</strong>（Day 1–8 的战斗 / 属性 / 经验逻辑一个没动）：<code>SkillSO</code>、<code>SkillSlot</code>、<code>SkillTreeManager</code>、<code>SkillManager</code>，外加一个早就存在、今天才接上开关的 <code>ToggleSkillTree</code>。</p><hr><h2 id="先说结论为什么「能点」比「能看」难这么多">先说结论：为什么「能点」比「能看」难这么多</h2><p>Day 8 那个面板之所以「看起来完成了」，是因为它只需要<strong>摆位置</strong>——纯 RectTransform，不依赖任何运行时数据。今天要的「能点」逼着你把三件 Day 8 刻意留白的事一次性补齐：</p><ol><li><strong>每个格子得有自己的数据</strong>：叫什么、几级满、用什么图标。</li><li><strong>得有一个中央地点存「我还有几点」、以及「谁解锁了」</strong>。</li><li><strong>「学一个技能」必须能反作用于游戏</strong>：加血量上限、或者把一开始锁死的战斗打开。</li></ol><p>这三点里，第 3 点最容易被当成「顺手」——结果三个崩溃里有俩都在它身上。等会儿会看到：崩溃从来不在你写新逻辑的地方炸，而是在新逻辑<strong>第一次真正被触发</strong>的瞬间炸。</p><hr><h2 id="脚本关系">脚本关系</h2><div class="table-wrap"><table><thead><tr><th>项</th><th>变化</th></tr></thead><tbody><tr><td><code>SkillSO.cs</code></td><td><strong>新增</strong> —— <code>ScriptableObject</code>：技能名 / 最大等级 / 图标</td></tr><tr><td><code>SkillSlot.cs</code></td><td><strong>新增</strong> —— 单个格子的组件：升一级、是否解锁、两个静态事件</td></tr><tr><td><code>SkillTreeManager.cs</code></td><td><strong>新增</strong> —— 持有全部 24 格、技能点、满级连锁解锁</td></tr><tr><td><code>SkillManager.cs</code></td><td><strong>新增</strong> —— 订阅「花点数」事件，把技能映射成属性/战斗改动</td></tr><tr><td><code>ToggleSkillTree.cs</code></td><td><strong>早已存在，今天接上</strong>（开关面板 + <code>Time.timeScale</code>）</td></tr><tr><td><code>StatsManger</code> / <code>Player_Combat</code> / <code>ExpManager</code></td><td><strong>全部未改</strong>，只是被新脚本引用</td></tr></tbody></table></div><p><strong>调用链</strong>（今天唯一新的一条主干）：</p><p><code>点击格子 Button → SkillTreeManager.Start 注册的监听 → CheckAvailablePoints → slot.TryUpgradeSkill() → ① 扣点数 + ② 满级连锁解锁 + ③ UpdateUI() 刷新 → SkillManager 把「学技能」接到属性/战斗</code></p><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>这条链里有两个<strong>静态事件</strong> <code>OnAbilityPointSpent</code> 和 <code>OnSkillMaxed</code>，挂在 <code>SkillSlot</code> 上。今天就是被这两个事件的订阅顺序和覆盖范围，坑了三次。下面的「账」会逐条拆。</p></div><hr><h2 id="一、24-个空格子-能点的-skillslot">一、24 个空格子 → 能点的 SkillSlot</h2><h3 id="1-skillso技能的数据外壳">1. <code>SkillSO</code>：技能的数据外壳</h3><p>Day 8 的「Skill Point: 10」是写死在 TMP 里的占位符。今天的第一件事是给技能一个正经的数据类型：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">[CreateAssetMenu(fileName ="NewSkill",menuName ="SkillTree/Skill")]
+public class SkillSO : ScriptableObject
+{
+    public string skillName;
+    public int maxLevel;
+    public Sprite skillIcon;
+}</code></pre></div><p>三个字段正好对应 Day 8 面板缺的三样东西：<code>skillName</code> 是显示名、<code>maxLevel</code> 是「X/Y」里的那个 Y、<code>skillIcon</code> 是格子上那张图。<strong>关键在 <code>ScriptableObject</code></strong>——它不挂在场景里，是项目资源（Project 里右键 <code>SkillTree/Skill</code> 就能建一个），所有格子共享同一份定义，改一处、全体生效。</p><h3 id="2-skillslot格子的灵魂">2. <code>SkillSlot</code>：格子的灵魂</h3><p>Day 8 的格子只有 <code>RectTransform</code>。今天给它挂上组件，让它同时具备「显示」和「行为」：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class SkillSlot : MonoBehaviour
+{
+    public List&lt;SkillSlot&gt; prerequisiteSkillSlots; // 前置依赖
+    public SkillSO skillSO;                        // 这份格子装哪个技能
+    public int currentLevel;
+    public bool isUnlocked;
+    public Image skillIcon;
+    public TMP_Text skillLevelText;
+    public Button skillButton;
+
+    public static event Action&lt;SkillSlot&gt; OnAbilityPointSpent; // 花了一点
+    public static event Action&lt;SkillSlot&gt; OnSkillMaxed;        // 刚满级
+
+    public void TryUpgradeSkill()
+    {
+        if (isUnlocked &amp;&amp; currentLevel &lt; skillSO.maxLevel)
+        {
+            currentLevel++;
+            OnAbilityPointSpent?.Invoke(this);
+            if (currentLevel &gt;= skillSO.maxLevel)
+            {
+                OnSkillMaxed?.Invoke(this);
+            }
+            UpdateUI();   // ← 最后才刷新自己
+        }
+    }
+
+    public bool CanUnlockSkill()
+    {
+        foreach (SkillSlot slot in prerequisiteSkillSlots)
+        {
+            if (!slot.isUnlocked || slot.currentLevel &lt; slot.skillSO.maxLevel)
+                return false;
+        }
+        return true;
+    }
+
+    public void Unlock() { isUnlocked = true; UpdateUI(); }
+
+    private void UpdateUI()
+    {
+        skillIcon.sprite = skillSO.skillIcon;
+        skillLevelText.text = isUnlocked
+            ? currentLevel + "/" + skillSO.maxLevel
+            : "Locked";
+        // ……颜色、按钮可点状态省略
+    }
+}</code></pre></div><p>注意 <code>TryUpgradeSkill</code> 的结构：<strong>先改数据（<code>currentLevel++</code>），再广播事件，最后才 <code>UpdateUI()</code>。</strong> 这个顺序今天害我们吃了第一个大亏（见坑 1）。也注意两个事件是 <code>static</code> 的——意味着全场景所有 <code>SkillSlot</code> 共用同一对事件，谁订阅谁收，跟具体哪个格子无关。</p><h3 id="3-skilltreemanager点数与解锁的中央">3. <code>SkillTreeManager</code>：点数与解锁的中央</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class SkillTreeManager : MonoBehaviour
+{
+    public SkillSlot[] skillSlots;     // 场景里拖进来的 24 格
+    public TMP_Text pointsText;
+    public int availablePoints;
+
+    private void OnEnable()
+    {
+        SkillSlot.OnAbilityPointSpent += HandleAbilityPointsSpent;
+        SkillSlot.OnSkillMaxed += HandleSkillMaxed;
+        ExpManager.OnLevelUp += UpdateAbilityPoints;
+    }
+    private void OnDisable()
+    {
+        SkillSlot.OnAbilityPointSpent -= HandleAbilityPointsSpent;
+        SkillSlot.OnSkillMaxed -= HandleSkillMaxed;
+        ExpManager.OnLevelUp -= UpdateAbilityPoints;
+    }
+
+    private void Start()
+    {
+        foreach (SkillSlot slot in skillSlots)
+            slot.skillButton.onClick.AddListener(() =&gt; CheckAvailablePoints(slot));
+        UpdateAbilityPoints(0);
+    }
+
+    private void CheckAvailablePoints(SkillSlot slot)
+    {
+        if (availablePoints &gt; 0) slot.TryUpgradeSkill();
+    }
+
+    private void HandleAbilityPointsSpent(SkillSlot skillSlot)
+    {
+        if (availablePoints &gt; 0) UpdateAbilityPoints(-1);
+    }
+
+    private void HandleSkillMaxed(SkillSlot skillSlot)
+    {
+        foreach (SkillSlot slot in skillSlots)
+            if (!slot.isUnlocked &amp;&amp; slot.CanUnlockSkill())
+                slot.Unlock();
+    }
+}</code></pre></div><p>这里做对了最关键的一件事：<strong>事件订阅在 <code>OnEnable</code> 加、<code>OnDisable</code> 减，成对出现</strong>。静态事件不会随物体销毁自动退订，少一个 <code>-=</code> 就会在物体消失后还往里塞回调，下一次广播直接对空引用开火。今天这一版两个 <code>-=</code> 都在，是昨天那版踩过「<code>OnDisable</code> 写了 <code>+=</code>」之后修回来的。</p><p><code>HandleSkillMaxed</code> 是「满级连锁解锁」：学满一个技能，自动把满足前置的其它格子点亮——这就是技能树「学 A 才解锁 B」的雏形。</p><h3 id="4-skillmanager把「学技能」接到游戏上">4. <code>SkillManager</code>：把「学技能」接到游戏上</h3><p>这是 Day 8 第十个洞（「升级仍然不给任何东西」）的真正消费者：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class SkillManager : MonoBehaviour
+{
+    public Player_Combat combat;       // 注意：这个字段在 Inspector 里没挂
+    private void OnEnable()  { SkillSlot.OnAbilityPointSpent += HandleAbilityPointSpent; }
+    private void OnDisable() { SkillSlot.OnAbilityPointSpent -= HandleAbilityPointSpent; }
+
+    private void HandleAbilityPointSpent(SkillSlot slot)
+    {
+        switch (slot.skillSO.skillName)
+        {
+            case "Max Health Boost":
+                StatsManger.Instance.UpdateMaxHealth(1);
+                break;
+            case "Sword Slash":
+                combat.enabled = true;   // ← 学「挥砍」才把战斗打开
+                break;
+            default:
+                Debug.LogWarning("Error" + slot.skillSO.skillName);
+                break;
+        }
+    }
+}</code></pre></div><p>设计意图很清楚：玩家开局<strong>不能攻击</strong>，得先去技能树点出「Sword Slash」，这行 <code>combat.enabled = true</code> 才把 <code>Player_Combat</code> 这个组件激活。逻辑很美，但今天就在「<code>combat</code> 到底挂没挂」上摔了一跤（见坑 2）。</p><hr><h2 id="二、今天翻出来的账三个崩溃">二、今天翻出来的账：三个崩溃</h2><p>首轮联调，刚点下第一个技能，Unity 控制台就红了三回。每一个都「不报错的时候一切正常，第一次真正触发才炸」。</p><h3 id="坑-1满级后-ui-卡在-45">坑 1：满级后 UI 卡在 4/5</h3><p><strong>现象</strong>：把一个技能从 4 级点满到 5 级，数据上 <code>currentLevel</code> 确实是 5，但格子上的文字死活停在 <code>4/5</code>。</p><p><strong>根因</strong>：回到 <code>TryUpgradeSkill</code>，最后是这一句才刷新自己：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">currentLevel++;
+OnAbilityPointSpent?.Invoke(this);     // 广播「花点」
+if (currentLevel &gt;= skillSO.maxLevel)
+    OnSkillMaxed?.Invoke(this);         // 触发连锁解锁
+UpdateUI();                            // ← 这一行被「跳过」了</code></pre></div><p><code>OnSkillMaxed</code> 的订阅者是 <code>SkillTreeManager.HandleSkillMaxed</code>，它会<strong>遍历全部 24 个格子</strong>，对「未解锁且满足前置」的调用 <code>Unlock()</code>。<code>Unlock()</code> 里第一行就是 <code>UpdateUI()</code>，而 <code>UpdateUI()</code> 第一行是：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">skillIcon.sprite = skillSO.skillIcon;   // skillSO 为 null 时这里直接 NRE</code></pre></div><p>场景里第 13–24 号格子在 Day 8 只是占位，<strong><code>skillSO</code> 是 null</strong>。于是 <code>HandleSkillMaxed</code> 一遍历到它们，<code>Unlock()</code> → <code>UpdateUI()</code> 立刻抛 <code>NullReferenceException</code>。这个异常顺着调用栈一路冒泡，冲出 <code>HandleSkillMaxed</code>、冲出 <code>TryUpgradeSkill</code>，导致 <code>TryUpgradeSkill</code> <strong>最后那句自己的 <code>UpdateUI()</code> 根本没执行</strong>——而它上一次刷新 UI 是在 <code>currentLevel++</code> 之前，所以格子永远停在 <code>4/5</code>。</p><p><strong>为什么给 13–24 号挂上 <code>skillSO</code> 就好了</strong>：崩溃源头就是那些 null 格子的 <code>UpdateUI()</code>。只要它们不再 null，<code>HandleSkillMaxed</code> 平静遍历完，异常不再抛，<code>TryUpgradeSkill</code> 末尾的 <code>UpdateUI()</code> 顺利执行，立刻刷成 <code>5/5</code>。</p><figure class="post-figure"><img src="../assets/images/arpg-day9-callchain.svg" alt="满级卡 4/5 的崩溃调用链" loading="lazy" decoding="async"><figcaption>崩溃发生在「连锁解锁」这一步：遍历到 skillSO 为 null 的格子时 UpdateUI() 抛 NRE，把原本应该刷新自己的最后一步一起吞掉了</figcaption></figure><p><strong>更稳的修法</strong>（挂占位 SO 只是止血）：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// 在 UpdateUI / CanUnlockSkill 里对 skillSO 判空
+private void UpdateUI()
+{
+    if (skillSO == null) return;        // 没装技能的格子直接跳过
+    skillIcon.sprite = skillSO.skillIcon;
+    // ……
+}
+// 或者把 TryUpgradeSkill 的刷新提前到事件之前：
+currentLevel++;
+UpdateUI();                            // 先刷自己
+OnAbilityPointSpent?.Invoke(this);     // 再广播，任凭下游炸都不影响本格</code></pre></div><p>前者是「下游防御」，后者是「先把本职工作做完再通知别人」——后者更治本：本格子的 UI 永远先刷新，连锁解锁就算炸了也不牵连它。</p><h3 id="坑-2skillmanager-第-25-行空引用">坑 2：SkillManager 第 25 行空引用</h3><p><strong>现象</strong>：点了名为「Sword Slash」的技能，控制台报 <code>NullReferenceException: SkillManager.HandleAbilityPointSpent (SkillManager.cs:25)</code>。</p><p><strong>根因</strong>：<code>SkillManager</code> 里 <code>public Player_Combat combat;</code> 是个<strong>公开字段，靠 Inspector 拖引用</strong>赋值。今天新建脚本时忘了把 Player 物体拖进去，于是它一直是 <code>null</code>。而 <code>HandleAbilityPointSpent</code> 走到 <code>case "Sword Slash"</code> 这一支，执行的第一句就是：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">combat.enabled = true;   // combat 为 null → 第 25 行 NRE</code></pre></div><p>注意它<strong>只在这个分支炸</strong>：「Max Health Boost」那支走的是 <code>StatsManger.Instance</code>（单例，永远有），不会炸；只有「Sword Slash」这种需要外部引用组件的支线才会暴露 <code>combat</code> 没挂。</p><p><strong>修法</strong>：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// 要么在 Inspector 把 Player（带 Player_Combat 的那个物体）拖到 combat 字段；
+// 要么代码里拿，省得忘：
+combat = combat ?? FindObjectOfType&lt;Player_Combat&gt;();
+if (combat != null) combat.enabled = true;</code></pre></div><p>这条账的本质和坑 1 一样：<strong>公开字段依赖手动拖拽，漏一个就是运行时才发现的 null。</strong> 凡是 <code>public Xxx foo;</code> 又要在代码里 <code>.foo</code> 的，都该在 <code>Awake</code>/<code>Start</code> 里兜底查一次，或者干脆用 <code>RequireComponent</code> + 自动获取。</p><h3 id="坑-3combat-初始禁用却仍能砍出第一刀">坑 3：Combat 初始禁用，却仍能砍出第一刀</h3><p><strong>现象</strong>：设计是「开局 <code>Player_Combat.enabled = false</code>，学了 Sword Slash 才开」。但实测进游戏、还没点技能，按攻击键<strong>第一刀能砍出去</strong>，之后就砍不动了。</p><p><strong>根因</strong>：Unity 的 <code>enabled = false</code> <strong>只停生命周期回调</strong>（<code>Update</code> / <code>FixedUpdate</code> / <code>OnEnable</code>），<strong>不阻止你直接调它的 public 方法</strong>。<code>Player_Combat</code> 的关键代码：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private float timer;
+private void Update()                 // disabled 时这一行根本不跑
+{
+    if (timer &gt; 0) timer -= Time.deltaTime;
+}
+public void Attack()
+{
+    if (timer &lt;= 0)                   // ← 没有「if (!enabled) return」
+    {
+        anim.SetBool("isAttacking", true);
+        timer = cooldown;             // timer 被设成 2
+    }
+}</code></pre></div><p><code>Attack()</code> 里只看了 <code>timer</code>，没看 <code>enabled</code>。开局 <code>timer = 0</code>，于是第一刀：<code>timer &lt;= 0</code> 成立 → 放动画、<code>timer</code> 设成 2。但因为组件是禁用的，<code>Update()</code> 不执行，<code>timer</code> 永远停在 2，再按攻击键 <code>timer &lt;= 0</code> 不成立 → 砍不动了。所以<strong>正好漏一刀</strong>。</p><p>调用 <code>Attack()</code> 的地方（PlayerMovement 的输入）当时是这么写的，才把这刀放出去：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">if (Input.GetButtonDown("Slash") &amp;&amp; player_Combat.enabled == true)
+    player_Combat.Attack();</code></pre></div><p><strong>为什么必须加 <code>&amp;&amp; player_Combat.enabled == true</code></strong>：<code>Attack()</code> 自己不守门，那就只能在「调它之前」守门。没这个判断，第一刀在 <code>timer</code> 还是 0 的时候就出去了；加上之后，组件没启用时整句短路，一刀都放不出去，等 <code>SkillManager</code> 把 <code>combat.enabled</code> 设成 <code>true</code>，攻击才真正解锁。</p><div class="alert alert-tip"><p class="alert-title"><span class="alert-icon">💡</span>技巧</p><p>更结实的写法是在 <code>Attack()</code> 内部守门：<code>if (!enabled || timer &gt; 0) return;</code>。这样无论从哪调用都安全，不依赖调用方记得判 <code>enabled</code>——毕竟 <code>Attack()</code> 是 public，谁都能调。</p></div><hr><h2 id="三、整体设计思路">三、整体设计思路</h2><h3 id="1-数据用-scriptableobject逻辑用-monobehaviour两件事分开">1. 数据用 ScriptableObject，逻辑用 MonoBehaviour，两件事分开</h3><p><code>SkillSO</code> 只描述「技能是什么」，不带任何运行行为；<code>SkillSlot</code> 才负责「这个格子怎么显示、怎么升级」。好处是：加一个新技能 = 在 Project 里右键新建一个 <code>SkillSO</code> + 往面板上拖一个 <code>SkillSlot</code>，<strong>不用改任何脚本</strong>。这是 Day 8 说的「留接口」真正兑现的样子。</p><h3 id="2-静态事件是把双刃剑">2. 静态事件是把双刃剑</h3><p><code>OnAbilityPointSpent</code> / <code>OnSkillMaxed</code> 让「花点数」和「满级」这两个动作能广播给任意监听者（<code>SkillTreeManager</code> 扣点、<code>SkillManager</code> 生效），格子之间彻底解耦。但代价是：<strong>订阅范围 = 全场景，且必须手动 <code>-=</code></strong>。</p><p>今天三个崩溃里，坑 1 和坑 2 的根都在这个「广播」语义上——广播会打到所有订阅者，任一订阅者内部有 null，整条链就崩。用静态事件时，脑子里得一直绷着一根弦：<strong>「这个事件现在所有谁在听？它们会不会因为某个字段没初始化而炸？」</strong></p><h3 id="3-enabled-不是「锁」是「暂停心跳」">3. <code>enabled</code> 不是「锁」，是「暂停心跳」</h3><p>坑 3 是最反直觉的一条。组件禁用 ≠ 不能调它的方法，只是它的 <code>Update</code> 不再跳。所以「开局锁住战斗」这种需求，靠 <code>enabled = false</code> 是<strong>不够的</strong>，必须在入口处（或方法内部）再加一道显式守卫。今天是用输入处的 <code>&amp;&amp; enabled == true</code> 兜住的，但更稳的是在 <code>Attack()</code> 内部守——因为方法是对外开放的。</p><h3 id="4-一整天里最该记住的一句话">4. 一整天里最该记住的一句话</h3><p><strong>崩溃不在你写新逻辑的地方炸，而在新逻辑第一次被真正触发的地方炸。</strong> 今天三个坑，没有一个是语法错、没有一个是 Editor 里能看出来的：它们全在「点下第一个技能」那一刻才暴露。静态事件没 <code>-=</code>、公开字段没拖引用、<code>enabled</code> 当锁用——这些「看起来能跑」的代码，只有跑到那条真实路径上才会翻脸。</p><hr><h2 id="明天要补的洞">明天要补的洞</h2><ol><li><strong><code>HandleSkillMaxed</code> 缺防御</strong>：遍历 24 格时没有对 <code>skillSO</code> 判空，依赖「所有格子都挂了 SO」这个前提才不崩（今天的修法是挂占位，应该改成代码判空）。</li><li><strong><code>SkillManager.combat</code> 没有兜底</strong>：靠 Inspector 手动拖，漏了就是运行时 NRE；应在 <code>Awake</code> 里自动获取或判空。</li><li><strong><code>Attack()</code> 没有内部守卫</strong>：只靠调用方判 <code>enabled</code>，改个调用点就会重新漏刀。</li><li><strong><code>ToggleSkillTree</code> 的变量名是 <code>statsCanvas</code></strong>：它实际控制的是技能面板的 <code>CanvasGroup</code>，名字会误导三个月后的自己，该改名。</li><li><strong>技能树还是「扁平列表」</strong>：<code>prerequisiteSkillSlots</code> 虽然接上了，但场景里还没真正配置前置关系，两棵树之间也没连线。</li><li><strong><code>StatsCanvas</code> 的 alpha 仍是 1、技能面板仍常显</strong>：Day 8 的坑 1、坑 6 还没真正写回 <code>Awake()</code>。</li><li><strong>升级给点数这条线还没接</strong>：<code>ExpManager.OnLevelUp</code> 今天只被用来刷新显示，没真的 <code>skillPoint += 1</code>。</li><li><strong><code>SkillPoint: 10</code> 仍是硬编码</strong>：<code>availablePoints</code> 现在是脚本里的初值，没跟 <code>ExpManager</code> 打通。</li></ol><p>完整的九天进度、脚本清单、数值与问题分级，我另外整理成了一页：<a href="../arpg-progress.html">ARPG 开发进度总览</a>。</p><hr><h2 id="一句话总结">一句话总结</h2><p>今天把 Day 8 那 24 个空 <code>RectTransform</code> 变成了真能点的 <code>SkillSlot</code>：用 <code>SkillSO</code>（ScriptableObject）装技能数据、<code>SkillTreeManager</code> 管点数与「满级连锁解锁」、<code>SkillManager</code> 把「学技能」接到属性与战斗——整条「点格子 → 扣点 → 升级 → 变亮 → 真改游戏」第一次跑通；但首轮联调立刻暴露三个崩溃，且全在「第一次真正触发」时才炸：<strong>满级后 UI 卡 4/5 是因为 <code>HandleSkillMaxed</code> 遍历到 null 格子的 <code>UpdateUI()</code> 抛 NRE、把本该刷新自己的最后一步一起吞了</strong>；<strong><code>SkillManager</code> 第 25 行空引用是因为 <code>combat</code> 字段忘了在 Inspector 挂</strong>；<strong>Combat 开局禁用却仍能砍第一刀，是因为 <code>enabled = false</code> 只停 <code>Update</code>、不挡 public 方法调用，<code>Attack()</code> 里没有 <code>enabled</code> 守卫</strong>。</p></div>
+  <footer class="post-footer">
+    <div class="post-tags"><a class="tag" href="../tags/index.html#tag-unity">Unity</a><a class="tag" href="../tags/index.html#tag-arpg">ARPG</a><a class="tag" href="../tags/index.html#tag-游戏开发">游戏开发</a><a class="tag" href="../tags/index.html#tag-技能树">技能树</a><a class="tag" href="../tags/index.html#tag-调试">调试</a><a class="tag" href="../tags/index.html#tag-scriptableobject">ScriptableObject</a></div>
+    <p class="post-source"><a href="https://github.com/daydaydream000/daydaydream000.github.io/blob/main/posts/arpg-day9-skill-system.md">在 GitHub 上查看源文件</a></p>
+  </footer>
+</article>
+<nav class="post-nav" aria-label="上下篇"><a class="post-nav-item prev" href="../post/hello-daydaydream.html"><span class="post-nav-label">← 更新的一篇</span><span class="post-nav-title">你好，欢迎来到 DayDayDream</span></a><a class="post-nav-item next" href="../post/arpg-day8-skill-ui.html"><span class="post-nav-label">更早的一篇 →</span><span class="post-nav-title">ARPG 学习日志 Day 8：把 UI 收进 UIManager，先摆一块技能面板</span></a></nav>
+</div>
+    <aside class="col col-right"><nav class="card-panel toc-card" aria-label="文章目录" data-reveal="0"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span>文章目录</span></h2><div class="toc-list"><a class="" href="#一句话说清这天的内容">一句话说清这天的内容</a><a class="" href="#先说结论为什么「能点」比「能看」难这么多">先说结论：为什么「能点」比「能看」难这么多</a><a class="" href="#脚本关系">脚本关系</a><a class="" href="#一、24-个空格子-能点的-skillslot">一、24 个空格子 → 能点的 SkillSlot</a><a class="toc-h3" href="#1-skillso技能的数据外壳">1. SkillSO：技能的数据外壳</a><a class="toc-h3" href="#2-skillslot格子的灵魂">2. SkillSlot：格子的灵魂</a><a class="toc-h3" href="#3-skilltreemanager点数与解锁的中央">3. SkillTreeManager：点数与解锁的中央</a><a class="toc-h3" href="#4-skillmanager把「学技能」接到游戏上">4. SkillManager：把「学技能」接到游戏上</a><a class="" href="#二、今天翻出来的账三个崩溃">二、今天翻出来的账：三个崩溃</a><a class="toc-h3" href="#坑-1满级后-ui-卡在-45">坑 1：满级后 UI 卡在 4/5</a><a class="toc-h3" href="#坑-2skillmanager-第-25-行空引用">坑 2：SkillManager 第 25 行空引用</a><a class="toc-h3" href="#坑-3combat-初始禁用却仍能砍出第一刀">坑 3：Combat 初始禁用，却仍能砍出第一刀</a><a class="" href="#三、整体设计思路">三、整体设计思路</a><a class="toc-h3" href="#1-数据用-scriptableobject逻辑用-monobehaviour两件事分开">1. 数据用 ScriptableObject，逻辑用 MonoBehaviour，两件事分开</a><a class="toc-h3" href="#2-静态事件是把双刃剑">2. 静态事件是把双刃剑</a><a class="toc-h3" href="#3-enabled-不是「锁」是「暂停心跳」">3. enabled 不是「锁」，是「暂停心跳」</a><a class="toc-h3" href="#4-一整天里最该记住的一句话">4. 一整天里最该记住的一句话</a><a class="" href="#明天要补的洞">明天要补的洞</a><a class="" href="#一句话总结">一句话总结</a></div></nav><section class="card-panel" data-reveal="3"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>站点统计</span></h2><ul class="stat-list"><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span class="stat-label">文章</span><span class="stat-value">12</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span class="stat-label">标签</span><span class="stat-value">22</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span class="stat-label">总字数</span><span class="stat-value">36,760</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="stat-label">最近更新</span><span class="stat-value">2026-10-20</span></li></ul></section></aside>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>转载请注明出处</p>
+  <nav class="footer-nav" aria-label="页脚导航">
+    <a href="../index.html">首页</a>
+    <a href="../tags/index.html">标签</a>
+    <a href="../about.html">关于</a>
+    <a href="../rss.xml">RSS</a>
+    <a href="https://github.com/daydaydream000">GitHub</a>
+    <a href="https://github.com/daydaydream000/daydaydream000.github.io">源码</a>
+    <a href="mailto:daydaydream000@users.noreply.github.com">邮件</a>
+  </nav>
+  <p class="footer-note">本站是纯静态站点，由 build.py 生成，托管于 GitHub Pages。</p>
+</footer>
+
+<a class="back-to-top" id="back-to-top" href="#" aria-label="回到顶部" title="回到顶部">
+  <svg class="i" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</a>
+
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="搜索文章">
+    <div class="search-head">
+      <svg class="i" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off"
+             spellcheck="false" aria-label="搜索关键词">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<script src="../assets/search-index.js" defer></script>
+<script src="../assets/app.js?v=ffe2833a95" defer></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 420" width="680" height="420">
+  <defs>
+    <linearGradient id="ccbg" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#f3f8f5"/>
+      <stop offset="1" stop-color="#e4eef0"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="680" height="420" fill="url(#ccbg)"/>
+  <text x="340" y="30" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="15" font-weight="700" fill="#183d2a">崩溃链路：为什么满级后还显示 4/5</text>
+
+  <!-- 节点 -->
+  <g font-family="ui-monospace, monospace" font-size="12">
+    <rect x="200" y="48" width="280" height="40" rx="5" fill="#ffffff" stroke="#183d2a" stroke-opacity="0.5"/>
+    <text x="340" y="72" text-anchor="middle" fill="#183d2a">TryUpgradeSkill()</text>
+
+    <rect x="200" y="108" width="280" height="34" rx="5" fill="#eef4ec" stroke="#183d2a" stroke-opacity="0.35"/>
+    <text x="340" y="129" text-anchor="middle" fill="#3c5147">currentLevel++  （4 → 5）</text>
+
+    <rect x="200" y="158" width="280" height="34" rx="5" fill="#eef4ec" stroke="#183d2a" stroke-opacity="0.35"/>
+    <text x="340" y="179" text-anchor="middle" fill="#3c5147">OnAbilityPointSpent?.Invoke</text>
+
+    <rect x="200" y="208" width="280" height="34" rx="5" fill="#eef4ec" stroke="#183d2a" stroke-opacity="0.35"/>
+    <text x="340" y="229" text-anchor="middle" fill="#3c5147">if currentLevel ≥ maxLevel:</text>
+
+    <rect x="200" y="258" width="280" height="34" rx="5" fill="#eef4ec" stroke="#183d2a" stroke-opacity="0.35"/>
+    <text x="340" y="279" text-anchor="middle" fill="#3c5147">OnSkillMaxed?.Invoke</text>
+
+    <rect x="200" y="308" width="280" height="36" rx="5" fill="#6a2a20" stroke="#6a2a20"/>
+    <text x="340" y="330" text-anchor="middle" fill="#ffd8c8">HandleSkillMaxed → Unlock()</text>
+  </g>
+
+  <!-- 红色崩溃分支 -->
+  <g font-family="ui-sans-serif, sans-serif">
+    <rect x="40" y="312" width="150" height="56" rx="6" fill="#fff0ee" stroke="#c0392b" stroke-width="1.5"/>
+    <text x="115" y="333" text-anchor="middle" font-size="11" font-weight="700" fill="#c0392b">第 13–24 格</text>
+    <text x="115" y="350" text-anchor="middle" font-size="10" fill="#a03020">skillSO = null</text>
+    <text x="115" y="364" text-anchor="middle" font-size="9.5" fill="#a03020">UpdateUI() 抛 NRE</text>
+
+    <text x="115" y="392" text-anchor="middle" font-size="10.5" font-weight="700" fill="#c0392b">❌ NRE 向上冒泡</text>
+  </g>
+
+  <!-- 虚线：崩溃吞掉最后的 UpdateUI -->
+  <g stroke="#c0392b" stroke-width="1.6" stroke-dasharray="5 4" fill="none">
+    <path d="M340,354 L340,392"/>
+  </g>
+  <text x="350" y="378" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#c0392b">崩溃冲出 TryUpgradeSkill，</text>
+  <text x="350" y="392" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#c0392b">最后一行 UpdateUI() 没跑</text>
+
+  <!-- 竖线连接 -->
+  <g stroke="#183d2a" stroke-opacity="0.5" stroke-width="1.5" fill="none">
+    <path d="M340,88 L340,108"/>
+    <path d="M340,142 L340,158"/>
+    <path d="M340,192 L340,208"/>
+    <path d="M340,242 L340,258"/>
+    <path d="M340,292 L340,308"/>
+  </g>
+
+  <!-- 指向崩溃分支的线 -->
+  <g stroke="#c0392b" stroke-width="1.4" fill="none">
+    <path d="M200,326 L190,326 L190,340 L190,340"/>
+  </g>
+  <path d="M200,335 C150,335 130,335 120,334" stroke="#c0392b" stroke-width="1.4" fill="none"/>
+</svg>
