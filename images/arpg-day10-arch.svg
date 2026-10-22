@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 680" width="1200" height="680">
+  <defs>
+    <linearGradient id="bgArch" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4f8fb"/>
+      <stop offset="1" stop-color="#e6eef5"/>
+    </linearGradient>
+    <linearGradient id="hub" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f3550"/>
+      <stop offset="1" stop-color="#13253a"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="680" fill="url(#bgArch)"/>
+
+  <text x="600" y="32" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="20" font-weight="700" fill="#1f3a5f">当前 ARPG 架构：四层 + 两个全局中枢 + 三条数据流</text>
+
+  <!-- 左：四层 -->
+  <g font-family="ui-sans-serif, sans-serif">
+    <!-- 表现层 -->
+    <rect x="30" y="66" width="560" height="86" rx="6" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="44" y="90" font-size="12" font-weight="700" fill="#1f3a5f">① 表现 / 输入层</text>
+    <text x="44" y="112" font-size="10.5" fill="#3a4a5a">PlayerMovement — 输入→速度、Flip、Knockback()</text>
+    <text x="44" y="132" font-size="9.5" fill="#5a6a7a">依赖：Player_Combat · StatsManger.Instance</text>
+
+    <!-- 战斗层 -->
+    <rect x="30" y="164" width="560" height="150" rx="6" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="44" y="188" font-size="12" font-weight="700" fill="#1f3a5f">② 战斗层</text>
+    <text x="44" y="210" font-size="10" fill="#3a4a5a">Player_Combat — Attack()→动画事件→DealDamage()</text>
+    <text x="44" y="228" font-size="10" fill="#3a4a5a">PlayerHealth — ChangeHealth()  ·  Enemy_Combat — 重叠圆检测</text>
+    <text x="44" y="246" font-size="10" fill="#3a4a5a">Enemy_Health — 血量 + OnMonsterDefeated(静态)</text>
+    <text x="44" y="264" font-size="10" fill="#3a4a5a">Enemy_Movement — 状态机  ·  Enemy_Knockback — 击退/硬直</text>
+    <text x="44" y="290" font-size="9.5" fill="#5a6a7a">流1（战斗伤害）走直接方法调用，Animator 事件驱动</text>
+
+    <!-- 成长层 -->
+    <rect x="30" y="326" width="560" height="150" rx="6" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="44" y="350" font-size="12" font-weight="700" fill="#1f3a5f">③ 成长层</text>
+    <text x="44" y="372" font-size="10" fill="#3a4a5a">ExpManager — level/expToLevel · OnLevelUp(静态)</text>
+    <text x="44" y="390" font-size="10" fill="#3a4a5a">SkillSO — ScriptableObject 技能数据</text>
+    <text x="44" y="408" font-size="10" fill="#3a4a5a">SkillSlot — TryUpgradeSkill · 两个静态事件</text>
+    <text x="44" y="426" font-size="10" fill="#3a4a5a">SkillTreeManager — 点数 / 解锁 / 满级连锁</text>
+    <text x="44" y="444" font-size="10" fill="#3a4a5a">SkillManager — 学技能→改属性 / 开战斗</text>
+    <text x="44" y="464" font-size="9.5" fill="#5a6a7a">流2/3（经验/技能）走静态事件 + 单例混合</text>
+
+    <!-- 支撑层 -->
+    <rect x="30" y="488" width="560" height="120" rx="6" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="44" y="512" font-size="12" font-weight="700" fill="#1f3a5f">④ 支撑 / UI / 场景层</text>
+    <text x="44" y="534" font-size="10" fill="#3a4a5a">StatsManger — 单例 Instance，全部属性真相源</text>
+    <text x="44" y="552" font-size="10" fill="#3a4a5a">StatsUI — ToggleStats 开面板</text>
+    <text x="44" y="570" font-size="10" fill="#3a4a5a">ToggleSkillTree — 技能面板开关 + timeScale</text>
+    <text x="44" y="588" font-size="10" fill="#3a4a5a">Elevation_Entry / Exit — 高低地形遮挡切换</text>
+  </g>
+
+  <!-- 右：两个全局中枢 -->
+  <g transform="translate(630, 66)">
+    <rect x="0" y="0" width="540" height="296" rx="8" fill="url(#hub)"/>
+    <text x="20" y="28" font-family="ui-sans-serif, sans-serif" font-size="14" font-weight="700" fill="#a8d0f0">全局中枢（两个）</text>
+
+    <rect x="20" y="44" width="500" height="86" rx="5" fill="#16314c"/>
+    <text x="36" y="70" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#ffffff">中枢一 · StatsManger.Instance（单例）</text>
+    <text x="36" y="92" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#cfe2f2">damage / speed / maxHealth / knockback…</text>
+    <text x="36" y="110" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#cfe2f2">全员只读不写（除 UpdateMaxHealth）</text>
+
+    <rect x="20" y="142" width="500" height="138" rx="5" fill="#16314c"/>
+    <text x="36" y="168" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#ffffff">中枢二 · 静态事件广播（4 个）</text>
+    <text x="36" y="192" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#cfe2f2">SkillSlot.OnAbilityPointSpent</text>
+    <text x="36" y="210" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#cfe2f2">SkillSlot.OnSkillMaxed</text>
+    <text x="36" y="228" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#cfe2f2">ExpManager.OnLevelUp</text>
+    <text x="36" y="246" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#cfe2f2">Enemy_Health.OnMonsterDefeated</text>
+    <text x="36" y="270" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#9fc0e0">必须 OnEnable 加 / OnDisable 减；打到未初始化对象就崩</text>
+
+    <rect x="20" y="294" width="500" height="0" />
+  </g>
+
+  <!-- 连接：左层 -> 中枢 -->
+  <g stroke="#2a4d6e" stroke-opacity="0.5" stroke-width="1.4" fill="none">
+    <path d="M590,109 C610,109 610,170 630,170"/>
+    <path d="M590,239 C610,239 610,200 630,200"/>
+    <path d="M590,401 C620,401 620,270 630,270"/>
+    <path d="M590,548 C620,548 620,320 630,320"/>
+  </g>
+  <g font-family="ui-sans-serif, sans-serif" font-size="8.5" fill="#2a4d6e">
+    <text x="600" y="150" text-anchor="middle">读/写</text>
+    <text x="600" y="230" text-anchor="middle">读</text>
+    <text x="600" y="340" text-anchor="middle">订阅</text>
+    <text x="600" y="430" text-anchor="middle">读/订阅</text>
+  </g>
+
+  <!-- 三条数据流 -->
+  <g transform="translate(30, 630)">
+    <rect x="0" y="0" width="1120" height="40" rx="5" fill="#eef4fa" stroke="#2a4d6e" stroke-opacity="0.35"/>
+    <text x="16" y="25" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#1f3a5f"><tspan font-weight="700">流1 战斗伤害</tspan>：PlayerMovement→Player_Combat.Attack→动画事件→DealDamage→Enemy_Health.ChangeHealth</text>
+    <text x="16" y="0" font-family="ui-sans-serif, sans-serif" font-size="0" fill="#1f3a5f"></text>
+  </g>
+  <g transform="translate(30, 596)">
+    <rect x="0" y="0" width="1120" height="30" rx="5" fill="#eef4fa" stroke="#2a4d6e" stroke-opacity="0.35"/>
+    <text x="16" y="20" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#1f3a5f"><tspan font-weight="700">流2 经验升级</tspan>：Enemy_Health.OnMonsterDefeated→ExpManager.GainExperience→LevelUp→OnLevelUp 广播</text>
+  </g>
+  <g transform="translate(30, 562)">
+    <rect x="0" y="0" width="1120" height="30" rx="5" fill="#eef4fa" stroke="#2a4d6e" stroke-opacity="0.35"/>
+    <text x="16" y="20" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#1f3a5f"><tspan font-weight="700">流3 技能生效</tspan>：点击 SkillSlot→TryUpgradeSkill→OnAbilityPointSpent→SkillManager 改 StatsManger / combat.enabled</text>
+  </g>
+</svg>

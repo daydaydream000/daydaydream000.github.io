@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" width="1200" height="360">
+  <defs>
+    <linearGradient id="bgP" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbf2e6"/>
+      <stop offset="1" stop-color="#f3e2cf"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="360" fill="url(#bgP)"/>
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="20" font-weight="700" fill="#7a3a10">4 个反复出现的反模式 · 一张图看清</text>
+  <text x="600" y="56" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12" fill="#8a5a2a">共同根因：写完逻辑 ≠ 接对生命周期</text>
+
+  <!-- 4 cards -->
+  <g font-family="ui-sans-serif, sans-serif">
+    <!-- card 1 -->
+    <rect x="24" y="78" width="276" height="252" rx="6" fill="#ffffff" stroke="#b48a2a" stroke-width="1.5"/>
+    <rect x="24" y="78" width="276" height="36" rx="6" fill="#b48a2a"/>
+    <text x="40" y="102" font-size="13" font-weight="700" fill="#fff">① 静态事件 / 广播</text>
+    <text x="40" y="138" font-size="10.5" fill="#5a4a2a">症状</text>
+    <text x="40" y="158" font-size="10" fill="#3a2a1a">满级后 UI 卡在 4/5</text>
+    <text x="40" y="184" font-size="10.5" fill="#5a4a2a">根因</text>
+    <text x="40" y="204" font-size="10" fill="#3a2a1a">HandleSkillMaxed 遍历</text>
+    <text x="40" y="220" font-size="10" fill="#3a2a1a">null 格子 → UpdateUI NRE</text>
+    <text x="40" y="246" font-size="10.5" fill="#5a4a2a">治本</text>
+    <text x="40" y="266" font-size="10" fill="#3a2a1a">OnEnable 加 / OnDisable 减</text>
+    <text x="40" y="282" font-size="10" fill="#3a2a1a">广播前对订阅者容错</text>
+    <text x="40" y="308" font-size="9" fill="#8a5a2a">涉及：SkillSlot / SkillTreeManager</text>
+
+    <!-- card 2 -->
+    <rect x="312" y="78" width="276" height="252" rx="6" fill="#ffffff" stroke="#7a3a10" stroke-opacity="0.45"/>
+    <rect x="312" y="78" width="276" height="36" rx="6" fill="#7a3a10"/>
+    <text x="328" y="102" font-size="13" font-weight="700" fill="#fff">② public 字段靠拖</text>
+    <text x="328" y="138" font-size="10.5" fill="#5a4a2a">症状</text>
+    <text x="328" y="158" font-size="10" fill="#3a2a1a">第 25 行 NullReference</text>
+    <text x="328" y="184" font-size="10.5" fill="#5a4a2a">根因</text>
+    <text x="328" y="204" font-size="10" fill="#3a2a1a">combat 字段 Inspector</text>
+    <text x="328" y="220" font-size="10" fill="#3a2a1a">没拖 → 直接 NRE</text>
+    <text x="328" y="246" font-size="10.5" fill="#5a4a2a">治本</text>
+    <text x="328" y="266" font-size="10" fill="#3a2a1a">RequireComponent +</text>
+    <text x="328" y="282" font-size="10" fill="#3a2a1a">Awake 自动 GetComponent</text>
+    <text x="328" y="308" font-size="9" fill="#8a5a2a">涉及：SkillManager</text>
+
+    <!-- card 3 -->
+    <rect x="600" y="78" width="276" height="252" rx="6" fill="#ffffff" stroke="#7a3a10" stroke-opacity="0.45"/>
+    <rect x="600" y="78" width="276" height="36" rx="6" fill="#7a3a10"/>
+    <text x="616" y="102" font-size="13" font-weight="700" fill="#fff">③ enabled 当锁</text>
+    <text x="616" y="138" font-size="10.5" fill="#5a4a2a">症状</text>
+    <text x="616" y="158" font-size="10" fill="#3a2a1a">开局漏砍第一刀</text>
+    <text x="616" y="184" font-size="10.5" fill="#5a4a2a">根因</text>
+    <text x="616" y="204" font-size="10" fill="#3a2a1a">enabled 只停 Update</text>
+    <text x="616" y="220" font-size="10" fill="#3a2a1a">Attack() 没守门</text>
+    <text x="616" y="246" font-size="10.5" fill="#5a4a2a">治本</text>
+    <text x="616" y="266" font-size="10" fill="#3a2a1a">方法首行 if(!active)</text>
+    <text x="616" y="282" font-size="10" fill="#3a2a1a">return; 不靠调用方</text>
+    <text x="616" y="308" font-size="9" fill="#8a5a2a">涉及：Player_Combat</text>
+
+    <!-- card 4 -->
+    <rect x="888" y="78" width="288" height="252" rx="6" fill="#ffffff" stroke="#b48a2a" stroke-width="1.5"/>
+    <rect x="888" y="78" width="288" height="36" rx="6" fill="#b48a2a"/>
+    <text x="904" y="102" font-size="13" font-weight="700" fill="#fff">④ UI 与数据不同步</text>
+    <text x="904" y="138" font-size="10.5" fill="#5a4a2a">症状</text>
+    <text x="904" y="158" font-size="10" fill="#3a2a1a">4/5、alpha 写死、面板常显</text>
+    <text x="904" y="184" font-size="10.5" fill="#5a4a2a">根因</text>
+    <text x="904" y="204" font-size="10" fill="#3a2a1a">显示层值没跟数据层接</text>
+    <text x="904" y="220" font-size="10" fill="#3a2a1a">刷新时机排在事件之后</text>
+    <text x="904" y="246" font-size="10.5" fill="#5a4a2a">治本</text>
+    <text x="904" y="266" font-size="10" fill="#3a2a1a">单一 Refresh()：数据改完</text>
+    <text x="904" y="282" font-size="10" fill="#3a2a1a">立即调，再广播</text>
+    <text x="904" y="308" font-size="9" fill="#8a5a2a">涉及：多处 UI / 数值</text>
+  </g>
+</svg>

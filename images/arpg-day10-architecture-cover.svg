@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bgA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eaf1f7"/>
+      <stop offset="1" stop-color="#dbe7f0"/>
+    </linearGradient>
+    <linearGradient id="screenA" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f3550"/>
+      <stop offset="1" stop-color="#13253a"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgA)"/>
+
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="23" font-weight="700" fill="#1f3a5f">ARPG 学习日志 Day 10（下）：当前架构全景</text>
+  <text x="600" y="58" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#2a4d6e">17 个脚本 · 4 层 · 2 个全局中枢 · 3 条数据流</text>
+
+  <!-- 三件套 -->
+  <g transform="translate(24, 78)">
+    <text x="0" y="0" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#1f3a5f">当前架构 = 三件套</text>
+
+    <rect x="0" y="16" width="270" height="80" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.45"/>
+    <text x="14" y="42" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#1f3a5f">单例存档</text>
+    <text x="14" y="64" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#3a4a5a">StatsManger.Instance</text>
+    <text x="14" y="82" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#5a6a7a">全部属性的唯一真相源</text>
+
+    <rect x="285" y="16" width="270" height="80" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.45"/>
+    <text x="299" y="42" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#1f3a5f">静态事件广播</text>
+    <text x="299" y="64" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#3a4a5a">OnLevelUp / OnMonster…</text>
+    <text x="299" y="82" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#5a6a7a">跨物体解耦通知（4 个）</text>
+
+    <rect x="570" y="16" width="270" height="80" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.45"/>
+    <text x="584" y="42" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#1f3a5f">MonoBehaviour 拼装</text>
+    <text x="584" y="64" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#3a4a5a">挂在各物体的组件</text>
+    <text x="584" y="82" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#5a6a7a">各管一摊，无 ECS</text>
+  </g>
+
+  <!-- 四层 -->
+  <g transform="translate(24, 190)">
+    <text x="0" y="0" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#1f3a5f">四层脚本</text>
+    <rect x="0" y="14" width="836" height="34" rx="4" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.35"/>
+    <text x="14" y="36" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#1f3a5f"><tspan font-weight="700">表现/输入</tspan>  PlayerMovement</text>
+
+    <rect x="0" y="54" width="836" height="34" rx="4" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.35"/>
+    <text x="14" y="76" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#1f3a5f"><tspan font-weight="700">战斗</tspan>  Player_Combat · PlayerHealth · Enemy_Combat · Enemy_Health · Enemy_Movement · Enemy_Knockback</text>
+
+    <rect x="0" y="94" width="836" height="34" rx="4" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.35"/>
+    <text x="14" y="116" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#1f3a5f"><tspan font-weight="700">成长</tspan>  ExpManager · SkillSO · SkillSlot · SkillTreeManager · SkillManager</text>
+
+    <rect x="0" y="134" width="836" height="34" rx="4" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.35"/>
+    <text x="14" y="156" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#1f3a5f"><tspan font-weight="700">支撑/UI/场景</tspan>  StatsManger · StatsUI · ToggleSkillTree · Elevation_Entry/Exit</text>
+  </g>
+
+  <!-- 三条流 -->
+  <g transform="translate(876, 190)">
+    <rect x="0" y="0" width="300" height="170" rx="6" fill="url(#screenA)"/>
+    <text x="14" y="26" font-family="ui-sans-serif, sans-serif" font-size="12" font-weight="700" fill="#a8d0f0">三条核心数据流</text>
+    <text x="14" y="54" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#e8f0f8">流1 战斗伤害：直接方法调用</text>
+    <text x="14" y="76" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#e8f0f8">流2 经验升级：静态事件</text>
+    <text x="14" y="98" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#e8f0f8">流3 技能生效：事件+单例</text>
+    <line x1="14" y1="116" x2="286" y2="116" stroke="#a8d0f0" stroke-opacity="0.3"/>
+    <text x="14" y="140" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#a8d0f0">两种机制混用 = 当前架构</text>
+    <text x="14" y="158" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#a8d0f0">的辨识特征与脆弱点来源</text>
+  </g>
+
+  <rect x="24" y="356" width="1152" height="26" rx="3" fill="#1f3a5f" opacity="0.06"/>
+  <text x="600" y="373" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#2a4d6e">能跑，但耦合集中在两个全局中枢，6 个已知脆弱点还没补——下一步先焊死它们</text>
+</svg>

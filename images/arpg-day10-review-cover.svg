@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bgR" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fbf2e6"/>
+      <stop offset="1" stop-color="#f3e2cf"/>
+    </linearGradient>
+    <linearGradient id="screenR" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3a2a1a"/>
+      <stop offset="1" stop-color="#241a10"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgR)"/>
+
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="23" font-weight="700" fill="#7a3a10">ARPG 学习日志 Day 10（上）：十天开发复盘</text>
+  <text x="600" y="58" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#8a5a2a">17 个脚本 · 4 大类系统 · 不写新功能，专门把踩过的坑摊开来复盘</text>
+
+  <!-- 左：做了什么 -->
+  <g transform="translate(24, 78)">
+    <rect x="0" y="0" width="430" height="280" rx="6" fill="#ffffff" stroke="#b48a2a" stroke-opacity="0.5"/>
+    <text x="16" y="26" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#7a3a10">这十天我们造出来了什么</text>
+    <text x="16" y="52" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#5a4a2a">玩家能动能砍 → 敌人会追会打 → 有血量经验等级 → 有技能树</text>
+
+    <text x="16" y="82" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#3a2a1a">Day1 移动/击退  · PlayerMovement</text>
+    <text x="16" y="104" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#3a2a1a">Day3 敌人状态机 · Enemy_Movement</text>
+    <text x="16" y="126" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#3a2a1a">Day4 敌人攻击  · Enemy_Combat</text>
+    <text x="16" y="148" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#3a2a1a">Day5 玩家战斗  · Player_Combat</text>
+    <text x="16" y="170" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#3a2a1a">Day6 属性/血量 · StatsManger(单例)</text>
+    <text x="16" y="192" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#3a2a1a">Day7 经验/升级 · ExpManager</text>
+    <text x="16" y="214" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#3a2a1a">Day8 技能面板 · ToggleSkillTree</text>
+    <text x="16" y="236" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#7a3a10">Day9 技能系统 · SkillSO/Slot/Mgr</text>
+    <line x1="16" y1="252" x2="414" y2="252" stroke="#b48a2a" stroke-opacity="0.4"/>
+    <text x="16" y="274" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a5a2a">功能在累加，但每一行背后都站着至少一个后来才炸的坑</text>
+  </g>
+
+  <!-- 中：4 反模式 -->
+  <g transform="translate(470, 78)">
+    <text x="0" y="0" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#7a3a10">4 个反复出现的反模式（同源）</text>
+
+    <rect x="0" y="14" width="320" height="62" rx="4" fill="#fff6e6" stroke="#b48a2a"/>
+    <text x="12" y="34" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#7a3a10">① 静态事件忘了退订 / 广播打到未初始化</text>
+    <text x="12" y="54" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a5a2a">满级 4/5 崩溃：遍历 null 格子 NRE</text>
+
+    <rect x="0" y="84" width="320" height="62" rx="4" fill="#ffffff" stroke="#7a3a10" stroke-opacity="0.4"/>
+    <text x="12" y="104" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#7a3a10">② public 字段靠 Inspector 手动拖</text>
+    <text x="12" y="124" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a4a2a">SkillManager.combat 没挂 → 第 25 行 NRE</text>
+
+    <rect x="0" y="154" width="320" height="62" rx="4" fill="#ffffff" stroke="#7a3a10" stroke-opacity="0.4"/>
+    <text x="12" y="174" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#7a3a10">③ 把 enabled=false 当「锁」用</text>
+    <text x="12" y="194" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a4a2a">Attack() 没守门 → 开局漏砍第一刀</text>
+
+    <rect x="0" y="224" width="320" height="62" rx="4" fill="#fff6e6" stroke="#b48a2a"/>
+    <text x="12" y="244" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#7a3a10">④ UI 显示与数据不同步</text>
+    <text x="12" y="264" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a5a2a">4/5、alpha 硬编码、点数硬编码…</text>
+  </g>
+
+  <!-- 右：根因 -->
+  <g transform="translate(812, 78)">
+    <rect x="0" y="0" width="364" height="280" rx="6" fill="url(#screenR)"/>
+    <text x="16" y="28" font-family="ui-sans-serif, sans-serif" font-size="13" font-weight="700" fill="#ffd8a8">一个根因的两面</text>
+    <text x="16" y="56" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#f0e0c8">「写完逻辑」≠「接对生命周期」</text>
+
+    <text x="16" y="92" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#e8d8c0">静态事件要成对退订</text>
+    <text x="16" y="116" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#e8d8c0">跨物体引用要自动取</text>
+    <text x="16" y="140" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#e8d8c0">禁用类需求要真锁</text>
+    <text x="16" y="164" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#e8d8c0">UI 要跟着数据刷</text>
+
+    <line x1="16" y1="184" x2="348" y2="184" stroke="#ffd8a8" stroke-opacity="0.3"/>
+    <text x="16" y="212" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#f0e0c8">崩溃从不在「写新逻辑」处炸，</text>
+    <text x="16" y="230" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#f0e0c8">而在「第一次真正被触发」时炸。</text>
+
+    <rect x="16" y="246" width="332" height="22" rx="3" fill="#ffd8a8" opacity="0.15"/>
+    <text x="24" y="261" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#ffd8a8">把这 4 条写进 Day 11 编码清单，比学一个模式更值</text>
+  </g>
+
+  <rect x="24" y="356" width="1152" height="26" rx="3" fill="#7a3a10" opacity="0.06"/>
+  <text x="600" y="373" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a5a2a">复盘不写新功能，但把 4 个同源反模式钉死后，Day 11 的代码从第一行就避开它们</text>
+</svg>
