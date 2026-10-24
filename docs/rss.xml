@@ -26,6 +26,149 @@ git commit -m "post: 新文章"
 git push</code></pre></div><p>目录分工也很直白：</p><div class="table-wrap"><table><thead><tr><th>路径</th><th>用途</th></tr></thead><tbody><tr><td><code>posts/</code></td><td>文章源文件（Markdown）</td></tr><tr><td><code>pages/</code></td><td>独立页面，比如「关于」</td></tr><tr><td><code>images/</code></td><td>文章中引用的图片，构建时自动复制</td></tr><tr><td><code>assets/</code></td><td>手写的 CSS 与 JavaScript</td></tr><tr><td><code>templates/</code></td><td>页面模板</td></tr><tr><td><code>docs/</code></td><td>生成结果，也是 Pages 的发布目录</td></tr></tbody></table></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>生成器只用 Python 标准库，没有第三方依赖；换台机器 clone 下来就能跑。</p></div><h2 id="写在最后">写在最后</h2><blockquote><p>种一棵树最好的时间是十年前，其次是现在。</p></blockquote><p>开始记录吧，欢迎常来坐坐。</p>]]></content:encoded>
     </item>
     <item>
+      <title>ARPG 技能树系统详解：从 ScriptableObject 到真正改游戏的完整链路</title>
+      <link>https://daydaydream000.github.io/post/arpg-skilltree-deep-dive.html</link>
+      <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-skilltree-deep-dive.html</guid>
+      <pubDate>Sat, 24 Oct 2026 19:19:00 +0000</pubDate>
+      <author>daydaydream000@users.noreply.github.com (DayDayDream)</author>
+      <category>Unity</category><category>ARPG</category><category>游戏开发</category><category>技能树</category><category>ScriptableObject</category><category>事件</category><category>架构</category><category>系统设计</category>
+      <description>一篇单独拆给技能树的文章——不写新功能，把 SkillSO / SkillSlot / SkillTreeManager / SkillManager / ToggleSkillTree 五个脚本的关系、一个格子从点击到生效的完整链路、三条数据流，以及当前还差什么（含对 Day10「升级没真给点数」的更正）一次讲透。</description>
+      <content:encoded><![CDATA[<h2 id="一句话说清这篇在讲什么">一句话说清这篇在讲什么</h2><p>前面 Day 8–11 断断续续碰过技能树，但都是夹在「当天功能」里顺手写的。这篇把它单独拎出来，把 <strong>5 个脚本怎么分工、一个格子从「点击」到「真正改游戏」走完哪几步、三条数据流怎么走</strong>，以及<strong>当前还差什么</strong>一次讲透。所有代码都来自 <code>Assets/Scripe/SkillTree/</code> 和 <code>ExpManager.cs</code> 的当前真实版本。</p><h2 id="先说结论">先说结论</h2><p>当前技能树 = <strong>「一个数据资产（SkillSO）+ 24 个格子（SkillSlot）+ 一个总调度（SkillTreeManager）+ 一个生效器（SkillManager）+ 一个面板开关（ToggleSkillTree）」</strong>，靠 <strong>两个静态事件（<code>OnAbilityPointSpent</code> / <code>OnSkillMaxed</code>）+ 一个单例（<code>StatsManger.Instance</code>）</strong> 串起来。</p><p>它的好：技能是<strong>数据资产</strong>，加技能 = 新建 SO + 拖进格子，不用改代码；格子和「生效逻辑」<strong>互不知道对方</strong>，靠事件解耦。它的弱：这棵「树」目前是<strong>扁平 24 格</strong>——前置关系（<code>prerequisiteSkillSlots</code>）还是空的，所以「树」还没长出来；外加几个已知的脆点（满级卡 4/5、<code>combat</code> 漏拖、命名误导、点数硬编码）。</p><h2 id="一、五个脚本怎么分工">一、五个脚本怎么分工</h2><div class="table-wrap"><table><thead><tr><th>脚本</th><th>角色</th><th>关键成员</th><th>一句话</th></tr></thead><tbody><tr><td><code>SkillSO</code></td><td>数据资产</td><td><code>skillName</code> / <code>maxLevel</code> / <code>skillIcon</code></td><td>描述「一个技能是什么」，纯数据</td></tr><tr><td><code>SkillSlot</code></td><td>格子</td><td><code>skillSO</code> / <code>currentLevel</code> / <code>isUnlocked</code> / 两个静态事件</td><td>一个格子的一生：升级、解锁、刷新 UI</td></tr><tr><td><code>SkillTreeManager</code></td><td>总调度</td><td><code>skillSlots[24]</code> / <code>availablePoints</code></td><td>把按钮点击接到升级、扣点、连锁解锁、接收升级加点</td></tr><tr><td><code>SkillManager</code></td><td>生效器</td><td><code>combat</code></td><td>订阅事件，把「点了技能」翻译成「改数值 / 开战斗」</td></tr><tr><td><code>ToggleSkillTree</code></td><td>面板开关</td><td><code>statsCanvas</code>(实际是技能面板)</td><td>开关面板 + <code>timeScale</code> 暂停</td></tr></tbody></table></div><figure class="post-figure"><img src="https://daydaydream000.github.io/assets/images/arpg-skilltree-cover.svg" alt="技能树五个脚本分工" loading="lazy" decoding="async"><figcaption>五个脚本各管一摊：数据 / 格子 / 调度 / 生效 / 面板</figcaption></figure><h2 id="二、skillso技能是「数据资产」不是代码">二、SkillSO：技能是「数据资产」，不是代码</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">[CreateAssetMenu(fileName = "NewSkill", menuName = "SkillTree/Skill")]
+public class SkillSO : ScriptableObject
+{
+    public string skillName;
+    public int maxLevel;
+    public Sprite skillIcon;
+}</code></pre></div><p>就三个字段，干净。值得注意两点：</p><ol><li><strong>前置关系不在 SO 里</strong>。<code>SkillSO</code> 只描述技能自己；「谁是谁的前置」写在场景里 <code>SkillSlot</code> 的 <code>prerequisiteSkillSlots</code> 列表上。也就是说，这棵「树」目前是<strong>场景里拼出来的</strong>，不是数据驱动的——这直接导致下面会说到的「树还没长出来」问题。</li><li><strong>加技能零代码</strong>：右键 <code>SkillTree/Skill</code> 新建一个 SO、填名字 / 满级 / 图标，再拖进某个格子即可。这是 SO 与逻辑分离带来的最大便利。</li></ol><h2 id="三、skillslot一个格子的完整一生">三、SkillSlot：一个格子的完整一生</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class SkillSlot : MonoBehaviour
+{
+    public List&lt;SkillSlot&gt; prerequisiteSkillSlots;   // 前置格子（当前为空）
+    public SkillSO skillSO;
+    public int currentLevel;
+    public bool isUnlocked;
+    public Image skillIcon;
+    public TMP_Text skillLevelText;
+    public Button skillButton;
+
+    public static event Action&lt;SkillSlot&gt; OnAbilityPointSpent;
+    public static event Action&lt;SkillSlot&gt; OnSkillMaxed;
+
+    public void TryUpgradeSkill()
+    {
+        if (isUnlocked &amp;&amp; currentLevel &lt; skillSO.maxLevel)
+        {
+            currentLevel++;
+            OnAbilityPointSpent?.Invoke(this);          // ① 广播：扣点 + 生效
+            if (currentLevel &gt;= skillSO.maxLevel)
+            {
+                OnSkillMaxed?.Invoke(this);             // ② 若满级，广播连锁解锁
+            }
+            UpdateUI();                                 // ③ 最后才刷新自己
+        }
+    }
+
+    public bool CanUnlockSkill()
+    {
+        foreach (SkillSlot slot in prerequisiteSkillSlots)
+            if (!slot.isUnlocked || slot.currentLevel &lt; slot.skillSO.maxLevel)
+                return false;
+        return true;
+    }
+
+    public void Unlock() { isUnlocked = true; UpdateUI(); }
+
+    private void UpdateUI()
+    {
+        skillIcon.sprite = skillSO.skillIcon;           // ← 空格子（skillSO==null）这里会 NRE
+        if (isUnlocked) { /* 按钮可点、显示 x/max、图标白 */ }
+        else           { /* 按钮不可点、显示 Locked、图标灰 */ }
+    }
+}</code></pre></div><p><strong>一个格子从点击到刷新，顺序是关键</strong>：<code>currentLevel++</code> → <code>OnAbilityPointSpent</code>（扣点 + 让技能生效）→ 若满级 <code>OnSkillMaxed</code>（连锁解锁别的格子）→ <strong>最后才 <code>UpdateUI()</code></strong>。</p><div class="alert alert-warning"><p class="alert-title"><span class="alert-icon">⚠️</span>警告</p><p><code>UpdateUI()</code> 排在所有事件广播<strong>之后</strong>。这意味着：只要①或②里任何一个订阅者抛异常，<code>UpdateUI()</code> 就不会执行——你刚点的格子 UI 停在旧状态。这正是 Day 9 那个「满级卡 4/5」的根因：满级时 <code>OnSkillMaxed</code> 触发 <code>HandleSkillMaxed</code> 遍历 24 格，撞上 <code>skillSO==null</code> 的空格子，<code>UpdateUI()</code> 里的 <code>skillIcon.sprite = skillSO.skillIcon</code> 抛 NRE，异常冒泡把当前格子本该执行的最后一步 <code>UpdateUI()</code> 一起吞了。</p></div><h2 id="四、skilltreemanager把点击接到升级的总指挥">四、SkillTreeManager：把点击接到升级的总指挥</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class SkillTreeManager : MonoBehaviour
+{
+    public SkillSlot[] skillSlots;          // 24 格
+    public TMP_Text pointsText;
+    public int availablePoints;             // 初始值在 Inspector 硬编码
+
+    private void OnEnable()
+    {
+        SkillSlot.OnAbilityPointSpent += HandleAbilityPointsSpent;
+        SkillSlot.OnSkillMaxed       += HandleSkillMaxed;
+        ExpManager.OnLevelUp         += UpdateAbilityPoints;   // 升级事件 → 加点
+    }
+    private void OnDisable()
+    {
+        SkillSlot.OnAbilityPointSpent -= HandleAbilityPointsSpent;
+        SkillSlot.OnSkillMaxed       -= HandleSkillMaxed;
+        ExpManager.OnLevelUp         -= UpdateAbilityPoints;   // 成对退订 ✓
+    }
+
+    private void Start()
+    {
+        foreach (SkillSlot slot in skillSlots)
+            slot.skillButton.onClick.AddListener(() =&gt; CheckAvailablePoints(slot));
+        UpdateAbilityPoints(0);             // 刷新点数文本
+    }
+
+    private void CheckAvailablePoints(SkillSlot slot)
+    {
+        if (availablePoints &gt; 0) slot.TryUpgradeSkill();      // 真正的「有没有点」闸门
+    }
+
+    private void HandleAbilityPointsSpent(SkillSlot _)
+    {
+        if (availablePoints &gt; 0) UpdateAbilityPoints(-1);     // 扣 1 点
+    }
+
+    private void HandleSkillMaxed(SkillSlot _)
+    {
+        foreach (SkillSlot slot in skillSlots)
+            if (!slot.isUnlocked &amp;&amp; slot.CanUnlockSkill())
+                slot.Unlock();                                // 连锁解锁满足条件的格子
+    }
+
+    public void UpdateAbilityPoints(int amount)
+    {
+        availablePoints += amount;
+        pointsText.text = "Points: " + availablePoints;
+    }
+}</code></pre></div><p>几个要点：</p><ul><li><strong>闸门在 <code>CheckAvailablePoints</code></strong>：点击按钮先查 <code>availablePoints&gt;0</code> 才允许升级，扣点则在事件 <code>HandleAbilityPointsSpent</code> 里做——升级动作和扣点是<strong>解耦</strong>的（格子不知道点数，调度器负责记账）。</li><li><strong>连锁解锁</strong>：满级时遍历全部 24 格，对「未解锁且前置满足」的格子调用 <code>Unlock()</code>。但如第三节所说，这个遍历对 <code>skillSO==null</code> 的格子会 NRE（因为 <code>CanUnlockSkill</code> 对空前置列表直接返回 <code>true</code>，锁不住）。</li><li><strong>事件订阅成对</strong>：<code>OnEnable</code> 加、<code>OnDisable</code> 减，三对都在——这是 Day 8 踩过 <code>OnDisable</code> 写成 <code>+=</code> 之后修回来的纪律，要守住。</li></ul><h2 id="五、skillmanager让技能「真正生效」">五、SkillManager：让技能「真正生效」</h2><p>格子只管「升级 + 广播」，至于「升级后游戏里发生什么」，交给 <code>SkillManager</code> 这个订阅者：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class SkillManager : MonoBehaviour
+{
+    public Player_Combat combat;            // Day 11 已改为 private + 自动取
+
+    private void OnEnable()  { SkillSlot.OnAbilityPointSpent += HandleAbilityPointSpent; }
+    private void OnDisable() { SkillSlot.OnAbilityPointSpent -= HandleAbilityPointSpent; }
+
+    private void HandleAbilityPointSpent(SkillSlot slot)
+    {
+        string skillName = slot.skillSO.skillName;
+        switch (skillName)
+        {
+            case "Max Health Boost":
+                StatsManger.Instance.UpdateMaxHealth(1);   // 改单例数值
+                break;
+            case "Sword Slash":
+                combat.enabled = true;                     // 开战斗
+                break;
+            default:
+                Debug.LogWarning("Error" + skillName);
+        }
+    }
+}</code></pre></div><p>这里就是「事件解耦」的价值：格子完全不知道 <code>StatsManger</code> 和 <code>combat</code> 的存在，它只喊一声「我花了点 / 我满了」，谁爱听谁听。<code>SkillManager</code> 按 <code>skillName</code> 把抽象事件翻译成具体游戏效果。当前只接了两种技能，扩技能 = 在 <code>switch</code> 里加 <code>case</code>。</p><h2 id="六、toggleskilltree开关面板-暂停">六、ToggleSkillTree：开关面板 + 暂停</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class ToggleSkillTree : MonoBehaviour
+{
+    public CanvasGroup statsCanvas;     // 命名误导：实际控的是「技能面板」
+    private bool skillTreeOpen = false;
+
+    void Update()
+    {
+        if (Input.GetButtonDown("ToggleSkillTree"))
+        {
+            if (skillTreeOpen) { Time.timeScale = 1;  statsCanvas.alpha = 0; statsCanvas.blocksRaycasts = false; }
+            else               { Time.timeScale = 0;  statsCanvas.alpha = 1; statsCanvas.blocksRaycasts = true;  }
+            skillTreeOpen = !skillTreeOpen;
+        }
+    }
+}</code></pre></div><p>开门时 <code>Time.timeScale = 0</code> 冻结世界、用 <code>CanvasGroup</code> 淡入面板并开启射线；关门相反。一个值得改的小问题：变量叫 <code>statsCanvas</code> 却控技能面板，纯命名误导（Day 10 已记）。</p><h2 id="七、三条数据流全景">七、三条数据流全景</h2><figure class="post-figure"><img src="https://daydaydream000.github.io/assets/images/arpg-skilltree-flow.svg" alt="技能树三条数据流" loading="lazy" decoding="async"><figcaption>流 A 升级给点（事件）· 流 B 点格升级→扣点→生效→连锁（事件+点击）· 流 C 面板开关</figcaption></figure><ul><li><strong>流 A · 升级给点（事件驱动）</strong>：敌人死亡 <code>OnMonsterDefeated</code> → <code>ExpManager.GainExperience</code> → <code>LevelUp</code> → <code>OnLevelUp(1)</code> → <code>SkillTreeManager.UpdateAbilityPoints(+1)</code> → <code>availablePoints</code> +1。</li><li><strong>流 B · 点格升级→扣点→生效→连锁</strong>：点击 <code>skillButton</code> → <code>CheckAvailablePoints</code>（有點才放行）→ <code>TryUpgradeSkill</code>（<code>currentLevel++</code> → <code>OnAbilityPointSpent</code> 扣点 + <code>SkillManager</code> 改游戏 → 满级则 <code>OnSkillMaxed</code> 连锁解锁 → 最后 <code>UpdateUI</code>）。</li><li><strong>流 C · 面板开关</strong>：<code>ToggleSkillTree</code> 输入 → <code>timeScale</code> 0/1 + <code>CanvasGroup</code> 显隐。</li></ul><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p><strong>更正 Day 10 的一个误记</strong>：Day 10 把「升级没真给点数」列进了脆弱点，但顺着当前真实代码看，<code>SkillTreeManager</code> 在 <code>OnEnable</code> 里订阅了 <code>ExpManager.OnLevelUp += UpdateAbilityPoints</code>，而 <code>LevelUp()</code> 会 <code>OnLevelUp?.Invoke(1)</code> → <code>availablePoints += 1</code>。<strong>升级确实会给点（每级 +1），事件链是接通的</strong>。真正剩下的不是「没给」，而是：初始 <code>availablePoints</code> 在 Inspector 硬编码、且每级只 +1 偏慢。</p></div><h2 id="八、当前还差什么让扁平-24-格长成真正的「树」">八、当前还差什么（让扁平 24 格长成真正的「树」）</h2><div class="table-wrap"><table><thead><tr><th>问题</th><th>现状</th><th>怎么补</th></tr></thead><tbody><tr><td>满级卡 4/5</td><td><code>UpdateUI()</code> 排最后，上游异常被吞；<code>HandleSkillMaxed</code> 撞 <code>skillSO==null</code> 空格子 NRE</td><td><code>UpdateUI</code> 对 <code>skillSO</code> 判空；<code>HandleSkillMaxed</code>/<code>CanUnlockSkill</code> 跳过 null 格子；或把 <code>UpdateUI()</code> 移到事件广播<strong>之前</strong></td></tr><tr><td><code>combat</code> 漏拖</td><td><code>SkillManager.combat</code> 靠 Inspector</td><td>Day 11 已用 <code>RequireComponent</code> + <code>Awake</code> 自取焊死</td></tr><tr><td>前置关系没配</td><td><code>prerequisiteSkillSlots</code> 全空 → 24 格同时可解锁，「树」没长出来</td><td>在场景里给每个格子配前置；或把前置搬进 <code>SkillSO</code> 做成数据驱动</td></tr><tr><td>命名误导</td><td><code>ToggleSkillTree.statsCanvas</code> 实际控技能面板</td><td>改名为 <code>skillTreeCanvas</code></td></tr><tr><td>点数硬编码</td><td>初始 <code>availablePoints</code> 写死、每级只 +1</td><td>改为「每级给 N 点」的配置项，初始 0 靠升级攒</td></tr></tbody></table></div><p><strong>设计可取之处（值得延续）</strong>：① SO 与逻辑分离，加技能零代码；② 格子与生效逻辑靠静态事件解耦，互不认识；③ <code>StatsManger.Instance</code> 作统一数值真相源；④ 事件订阅成对退订的纪律已建立。</p><h2 id="一句话总结">一句话总结</h2><p>技能树由 <code>SkillSO</code>（数据资产）/ <code>SkillSlot</code>（24 个格子，含 <code>OnAbilityPointSpent</code>、<code>OnSkillMaxed</code> 两个静态事件）/ <code>SkillTreeManager</code>（总调度：接线、扣点、连锁解锁、接收升级加点）/ <code>SkillManager</code>（按 <code>skillName</code> 把事件翻译成改数值或开战斗）/ <code>ToggleSkillTree</code>（开关 + <code>timeScale</code> 暂停）五个脚本组成，靠事件 + 单例串成「点击→升级→广播→生效→连锁」的完整链路；它好在 SO 与逻辑分离、事件解耦、数值单例化，弱在仍是扁平 24 格——前置关系没配、「树」没长出来，外加满级卡 4/5、<code>combat</code> 漏拖、命名误导、点数硬编码几个脆点（其中「升级给点」实际已通过 <code>OnLevelUp→UpdateAbilityPoints(+1)</code> 接通，Day10 的「没给点数」是误记）；下一步是把前置关系数据化、让 <code>availablePoints</code> 配置化，并焊死 <code>HandleSkillMaxed</code> 的 null 判断。</p>]]></content:encoded>
+    </item>
+    <item>
       <title>ARPG 学习日志 Day 11：焊死战斗脆弱点——gizmo 空引用、enabled 真锁、引用自动取</title>
       <link>https://daydaydream000.github.io/post/arpg-day11-hardening-combat.html</link>
       <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day11-hardening-combat.html</guid>

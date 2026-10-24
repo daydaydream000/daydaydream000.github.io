@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 560" width="1200" height="560">
+  <defs>
+    <linearGradient id="bgFL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eaf1f7"/>
+      <stop offset="1" stop-color="#dbe7f0"/>
+    </linearGradient>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#2a4d6e"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="560" fill="url(#bgFL)"/>
+
+  <text x="600" y="32" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1f3a5f">技能树三条数据流</text>
+
+  <!-- Lane A: 升级给点 -->
+  <g transform="translate(24, 56)">
+    <rect x="0" y="0" width="1152" height="200" rx="8" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.35"/>
+    <text x="20" y="28" font-family="ui-sans-serif, sans-serif" font-size="15" font-weight="700" fill="#1f3a5f">流 A · 升级给点（事件驱动）</text>
+
+    <rect x="20" y="48" width="170" height="46" rx="5" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="32" y="70" font-family="ui-monospace, monospace" font-size="11" fill="#1f3a5f">敌人死亡</text>
+    <text x="32" y="86" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a6a7a">OnMonsterDefeated</text>
+
+    <rect x="230" y="48" width="170" height="46" rx="5" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="242" y="70" font-family="ui-monospace, monospace" font-size="11" fill="#1f3a5f">ExpManager</text>
+    <text x="242" y="86" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a6a7a">GainExp → LevelUp</text>
+
+    <rect x="440" y="48" width="170" height="46" rx="5" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="452" y="70" font-family="ui-monospace, monospace" font-size="11" fill="#1f3a5f">OnLevelUp(1)</text>
+    <text x="452" y="86" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a6a7a">静态事件广播</text>
+
+    <rect x="650" y="48" width="200" height="46" rx="5" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="662" y="70" font-family="ui-monospace, monospace" font-size="11" fill="#1f3a5f">SkillTreeManager</text>
+    <text x="662" y="86" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a6a7a">UpdateAbilityPoints(+1)</text>
+
+    <rect x="880" y="48" width="240" height="46" rx="5" fill="#1f6a3a" fill-opacity="0.12" stroke="#1f6a3a" stroke-opacity="0.5"/>
+    <text x="892" y="70" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#1f6a3a">availablePoints +1</text>
+    <text x="892" y="86" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#2a4d6e">pointsText 刷新</text>
+
+    <line x1="190" y1="71" x2="228" y2="71" stroke="#2a4d6e" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="400" y1="71" x2="438" y2="71" stroke="#2a4d6e" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="610" y1="71" x2="648" y2="71" stroke="#2a4d6e" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="850" y1="71" x2="878" y2="71" stroke="#2a4d6e" stroke-width="2" marker-end="url(#arr)"/>
+
+    <text x="20" y="130" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">订阅关系：SkillTreeManager.OnEnable → <tspan font-family="ui-monospace" font-weight="700">ExpManager.OnLevelUp += UpdateAbilityPoints</tspan></text>
+    <text x="20" y="156" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">所以「升级」确实会给技能点：每升 1 级 +1 点（经事件链，已接通，不是 Day10 误记的"没给"）。</text>
+    <text x="20" y="182" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a6a7a">剩余问题：初始 availablePoints 在 Inspector 硬编码；每级只 +1，成长偏慢。</text>
+  </g>
+
+  <!-- Lane B: 点格升级 + 生效 + 连锁 -->
+  <g transform="translate(24, 280)">
+    <rect x="0" y="0" width="1152" height="262" rx="8" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.35"/>
+    <text x="20" y="28" font-family="ui-sans-serif, sans-serif" font-size="15" font-weight="700" fill="#1f3a5f">流 B · 点格子升级 → 扣点 → 生效 → 连锁（点击事件 + 事件链）</text>
+
+    <rect x="20" y="44" width="150" height="46" rx="5" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="30" y="66" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#1f3a5f">点击 skillButton</text>
+    <text x="30" y="82" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a6a7a">Start 接的监听</text>
+
+    <rect x="200" y="44" width="170" height="46" rx="5" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="212" y="66" font-family="ui-monospace, monospace" font-size="11" fill="#1f3a5f">CheckAvailablePoints</text>
+    <text x="212" y="82" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a6a7a">门：availablePoints&gt;0</text>
+
+    <rect x="410" y="44" width="190" height="46" rx="5" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="422" y="66" font-family="ui-monospace, monospace" font-size="11" fill="#1f3a5f">TryUpgradeSkill</text>
+    <text x="422" y="82" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a6a7a">currentLevel++</text>
+
+    <rect x="640" y="44" width="200" height="46" rx="5" fill="#1f6a3a" fill-opacity="0.12" stroke="#1f6a3a" stroke-opacity="0.5"/>
+    <text x="652" y="66" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#1f6a3a">OnAbilityPointSpent</text>
+    <text x="652" y="82" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#2a4d6e">扣点 + SkillManager 改游戏</text>
+
+    <rect x="880" y="44" width="240" height="46" rx="5" fill="#eaf1f7" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="892" y="66" font-family="ui-monospace, monospace" font-size="11" fill="#1f3a5f">if maxed → OnSkillMaxed</text>
+    <text x="892" y="82" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a6a7a">HandleSkillMaxed 连锁解锁</text>
+
+    <line x1="170" y1="67" x2="198" y2="67" stroke="#2a4d6e" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="370" y1="67" x2="408" y2="67" stroke="#2a4d6e" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="600" y1="67" x2="638" y2="67" stroke="#2a4d6e" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="840" y1="67" x2="878" y2="67" stroke="#2a4d6e" stroke-width="2" marker-end="url(#arr)"/>
+
+    <!-- SkillManager 分支 -->
+    <rect x="640" y="118" width="230" height="50" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="652" y="140" font-family="ui-monospace, monospace" font-size="10.5" fill="#1f3a5f">SkillManager.Handle…</text>
+    <text x="652" y="158" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a6a7a">"Max Health"→+HP / "Sword Slash"→combat.enabled</text>
+    <line x1="740" y1="90" x2="755" y2="116" stroke="#2a4d6e" stroke-width="2" marker-end="url(#arr)"/>
+
+    <!-- 连锁解锁分支 -->
+    <rect x="880" y="118" width="240" height="50" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.4"/>
+    <text x="892" y="140" font-family="ui-monospace, monospace" font-size="10.5" fill="#1f3a5f">遍历 24 格 Unlock()</text>
+    <text x="892" y="158" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a6a7a">!isUnlocked && CanUnlockSkill()</text>
+    <line x1="1000" y1="90" x2="1000" y2="116" stroke="#2a4d6e" stroke-width="2" marker-end="url(#arr)"/>
+
+    <text x="20" y="206" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">关键顺序（TryUpgradeSkill 内部）：currentLevel++ → 广播 OnAbilityPointSpent → 若满级广播 OnSkillMaxed → 最后才 UpdateUI()。</text>
+    <text x="20" y="232" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#7a2530">坑：UpdateUI() 排最后，若上游任一处理者抛 NRE（如 HandleSkillMaxed 撞上 skillSO==null 的空格子），刷新被吞 → 满级卡 4/5。</text>
+  </g>
+</svg>

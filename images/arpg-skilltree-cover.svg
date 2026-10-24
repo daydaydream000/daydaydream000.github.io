@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bgST" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eaf1f7"/>
+      <stop offset="1" stop-color="#dbe7f0"/>
+    </linearGradient>
+    <linearGradient id="screenST" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f3550"/>
+      <stop offset="1" stop-color="#13253a"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgST)"/>
+
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="23" font-weight="700" fill="#1f3a5f">ARPG 技能树系统详解</text>
+  <text x="600" y="58" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#2a4d6e">ScriptableObject → 点击事件 → 静态事件 → 真正改游戏</text>
+
+  <!-- 四个角色 -->
+  <g transform="translate(24, 84)">
+    <rect x="0" y="0" width="282" height="150" rx="6" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.45"/>
+    <rect x="0" y="0" width="282" height="30" rx="6" fill="#1f3a5f"/>
+    <text x="16" y="20" font-family="ui-monospace, monospace" font-size="13" font-weight="700" fill="#ffffff">SkillSO · 数据资产</text>
+    <text x="16" y="58" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">技能名 / 满级 / 图标</text>
+    <text x="16" y="78" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">CreateAssetMenu 可新建</text>
+    <text x="16" y="108" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#1f6a3a"><tspan font-weight="700">职责：</tspan>描述「一个技能是什么」</text>
+    <text x="16" y="128" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a6a7a">不含逻辑，纯数据</text>
+
+    <rect x="294" y="0" width="282" height="150" rx="6" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.45"/>
+    <rect x="294" y="0" width="282" height="30" rx="6" fill="#1f3a5f"/>
+    <text x="310" y="20" font-family="ui-monospace, monospace" font-size="13" font-weight="700" fill="#ffffff">SkillSlot · 格子</text>
+    <text x="310" y="58" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">等级 / 解锁 / 图标 / 按钮</text>
+    <text x="310" y="78" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">两个静态事件</text>
+    <text x="310" y="108" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#1f6a3a"><tspan font-weight="700">职责：</tspan>一个格子的一生</text>
+    <text x="310" y="128" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a6a7a">TryUpgradeSkill 全流程</text>
+
+    <rect x="588" y="0" width="282" height="150" rx="6" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.45"/>
+    <rect x="588" y="0" width="282" height="30" rx="6" fill="#1f3a5f"/>
+    <text x="604" y="20" font-family="ui-monospace, monospace" font-size="13" font-weight="700" fill="#ffffff">SkillTreeManager · 调度</text>
+    <text x="604" y="58" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">24 格 / 点数 / 接线</text>
+    <text x="604" y="78" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">扣点 / 连锁解锁 / 加點</text>
+    <text x="604" y="108" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#1f6a3a"><tspan font-weight="700">职责：</tspan>总指挥</text>
+    <text x="604" y="128" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a6a7a">把点击接到升级</text>
+
+    <rect x="882" y="0" width="294" height="150" rx="6" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.45"/>
+    <rect x="882" y="0" width="294" height="30" rx="6" fill="#1f3a5f"/>
+    <text x="898" y="20" font-family="ui-monospace, monospace" font-size="13" font-weight="700" fill="#ffffff">SkillManager · 生效</text>
+    <text x="898" y="58" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">订阅 OnAbilityPointSpent</text>
+    <text x="898" y="78" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">switch(skillName)</text>
+    <text x="898" y="108" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#1f6a3a"><tspan font-weight="700">职责：</tspan>让技能改游戏</text>
+    <text x="898" y="128" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a6a7a">改 StatsManger / combat</text>
+  </g>
+
+  <rect x="24" y="356" width="1152" height="26" rx="3" fill="#1f3a5f" opacity="0.06"/>
+  <text x="600" y="373" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#2a4d6e">SO 与逻辑分离 · 事件解耦 · 单例 StatsManger 作数值真相源 —— 当前是「扁平 24 格 + 事件链」，还不是真正的「树」</text>
+</svg>
