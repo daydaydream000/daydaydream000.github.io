@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARPG 学习日志 Day 11：焊死战斗脆弱点——gizmo 空引用、enabled 真锁、引用自动取 · DayDayDream</title>
+<meta name="description" content="不写新功能，专门把 Day 10 列的 6 个脆弱点里「战斗相关」的三条一次焊死：OnDrawGizmosSelected 的空引用、Attack() 没内部 enabled 守卫、SkillManager.combat 靠 Inspector 漏拖。每条都给 before/after 真实代码，并落到 Day 10 那句「写完逻辑 ≠ 接对生命周期」。">
+<link rel="canonical" href="https://daydaydream000.github.io/post/arpg-day11-hardening-combat.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DayDayDream">
+<meta property="og:title" content="ARPG 学习日志 Day 11：焊死战斗脆弱点——gizmo 空引用、enabled 真锁、引用自动取">
+<meta property="og:description" content="不写新功能，专门把 Day 10 列的 6 个脆弱点里「战斗相关」的三条一次焊死：OnDrawGizmosSelected 的空引用、Attack() 没内部 enabled 守卫、SkillManager.combat 靠 Inspector 漏拖。每条都给 before/after 真实代码，并落到 Day 10 那句「写完逻辑 ≠ 接对生命周期」。">
+<meta property="og:url" content="https://daydaydream000.github.io/post/arpg-day11-hardening-combat.html">
+<meta property="og:image" content="https://daydaydream000.github.io/assets/images/arpg-day11-cover.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f3f8f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="DayDayDream" href="../rss.xml">
+<link rel="stylesheet" href="../assets/style.css?v=db15b81cea">
+<script>
+/* 主题与公告状态在首次绘制前应用，避免闪烁 */
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('dsh-theme'); } catch (e) {}
+  if (saved !== 'light' && saved !== 'dark') saved = 'auto';
+  var root = document.documentElement;
+  root.dataset.theme = saved;
+  root.classList.toggle('dark', saved === 'dark' ||
+    (saved === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  try {
+    if (localStorage.getItem('dsh-notice') === 'off') root.classList.add('notice-off');
+  } catch (e) {}
+})();
+</script>
+
+</head>
+<body class="page-post">
+<div id="page-progress" aria-hidden="true"></div>
+<a class="skip-link" href="#main">跳到正文</a>
+
+<header class="topbar"><div class="topbar-inner"><a class="topbar-brand" href="../index.html"><img src="../assets/avatar.jpg" alt="" width="30" height="30"><span class="topbar-brand-text">DayDayDream</span></a><nav class="topbar-nav" aria-label="主导航"><a href="../index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg><span>首页</span></a><a href="../arpg-progress.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>ARPG</span></a><a href="../tags/index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span>标签</span></a><a href="../about.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>关于</span></a></nav><div class="topbar-tools"><button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索（按 /）"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题"><span class="icon-sun"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg></span><span class="icon-moon"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></svg></span></button></div></div></header>
+<header class="banner banner-short"><img class="banner-bg" src="../assets/banner.jpg" alt="" aria-hidden="true" decoding="async"><div class="banner-scrim"></div><div class="banner-inner"><p class="banner-title">DayDayDream</p><p class="banner-subtitle">醒着做梦，落笔成诗——记所思，存所学。</p></div></header>
+
+<main id="main" class="layout">
+  <div class="layout-inner">
+    <aside class="col col-left"><section class="card-panel profile-card" data-reveal="0"><a class="profile-avatar-link" href="../about.html" aria-label="关于我"><img class="profile-avatar" src="../assets/avatar.jpg" alt="DayDayDream" decoding="async"></a><p class="profile-name">DayDayDream</p><div class="profile-accent" aria-hidden="true"></div><p class="profile-greeting">Hello, I'm DayDayDream.</p><div class="profile-social"><a class="social-chip" href="https://github.com/daydaydream000" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener noreferrer"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.58.69.48A10.04 10.04 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/></svg></a><a class="social-chip" href="mailto:daydaydream000@users.noreply.github.com" title="邮箱" aria-label="邮箱"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></a><a class="social-chip" href="../rss.xml" title="RSS 订阅" aria-label="RSS 订阅"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18.5" r="1.4" fill="currentColor" stroke="none"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/></svg></a></div></section><section class="card-panel notice-card" id="notice" data-reveal="1"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5v3A1.5 1.5 0 0 0 5.5 15H7l1 4h2l-1-4h2l7 3.5V6.5L11 10H5.5A1.5 1.5 0 0 0 4 10.5Z"/></svg><span>公告</span></h2><p class="notice-text">欢迎来到 DayDayDream —— 醒着做梦，落笔成诗，记所思，存所学。</p><div class="notice-foot"><a class="notice-more" href="../about.html">前往关于</a><button class="notice-close" type="button" aria-label="关闭公告" title="关闭"><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></section></aside>
+    <div class="col col-main"><article class="card-panel post">
+  <header class="post-header">
+    <h1 class="post-title">ARPG 学习日志 Day 11：焊死战斗脆弱点——gizmo 空引用、enabled 真锁、引用自动取</h1>
+    <div class="post-meta"><div class="post-badges"><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><time datetime="2026-10-24">2026 年 10 月 24 日</time></span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg>约 1647 字</span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>6 分钟阅读</span><a class="badge badge-pin" href="../tags/index.html#tag-unity"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>Unity</a><a class="badge badge-pin" href="../tags/index.html#tag-arpg"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>ARPG</a><a class="badge badge-pin" href="../tags/index.html#tag-游戏开发"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>游戏开发</a><a class="badge badge-pin" href="../tags/index.html#tag-调试"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>调试</a><a class="badge badge-pin" href="../tags/index.html#tag-防御性编程"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>防御性编程</a><a class="badge badge-pin" href="../tags/index.html#tag-单例"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>单例</a><a class="badge badge-pin" href="../tags/index.html#tag-重构"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>重构</a></div></div>
+  </header>
+  <div class="toc-mobile"><nav class="toc" aria-label="目录"><p class="toc-title">目录</p><div class="toc-list"><a href="#一句话说清这天的内容">一句话说清这天的内容</a><a href="#先说结论">先说结论</a><a href="#一、改动清单只动了-2-个脚本">一、改动清单（只动了 2 个脚本）</a><a href="#二、修复1gizmo-空引用ondrawgizmosselected">二、修复①：gizmo 空引用（OnDrawGizmosSelected）</a><a href="#三、修复2enabled-真锁attack-内部守卫">三、修复②：enabled 真锁（Attack 内部守卫）</a><a href="#四、修复3引用自动取skillmanagercombat">四、修复③：引用自动取（SkillManager.combat）</a><a href="#五、整体设计思路把「防御」放进生命周期里">五、整体设计思路：把「防御」放进生命周期里</a><a href="#六、明天要补的洞day-10-剩下的-4-条">六、明天要补的洞（Day 10 剩下的 4 条）</a><a href="#一句话总结">一句话总结</a></div></nav></div>
+  <figure class="post-cover"><img src="../assets/images/arpg-day11-cover.svg" alt="ARPG 学习日志 Day 11：焊死战斗脆弱点——gizmo 空引用、enabled 真锁、引用自动取" loading="lazy" decoding="async"></figure>
+  <div class="post-content"><h2 id="一句话说清这天的内容">一句话说清这天的内容</h2><p>Day 10 收尾时列了 <strong>6 个已知脆弱点</strong>，今天不写新功能，先把其中「战斗相关」的三条一次焊死：<code>Player_Combat</code> 的 gizmo 空引用、没内部 <code>enabled</code> 守卫，以及 <code>SkillManager.combat</code> 靠 Inspector 漏拖。每条都先讲「为什么会炸」，再给「修了之后长什么样」的真实代码。</p><h2 id="先说结论">先说结论</h2><p>这三条崩溃看似各不相干，根因其实同一个——<strong>「写完逻辑」≠「接对生命周期」</strong>：</p><ul><li>gizmo 那是在<strong>编辑器回调</strong>里访问了还没初始化的引用；</li><li><code>Attack()</code> 漏第一刀，是把 <code>enabled=false</code> 当成锁、却没在<strong>方法内部</strong>真正拦；</li><li><code>combat</code> 漏拖，是<strong>跨物体引用</strong>靠人手拖、而不是让代码自己取。</li></ul><p>修法就一句口诀：<strong>「引用在被解引用之前，先确认它存在」</strong>——编辑器回调判空、<code>Attack()</code> 入口判 <code>isActiveAndEnabled</code>、跨物体引用 <code>RequireComponent</code> + <code>Awake</code> 自取。</p><h2 id="一、改动清单只动了-2-个脚本">一、改动清单（只动了 2 个脚本）</h2><div class="table-wrap"><table><thead><tr><th>脚本</th><th>改了什么</th><th>对应脆弱点</th></tr></thead><tbody><tr><td><code>Player_Combat.cs</code></td><td><code>OnDrawGizmosSelected</code> 加 null 守卫；<code>Attack()</code> 入口加 <code>isActiveAndEnabled</code> 守卫</td><td>gizmo 空引用 / enabled 漏锁</td></tr><tr><td><code>SkillManager.cs</code></td><td><code>combat</code> 由 public 拖拽改 <code>private</code> + <code>[RequireComponent]</code> + <code>Awake</code> 自取</td><td>引用漏拖</td></tr><tr><td><code>PlayerMovement.cs</code></td><td>调用处 <code>&amp;&amp; player_Combat.enabled==true</code> 同步删掉（锁已进 <code>Attack()</code> 内部）</td><td>配套清理</td></tr></tbody></table></div><figure class="post-figure"><img src="../assets/images/arpg-day11-fixes.svg" alt="修复前 vs 修复后：三道闸" loading="lazy" decoding="async"><figcaption>修复前三个漏点 → 修复后三道闸，崩溃入口全部焊死</figcaption></figure><h2 id="二、修复1gizmo-空引用ondrawgizmosselected">二、修复①：gizmo 空引用（OnDrawGizmosSelected）</h2><p><code>OnDrawGizmosSelected</code> 在<strong>编辑器里选中物体时就会执行</strong>，不进 Play 模式、<code>Awake/Start</code> 也不跑。所以它访问的两个东西，在编辑期很可能还是 null：</p><ul><li><code>attackPoint</code>：<code>public Transform</code>，靠 Inspector 拖，没拖就是 null；</li><li><code>StatsManger.Instance</code>：单例在 <code>Awake</code> 里才赋值，编辑期没运行就还是 null。</li></ul><p>于是第 50 行 <code>attackPoint.position</code> / <code>.weaponRange</code> 一解引用就 NRE。</p><p><strong>before</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnDrawGizmosSelected()
+{
+    Gizmos.color = Color.red;
+    Gizmos.DrawWireSphere(attackPoint.position, StatsManger.Instance.weaponRange);
+}</code></pre></div><p><strong>after</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnDrawGizmosSelected()
+{
+    if (attackPoint == null || StatsManger.Instance == null) return;
+
+    Gizmos.color = Color.red;
+    Gizmos.DrawWireSphere(attackPoint.position, StatsManger.Instance.weaponRange);
+}</code></pre></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>这只是「让 gizmo 不报错」。真正的根因还是 <code>attackPoint</code> 槽位要记得在 Inspector 拖上 AttackPoint 子物体——判空是兜底，不是免拖许可证。</p></div><h2 id="三、修复2enabled-真锁attack-内部守卫">三、修复②：enabled 真锁（Attack 内部守卫）</h2><p>之前 <code>Player_Combat</code> 开局 <code>enabled=false</code>，但 <code>Attack()</code> 是 public 方法，<code>enabled</code> 只停 <code>Update</code>、不挡方法调用；<code>Attack()</code> 内部又只判 <code>timer&lt;=0</code>，<code>timer</code> 初始 0 → 第一刀在禁用态就漏出去了，全靠 <code>PlayerMovement</code> 调用处那句 <code>&amp;&amp; player_Combat.enabled==true</code> 兜着。</p><p>正确做法是<strong>把锁搬进方法内部</strong>，调用方不用替它担责：</p><p><strong>before</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void Attack()
+{
+    if(timer&lt;=0)
+    {
+        anim.SetBool("isAttacking", true);
+        timer = cooldown;
+    }
+}</code></pre></div><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// PlayerMovement.Update()
+if(Input.GetButtonDown("Slash") &amp;&amp; player_Combat.enabled==true)
+    player_Combat.Attack();</code></pre></div><p><strong>after</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void Attack()
+{
+    if (!isActiveAndEnabled || timer &gt; 0) return;   // 锁进方法内部
+    anim.SetBool("isAttacking", true);
+    timer = cooldown;
+}</code></pre></div><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// PlayerMovement.Update()
+if (Input.GetButtonDown("Slash"))
+    player_Combat.Attack();   // 禁用态自然被 Attack() 自己挡掉</code></pre></div><div class="alert alert-tip"><p class="alert-title"><span class="alert-icon">💡</span>技巧</p><p><code>isActiveAndEnabled</code> 同时查「物体激活」和「组件启用」，比单独看 <code>enabled</code> 更稳。调用方那句 <code>enabled==true</code> 现在成了冗余，删掉反而更干净——<strong>守卫只该有一处，放在离数据最近的地方</strong>。</p></div><h2 id="四、修复3引用自动取skillmanagercombat">四、修复③：引用自动取（SkillManager.combat）</h2><p><code>SkillManager</code> 的 <code>combat</code> 是 <code>public Player_Combat combat;</code>，靠 Inspector 拖。漏拖 → 点「Sword Slash」走到 <code>combat.enabled = true</code> 第 25 行直接 NRE。对照 <code>Enemy_*</code> 系列在 <code>Start()</code> 里 <code>GetComponent</code> 自取，从没出过这种错——所以治本写法是让组件「自己保证引用存在」：</p><p><strong>before</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class SkillManager : MonoBehaviour
+{
+    public Player_Combat combat;   // 靠拖，漏拖就 NRE
+    // ...
+    case "Sword Slash":
+        combat.enabled = true;     // 第 25 行
+        break;
+}</code></pre></div><p><strong>after</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">[RequireComponent(typeof(Player_Combat))]
+public class SkillManager : MonoBehaviour
+{
+    private Player_Combat combat;
+
+    private void Awake()
+    {
+        combat = GetComponent&lt;Player_Combat&gt;();   // 自动取，不靠拖
+    }
+
+    private void OnEnable()
+    {
+        SkillSlot.OnAbilityPointSpent += HandleAbilityPointSpent;
+    }
+    private void OnDisable()
+    {
+        SkillSlot.OnAbilityPointSpent -= HandleAbilityPointSpent;
+    }
+
+    private void HandleAbilityPointSpent(SkillSlot slot)
+    {
+        string skillName = slot.skillSO.skillName;
+        switch(skillName)
+        {
+            case "Max Health Boost":
+                StatsManger.Instance.UpdateMaxHealth(1);
+                break;
+            case "Sword Slash":
+                combat.enabled = true;             // 现在 guaranteed 非空
+                break;
+            default:
+                Debug.LogWarning("Error" + skillName);
+                break;
+        }
+    }
+}</code></pre></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p><code>[RequireComponent(typeof(Player_Combat))]</code> 让 Unity 在挂 <code>SkillManager</code> 时<strong>强制</strong>要求同物体上有 <code>Player_Combat</code>：没有就直接拒绝添加（Inspector 里也自动补上），从源头消灭「漏拖」。配合 <code>Awake</code> 里 <code>GetComponent</code>，引用在第一次被用到之前就一定存在。</p></div><h2 id="五、整体设计思路把「防御」放进生命周期里">五、整体设计思路：把「防御」放进生命周期里</h2><p>今天三条修复，本质上都是把 Day 10 复盘里的那句口号落地：</p><div class="table-wrap"><table><thead><tr><th>反模式（Day 10）</th><th>今天的落地点</th></tr></thead><tbody><tr><td>静态事件 / 广播打到未初始化对象</td><td>gizmo 在<strong>编辑器回调</strong>里先判 <code>Instance==null</code></td></tr><tr><td>public 字段靠 Inspector 漏拖</td><td><code>RequireComponent</code> + <code>Awake</code> 自取，编译/挂载期就拦</td></tr><tr><td>把 <code>enabled=false</code> 当锁</td><td>守卫搬进 <code>Attack()</code> 内部，方法自锁</td></tr><tr><td>UI 与数据不同步</td><td>（本日未动，留给后续）</td></tr></tbody></table></div><p>一句话：<strong>防御不该靠「调用方记得检查」，而该靠「被调用方/被访问方自身保证」</strong>——要么自己判空，要么自己取引用，要么自己锁门。</p><h2 id="六、明天要补的洞day-10-剩下的-4-条">六、明天要补的洞（Day 10 剩下的 4 条）</h2><p>战斗相关三条焊死了，Day 10 的 6 个脆弱点还剩：</p><ol><li><code>HandleSkillMaxed</code> 遍历 24 格没对 <code>skillSO</code> 判空（满级 4/5 那坑的治本办法）。</li><li><code>ToggleSkillTree.statsCanvas</code> 变量名误导（实际控技能面板，该改名）。</li><li>技能树还是扁平列表，<code>prerequisiteSkillSlots</code> 没真配置（点格子解锁关系还是摆设）。</li><li>显示 / 数值层依然硬编码：<code>StatsCanvas.alpha=1</code>、技能面板常显、<code>availablePoints=10</code> 写死、升级没真给点数。</li></ol><p>Day 12 计划：先焊死 #1（判空）和 #4（把点数 / 面板显隐接到数据），#2 改名顺手做，#3 留到技能树重构那一轮。</p><h2 id="一句话总结">一句话总结</h2><p>Day 11 没写新功能，而是把 Day 10 列的 6 个脆弱点里「战斗相关」的三条一次焊死——<code>OnDrawGizmosSelected</code> 加 null 守卫（编辑器回调先判 <code>attackPoint</code>/<code>Instance</code>）、<code>Attack()</code> 把 <code>enabled</code> 守卫搬进方法内部（<code>isActiveAndEnabled</code> + <code>timer</code>）、<code>SkillManager.combat</code> 用 <code>[RequireComponent]</code> + <code>Awake</code> 自取替代 Inspector 拖拽——共同原则是「引用在被解引用之前先确认存在」，把防御从「调用方记得查」下沉到「被调用方自身保证」，剩下 4 条脆弱点留给 Day 12。</p></div>
+  <footer class="post-footer">
+    <div class="post-tags"><a class="tag" href="../tags/index.html#tag-unity">Unity</a><a class="tag" href="../tags/index.html#tag-arpg">ARPG</a><a class="tag" href="../tags/index.html#tag-游戏开发">游戏开发</a><a class="tag" href="../tags/index.html#tag-调试">调试</a><a class="tag" href="../tags/index.html#tag-防御性编程">防御性编程</a><a class="tag" href="../tags/index.html#tag-单例">单例</a><a class="tag" href="../tags/index.html#tag-重构">重构</a></div>
+    <p class="post-source"><a href="https://github.com/daydaydream000/daydaydream000.github.io/blob/main/posts/arpg-day11-hardening-combat.md">在 GitHub 上查看源文件</a></p>
+  </footer>
+</article>
+<nav class="post-nav" aria-label="上下篇"><a class="post-nav-item prev" href="../post/hello-daydaydream.html"><span class="post-nav-label">← 更新的一篇</span><span class="post-nav-title">你好，欢迎来到 DayDayDream</span></a><a class="post-nav-item next" href="../post/arpg-day10-architecture.html"><span class="post-nav-label">更早的一篇 →</span><span class="post-nav-title">ARPG 学习日志 Day 10（下）：当前架构全景——17 个脚本是怎么拼起来的</span></a></nav>
+</div>
+    <aside class="col col-right"><nav class="card-panel toc-card" aria-label="文章目录" data-reveal="0"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span>文章目录</span></h2><div class="toc-list"><a class="" href="#一句话说清这天的内容">一句话说清这天的内容</a><a class="" href="#先说结论">先说结论</a><a class="" href="#一、改动清单只动了-2-个脚本">一、改动清单（只动了 2 个脚本）</a><a class="" href="#二、修复1gizmo-空引用ondrawgizmosselected">二、修复①：gizmo 空引用（OnDrawGizmosSelected）</a><a class="" href="#三、修复2enabled-真锁attack-内部守卫">三、修复②：enabled 真锁（Attack 内部守卫）</a><a class="" href="#四、修复3引用自动取skillmanagercombat">四、修复③：引用自动取（SkillManager.combat）</a><a class="" href="#五、整体设计思路把「防御」放进生命周期里">五、整体设计思路：把「防御」放进生命周期里</a><a class="" href="#六、明天要补的洞day-10-剩下的-4-条">六、明天要补的洞（Day 10 剩下的 4 条）</a><a class="" href="#一句话总结">一句话总结</a></div></nav><section class="card-panel" data-reveal="3"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>站点统计</span></h2><ul class="stat-list"><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span class="stat-label">文章</span><span class="stat-value">15</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span class="stat-label">标签</span><span class="stat-value">27</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span class="stat-label">总字数</span><span class="stat-value">41,707</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="stat-label">最近更新</span><span class="stat-value">2026-10-24</span></li></ul></section></aside>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>转载请注明出处</p>
+  <nav class="footer-nav" aria-label="页脚导航">
+    <a href="../index.html">首页</a>
+    <a href="../tags/index.html">标签</a>
+    <a href="../about.html">关于</a>
+    <a href="../rss.xml">RSS</a>
+    <a href="https://github.com/daydaydream000">GitHub</a>
+    <a href="https://github.com/daydaydream000/daydaydream000.github.io">源码</a>
+    <a href="mailto:daydaydream000@users.noreply.github.com">邮件</a>
+  </nav>
+  <p class="footer-note">本站是纯静态站点，由 build.py 生成，托管于 GitHub Pages。</p>
+</footer>
+
+<a class="back-to-top" id="back-to-top" href="#" aria-label="回到顶部" title="回到顶部">
+  <svg class="i" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</a>
+
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="搜索文章">
+    <div class="search-head">
+      <svg class="i" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off"
+             spellcheck="false" aria-label="搜索关键词">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<script src="../assets/search-index.js" defer></script>
+<script src="../assets/app.js?v=ffe2833a95" defer></script>
+</body>
+</html>

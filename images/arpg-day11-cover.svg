@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bgD11" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eaf1f7"/>
+      <stop offset="1" stop-color="#dbe7f0"/>
+    </linearGradient>
+    <linearGradient id="screenD11" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f3550"/>
+      <stop offset="1" stop-color="#13253a"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bgD11)"/>
+
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="23" font-weight="700" fill="#1f3a5f">ARPG 学习日志 Day 11：焊死战斗脆弱点</text>
+  <text x="600" y="58" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#2a4d6e">3 处 null / 漏锁 / 漏拖 → 从「刚能跑」到「不会莫名崩」</text>
+
+  <!-- 三张卡片 -->
+  <g transform="translate(24, 84)">
+    <rect x="0" y="0" width="376" height="150" rx="6" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.45"/>
+    <rect x="0" y="0" width="376" height="30" rx="6" fill="#1f3a5f"/>
+    <text x="16" y="20" font-family="ui-monospace, monospace" font-size="13" font-weight="700" fill="#ffffff">① gizmo 空引用</text>
+    <text x="16" y="58" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a"><tspan font-weight="700">病：</tspan>OnDrawGizmosSelected 第 50 行</text>
+    <text x="16" y="78" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">attackPoint / Instance 编辑器期为 null</text>
+    <text x="16" y="108" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#1f6a3a"><tspan font-weight="700">治：</tspan>null 守卫，任一为空直接 return</text>
+    <text x="16" y="128" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a6a7a">编辑器选中也不再崩</text>
+
+    <rect x="394" y="0" width="376" height="150" rx="6" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.45"/>
+    <rect x="394" y="0" width="376" height="30" rx="6" fill="#1f3a5f"/>
+    <text x="410" y="20" font-family="ui-monospace, monospace" font-size="13" font-weight="700" fill="#ffffff">② enabled 真锁</text>
+    <text x="410" y="58" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a"><tspan font-weight="700">病：</tspan>Attack() 没内部守卫</text>
+    <text x="410" y="78" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">Combat 禁用仍漏砍第一刀</text>
+    <text x="410" y="108" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#1f6a3a"><tspan font-weight="700">治：</tspan>锁进方法内 isActiveAndEnabled</text>
+    <text x="410" y="128" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a6a7a">调用方不再担责</text>
+
+    <rect x="788" y="0" width="388" height="150" rx="6" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.45"/>
+    <rect x="788" y="0" width="388" height="30" rx="6" fill="#1f3a5f"/>
+    <text x="804" y="20" font-family="ui-monospace, monospace" font-size="13" font-weight="700" fill="#ffffff">③ 引用自动取</text>
+    <text x="804" y="58" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a"><tspan font-weight="700">病：</tspan>SkillManager.combat 靠 Inspector 漏拖</text>
+    <text x="804" y="78" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#3a4a5a">点 Sword Slash → 第 25 行 NRE</text>
+    <text x="804" y="108" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#1f6a3a"><tspan font-weight="700">治：</tspan>RequireComponent + Awake 自取</text>
+    <text x="804" y="128" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a6a7a">缺组件 Unity 直接拒挂</text>
+  </g>
+
+  <rect x="24" y="356" width="1152" height="26" rx="3" fill="#1f3a5f" opacity="0.06"/>
+  <text x="600" y="373" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#2a4d6e">都是 Day 10 列的 6 个脆弱点里的战斗相关三条——今天一次焊死，剩下 4 条留给 Day 12</text>
+</svg>

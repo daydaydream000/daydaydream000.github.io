@@ -26,6 +26,84 @@ git commit -m "post: 新文章"
 git push</code></pre></div><p>目录分工也很直白：</p><div class="table-wrap"><table><thead><tr><th>路径</th><th>用途</th></tr></thead><tbody><tr><td><code>posts/</code></td><td>文章源文件（Markdown）</td></tr><tr><td><code>pages/</code></td><td>独立页面，比如「关于」</td></tr><tr><td><code>images/</code></td><td>文章中引用的图片，构建时自动复制</td></tr><tr><td><code>assets/</code></td><td>手写的 CSS 与 JavaScript</td></tr><tr><td><code>templates/</code></td><td>页面模板</td></tr><tr><td><code>docs/</code></td><td>生成结果，也是 Pages 的发布目录</td></tr></tbody></table></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>生成器只用 Python 标准库，没有第三方依赖；换台机器 clone 下来就能跑。</p></div><h2 id="写在最后">写在最后</h2><blockquote><p>种一棵树最好的时间是十年前，其次是现在。</p></blockquote><p>开始记录吧，欢迎常来坐坐。</p>]]></content:encoded>
     </item>
     <item>
+      <title>ARPG 学习日志 Day 11：焊死战斗脆弱点——gizmo 空引用、enabled 真锁、引用自动取</title>
+      <link>https://daydaydream000.github.io/post/arpg-day11-hardening-combat.html</link>
+      <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day11-hardening-combat.html</guid>
+      <pubDate>Sat, 24 Oct 2026 19:10:00 +0000</pubDate>
+      <author>daydaydream000@users.noreply.github.com (DayDayDream)</author>
+      <category>Unity</category><category>ARPG</category><category>游戏开发</category><category>调试</category><category>防御性编程</category><category>单例</category><category>重构</category>
+      <description>不写新功能，专门把 Day 10 列的 6 个脆弱点里「战斗相关」的三条一次焊死：OnDrawGizmosSelected 的空引用、Attack() 没内部 enabled 守卫、SkillManager.combat 靠 Inspector 漏拖。每条都给 before/after 真实代码，并落到 Day 10 那句「写完逻辑 ≠ 接对生命周期」。</description>
+      <content:encoded><![CDATA[<h2 id="一句话说清这天的内容">一句话说清这天的内容</h2><p>Day 10 收尾时列了 <strong>6 个已知脆弱点</strong>，今天不写新功能，先把其中「战斗相关」的三条一次焊死：<code>Player_Combat</code> 的 gizmo 空引用、没内部 <code>enabled</code> 守卫，以及 <code>SkillManager.combat</code> 靠 Inspector 漏拖。每条都先讲「为什么会炸」，再给「修了之后长什么样」的真实代码。</p><h2 id="先说结论">先说结论</h2><p>这三条崩溃看似各不相干，根因其实同一个——<strong>「写完逻辑」≠「接对生命周期」</strong>：</p><ul><li>gizmo 那是在<strong>编辑器回调</strong>里访问了还没初始化的引用；</li><li><code>Attack()</code> 漏第一刀，是把 <code>enabled=false</code> 当成锁、却没在<strong>方法内部</strong>真正拦；</li><li><code>combat</code> 漏拖，是<strong>跨物体引用</strong>靠人手拖、而不是让代码自己取。</li></ul><p>修法就一句口诀：<strong>「引用在被解引用之前，先确认它存在」</strong>——编辑器回调判空、<code>Attack()</code> 入口判 <code>isActiveAndEnabled</code>、跨物体引用 <code>RequireComponent</code> + <code>Awake</code> 自取。</p><h2 id="一、改动清单只动了-2-个脚本">一、改动清单（只动了 2 个脚本）</h2><div class="table-wrap"><table><thead><tr><th>脚本</th><th>改了什么</th><th>对应脆弱点</th></tr></thead><tbody><tr><td><code>Player_Combat.cs</code></td><td><code>OnDrawGizmosSelected</code> 加 null 守卫；<code>Attack()</code> 入口加 <code>isActiveAndEnabled</code> 守卫</td><td>gizmo 空引用 / enabled 漏锁</td></tr><tr><td><code>SkillManager.cs</code></td><td><code>combat</code> 由 public 拖拽改 <code>private</code> + <code>[RequireComponent]</code> + <code>Awake</code> 自取</td><td>引用漏拖</td></tr><tr><td><code>PlayerMovement.cs</code></td><td>调用处 <code>&amp;&amp; player_Combat.enabled==true</code> 同步删掉（锁已进 <code>Attack()</code> 内部）</td><td>配套清理</td></tr></tbody></table></div><figure class="post-figure"><img src="https://daydaydream000.github.io/assets/images/arpg-day11-fixes.svg" alt="修复前 vs 修复后：三道闸" loading="lazy" decoding="async"><figcaption>修复前三个漏点 → 修复后三道闸，崩溃入口全部焊死</figcaption></figure><h2 id="二、修复1gizmo-空引用ondrawgizmosselected">二、修复①：gizmo 空引用（OnDrawGizmosSelected）</h2><p><code>OnDrawGizmosSelected</code> 在<strong>编辑器里选中物体时就会执行</strong>，不进 Play 模式、<code>Awake/Start</code> 也不跑。所以它访问的两个东西，在编辑期很可能还是 null：</p><ul><li><code>attackPoint</code>：<code>public Transform</code>，靠 Inspector 拖，没拖就是 null；</li><li><code>StatsManger.Instance</code>：单例在 <code>Awake</code> 里才赋值，编辑期没运行就还是 null。</li></ul><p>于是第 50 行 <code>attackPoint.position</code> / <code>.weaponRange</code> 一解引用就 NRE。</p><p><strong>before</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnDrawGizmosSelected()
+{
+    Gizmos.color = Color.red;
+    Gizmos.DrawWireSphere(attackPoint.position, StatsManger.Instance.weaponRange);
+}</code></pre></div><p><strong>after</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnDrawGizmosSelected()
+{
+    if (attackPoint == null || StatsManger.Instance == null) return;
+
+    Gizmos.color = Color.red;
+    Gizmos.DrawWireSphere(attackPoint.position, StatsManger.Instance.weaponRange);
+}</code></pre></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>这只是「让 gizmo 不报错」。真正的根因还是 <code>attackPoint</code> 槽位要记得在 Inspector 拖上 AttackPoint 子物体——判空是兜底，不是免拖许可证。</p></div><h2 id="三、修复2enabled-真锁attack-内部守卫">三、修复②：enabled 真锁（Attack 内部守卫）</h2><p>之前 <code>Player_Combat</code> 开局 <code>enabled=false</code>，但 <code>Attack()</code> 是 public 方法，<code>enabled</code> 只停 <code>Update</code>、不挡方法调用；<code>Attack()</code> 内部又只判 <code>timer&lt;=0</code>，<code>timer</code> 初始 0 → 第一刀在禁用态就漏出去了，全靠 <code>PlayerMovement</code> 调用处那句 <code>&amp;&amp; player_Combat.enabled==true</code> 兜着。</p><p>正确做法是<strong>把锁搬进方法内部</strong>，调用方不用替它担责：</p><p><strong>before</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void Attack()
+{
+    if(timer&lt;=0)
+    {
+        anim.SetBool("isAttacking", true);
+        timer = cooldown;
+    }
+}</code></pre></div><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// PlayerMovement.Update()
+if(Input.GetButtonDown("Slash") &amp;&amp; player_Combat.enabled==true)
+    player_Combat.Attack();</code></pre></div><p><strong>after</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void Attack()
+{
+    if (!isActiveAndEnabled || timer &gt; 0) return;   // 锁进方法内部
+    anim.SetBool("isAttacking", true);
+    timer = cooldown;
+}</code></pre></div><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// PlayerMovement.Update()
+if (Input.GetButtonDown("Slash"))
+    player_Combat.Attack();   // 禁用态自然被 Attack() 自己挡掉</code></pre></div><div class="alert alert-tip"><p class="alert-title"><span class="alert-icon">💡</span>技巧</p><p><code>isActiveAndEnabled</code> 同时查「物体激活」和「组件启用」，比单独看 <code>enabled</code> 更稳。调用方那句 <code>enabled==true</code> 现在成了冗余，删掉反而更干净——<strong>守卫只该有一处，放在离数据最近的地方</strong>。</p></div><h2 id="四、修复3引用自动取skillmanagercombat">四、修复③：引用自动取（SkillManager.combat）</h2><p><code>SkillManager</code> 的 <code>combat</code> 是 <code>public Player_Combat combat;</code>，靠 Inspector 拖。漏拖 → 点「Sword Slash」走到 <code>combat.enabled = true</code> 第 25 行直接 NRE。对照 <code>Enemy_*</code> 系列在 <code>Start()</code> 里 <code>GetComponent</code> 自取，从没出过这种错——所以治本写法是让组件「自己保证引用存在」：</p><p><strong>before</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class SkillManager : MonoBehaviour
+{
+    public Player_Combat combat;   // 靠拖，漏拖就 NRE
+    // ...
+    case "Sword Slash":
+        combat.enabled = true;     // 第 25 行
+        break;
+}</code></pre></div><p><strong>after</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">[RequireComponent(typeof(Player_Combat))]
+public class SkillManager : MonoBehaviour
+{
+    private Player_Combat combat;
+
+    private void Awake()
+    {
+        combat = GetComponent&lt;Player_Combat&gt;();   // 自动取，不靠拖
+    }
+
+    private void OnEnable()
+    {
+        SkillSlot.OnAbilityPointSpent += HandleAbilityPointSpent;
+    }
+    private void OnDisable()
+    {
+        SkillSlot.OnAbilityPointSpent -= HandleAbilityPointSpent;
+    }
+
+    private void HandleAbilityPointSpent(SkillSlot slot)
+    {
+        string skillName = slot.skillSO.skillName;
+        switch(skillName)
+        {
+            case "Max Health Boost":
+                StatsManger.Instance.UpdateMaxHealth(1);
+                break;
+            case "Sword Slash":
+                combat.enabled = true;             // 现在 guaranteed 非空
+                break;
+            default:
+                Debug.LogWarning("Error" + skillName);
+                break;
+        }
+    }
+}</code></pre></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p><code>[RequireComponent(typeof(Player_Combat))]</code> 让 Unity 在挂 <code>SkillManager</code> 时<strong>强制</strong>要求同物体上有 <code>Player_Combat</code>：没有就直接拒绝添加（Inspector 里也自动补上），从源头消灭「漏拖」。配合 <code>Awake</code> 里 <code>GetComponent</code>，引用在第一次被用到之前就一定存在。</p></div><h2 id="五、整体设计思路把「防御」放进生命周期里">五、整体设计思路：把「防御」放进生命周期里</h2><p>今天三条修复，本质上都是把 Day 10 复盘里的那句口号落地：</p><div class="table-wrap"><table><thead><tr><th>反模式（Day 10）</th><th>今天的落地点</th></tr></thead><tbody><tr><td>静态事件 / 广播打到未初始化对象</td><td>gizmo 在<strong>编辑器回调</strong>里先判 <code>Instance==null</code></td></tr><tr><td>public 字段靠 Inspector 漏拖</td><td><code>RequireComponent</code> + <code>Awake</code> 自取，编译/挂载期就拦</td></tr><tr><td>把 <code>enabled=false</code> 当锁</td><td>守卫搬进 <code>Attack()</code> 内部，方法自锁</td></tr><tr><td>UI 与数据不同步</td><td>（本日未动，留给后续）</td></tr></tbody></table></div><p>一句话：<strong>防御不该靠「调用方记得检查」，而该靠「被调用方/被访问方自身保证」</strong>——要么自己判空，要么自己取引用，要么自己锁门。</p><h2 id="六、明天要补的洞day-10-剩下的-4-条">六、明天要补的洞（Day 10 剩下的 4 条）</h2><p>战斗相关三条焊死了，Day 10 的 6 个脆弱点还剩：</p><ol><li><code>HandleSkillMaxed</code> 遍历 24 格没对 <code>skillSO</code> 判空（满级 4/5 那坑的治本办法）。</li><li><code>ToggleSkillTree.statsCanvas</code> 变量名误导（实际控技能面板，该改名）。</li><li>技能树还是扁平列表，<code>prerequisiteSkillSlots</code> 没真配置（点格子解锁关系还是摆设）。</li><li>显示 / 数值层依然硬编码：<code>StatsCanvas.alpha=1</code>、技能面板常显、<code>availablePoints=10</code> 写死、升级没真给点数。</li></ol><p>Day 12 计划：先焊死 #1（判空）和 #4（把点数 / 面板显隐接到数据），#2 改名顺手做，#3 留到技能树重构那一轮。</p><h2 id="一句话总结">一句话总结</h2><p>Day 11 没写新功能，而是把 Day 10 列的 6 个脆弱点里「战斗相关」的三条一次焊死——<code>OnDrawGizmosSelected</code> 加 null 守卫（编辑器回调先判 <code>attackPoint</code>/<code>Instance</code>）、<code>Attack()</code> 把 <code>enabled</code> 守卫搬进方法内部（<code>isActiveAndEnabled</code> + <code>timer</code>）、<code>SkillManager.combat</code> 用 <code>[RequireComponent]</code> + <code>Awake</code> 自取替代 Inspector 拖拽——共同原则是「引用在被解引用之前先确认存在」，把防御从「调用方记得查」下沉到「被调用方自身保证」，剩下 4 条脆弱点留给 Day 12。</p>]]></content:encoded>
+    </item>
+    <item>
       <title>ARPG 学习日志 Day 10（下）：当前架构全景——17 个脚本是怎么拼起来的</title>
       <link>https://daydaydream000.github.io/post/arpg-day10-architecture.html</link>
       <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day10-architecture.html</guid>

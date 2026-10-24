@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="1200" height="420">
+  <defs>
+    <linearGradient id="bgF" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#eaf1f7"/>
+      <stop offset="1" stop-color="#dbe7f0"/>
+    </linearGradient>
+    <linearGradient id="bad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a2530"/>
+      <stop offset="1" stop-color="#5a1a22"/>
+    </linearGradient>
+    <linearGradient id="good" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f5a3a"/>
+      <stop offset="1" stop-color="#143f29"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="420" fill="url(#bgF)"/>
+
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1f3a5f">修复前 vs 修复后：三道闸把崩溃入口焊死</text>
+
+  <!-- 修复前 -->
+  <g transform="translate(24, 60)">
+    <rect x="0" y="0" width="572" height="330" rx="8" fill="url(#bad)"/>
+    <text x="20" y="30" font-family="ui-sans-serif, sans-serif" font-size="16" font-weight="700" fill="#ffd9de">修复前 · 三个漏点</text>
+
+    <rect x="20" y="50" width="532" height="80" rx="5" fill="#ffffff" fill-opacity="0.08"/>
+    <text x="36" y="76" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#ffd9de">OnDrawGizmosSelected() : 50</text>
+    <text x="36" y="98" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#ffe6e9">attackPoint?.position · StatsManger.Instance?.weaponRange</text>
+    <text x="36" y="118" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#ffb3ba">→ 编辑器选中即 NRE（两者任一为 null）</text>
+
+    <rect x="20" y="140" width="532" height="80" rx="5" fill="#ffffff" fill-opacity="0.08"/>
+    <text x="36" y="166" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#ffd9de">Attack() 入口</text>
+    <text x="36" y="188" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#ffe6e9">只判 timer&lt;=0，无 enabled 守卫</text>
+    <text x="36" y="208" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#ffb3ba">→ Combat 禁用仍漏砍第一刀</text>
+
+    <rect x="20" y="230" width="532" height="80" rx="5" fill="#ffffff" fill-opacity="0.08"/>
+    <text x="36" y="256" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#ffd9de">SkillManager.combat</text>
+    <text x="36" y="278" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#ffe6e9">public 字段，靠 Inspector 拖</text>
+    <text x="36" y="298" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#ffb3ba">→ 漏拖 → Sword Slash 第 25 行 NRE</text>
+  </g>
+
+  <!-- 修复后 -->
+  <g transform="translate(604, 60)">
+    <rect x="0" y="0" width="572" height="330" rx="8" fill="url(#good)"/>
+    <text x="20" y="30" font-family="ui-sans-serif, sans-serif" font-size="16" font-weight="700" fill="#c8f0d8">修复后 · 三道闸</text>
+
+    <rect x="20" y="50" width="532" height="80" rx="5" fill="#ffffff" fill-opacity="0.08"/>
+    <text x="36" y="76" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#c8f0d8">OnDrawGizmosSelected()</text>
+    <text x="36" y="98" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#d8f5e4">if (attackPoint==null || Instance==null) return;</text>
+    <text x="36" y="118" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#a8e0bd">→ 空就退出，第 50 行永不被触发</text>
+
+    <rect x="20" y="140" width="532" height="80" rx="5" fill="#ffffff" fill-opacity="0.08"/>
+    <text x="36" y="166" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#c8f0d8">Attack() 入口</text>
+    <text x="36" y="188" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#d8f5e4">if (!isActiveAndEnabled || timer&gt;0) return;</text>
+    <text x="36" y="208" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#a8e0bd">→ 锁进方法内，调用方零负担</text>
+
+    <rect x="20" y="230" width="532" height="80" rx="5" fill="#ffffff" fill-opacity="0.08"/>
+    <text x="36" y="256" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#c8f0d8">SkillManager</text>
+    <text x="36" y="278" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#d8f5e4">[RequireComponent] + Awake GetComponent</text>
+    <text x="36" y="298" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#a8e0bd">→ 缺组件 Unity 拒挂，不再漏拖</text>
+  </g>
+
+  <text x="600" y="412" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#2a4d6e">共同原则：引用在「被解引用之前」先确认存在——编辑器回调、禁用态、跨物体引用三处都要守</text>
+</svg>
