@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" width="1200" height="470">
+  <defs>
+    <linearGradient id="bgD12f" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3f7fa"/>
+      <stop offset="1" stop-color="#e4edf4"/>
+    </linearGradient>
+    <marker id="arwD12" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2a4d6e"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="1200" height="470" fill="url(#bgD12f)"/>
+
+  <!-- 上半：射击时序 -->
+  <text x="60" y="52" font-family="ui-sans-serif, sans-serif" font-size="15" font-weight="700" fill="#1f3a5f">射击时序：按键 ≠ 出箭</text>
+  <text x="330" y="52" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a6a7a">按键只触发动画；真正 Instantiate 在 Animation Event 的释放帧</text>
+
+  <g font-family="ui-sans-serif, sans-serif" font-size="11" fill="#22405c">
+    <rect x="60" y="90" width="150" height="64" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.5"/>
+    <text x="135" y="117" text-anchor="middle" font-weight="700">按下 Shoot</text>
+    <text x="135" y="136" text-anchor="middle" fill="#5a6a7a">Input.GetButtonDown</text>
+
+    <rect x="225" y="90" width="150" height="64" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.5"/>
+    <text x="300" y="113" text-anchor="middle" font-weight="700">定身 + 触发动画</text>
+    <text x="300" y="132" text-anchor="middle" fill="#5a6a7a">isShooting=true</text>
+    <text x="300" y="147" text-anchor="middle" fill="#5a6a7a">SetBool("isShooting")</text>
+
+    <rect x="390" y="90" width="150" height="64" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.5"/>
+    <text x="465" y="117" text-anchor="middle" font-weight="700">动画播放</text>
+    <text x="465" y="136" text-anchor="middle" fill="#5a6a7a">到放手那一帧</text>
+
+    <rect x="555" y="90" width="150" height="64" rx="5" fill="#e8f2ea" stroke="#1f6a3a" stroke-opacity="0.6"/>
+    <text x="630" y="113" text-anchor="middle" font-weight="700" fill="#1f6a3a">Animation Event</text>
+    <text x="630" y="132" text-anchor="middle" fill="#1f6a3a">→ Shoot()</text>
+    <text x="630" y="147" text-anchor="middle" fill="#3a7a52">每次仍判 shootTimer</text>
+
+    <rect x="720" y="90" width="150" height="64" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.5"/>
+    <text x="795" y="113" text-anchor="middle" font-weight="700">Instantiate 箭</text>
+    <text x="795" y="132" text-anchor="middle" fill="#5a6a7a">direction = aimDirection</text>
+    <text x="795" y="147" text-anchor="middle" fill="#5a6a7a">Start() 下一帧才读</text>
+
+    <rect x="885" y="90" width="150" height="64" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.5"/>
+    <text x="960" y="113" text-anchor="middle" font-weight="700">飞行与命中</text>
+    <text x="960" y="132" text-anchor="middle" fill="#5a6a7a">敌人 / 障碍</text>
+    <text x="960" y="147" text-anchor="middle" fill="#5a6a7a">2s 后 Destroy</text>
+  </g>
+
+  <g stroke="#2a4d6e" stroke-width="1.4" marker-end="url(#arwD12)">
+    <line x1="212" y1="122" x2="221" y2="122"/>
+    <line x1="377" y1="122" x2="386" y2="122"/>
+    <line x1="542" y1="122" x2="551" y2="122"/>
+    <line x1="707" y1="122" x2="716" y2="122"/>
+    <line x1="872" y1="122" x2="881" y2="122"/>
+  </g>
+
+  <!-- 下半：换武器 -->
+  <text x="60" y="262" font-family="ui-sans-serif, sans-serif" font-size="15" font-weight="700" fill="#1f3a5f">换武器：组件 enabled 就是武器状态</text>
+  <text x="470" y="262" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#5a6a7a">不需要 if(当前武器==弓)，组件在不在跑本身就是状态</text>
+
+  <g font-family="ui-sans-serif, sans-serif" font-size="11" fill="#22405c">
+    <rect x="90" y="300" width="210" height="70" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.5"/>
+    <text x="195" y="330" text-anchor="middle" font-weight="700">按下 ChangeEquipment</text>
+    <text x="195" y="349" text-anchor="middle" fill="#5a6a7a">GetButtonDown 一次</text>
+
+    <rect x="350" y="300" width="210" height="70" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.5"/>
+    <text x="455" y="330" text-anchor="middle" font-weight="700">combat.enabled 翻转</text>
+    <text x="455" y="349" text-anchor="middle" fill="#5a6a7a">近战停/启</text>
+
+    <rect x="610" y="300" width="210" height="70" rx="5" fill="#ffffff" stroke="#2a4d6e" stroke-opacity="0.5"/>
+    <text x="715" y="330" text-anchor="middle" font-weight="700">bow.enabled 翻转</text>
+    <text x="715" y="349" text-anchor="middle" fill="#5a6a7a">弓箭停/启</text>
+
+    <rect x="870" y="300" width="210" height="70" rx="5" fill="#e8f2ea" stroke="#1f6a3a" stroke-opacity="0.6"/>
+    <text x="975" y="325" text-anchor="middle" font-weight="700" fill="#1f6a3a">OnEnable / OnDisable</text>
+    <text x="975" y="344" text-anchor="middle" fill="#1f6a3a">动画层 0 与 1 权重互换</text>
+    <text x="975" y="360" text-anchor="middle" fill="#3a7a52">弓箭层显示 / 隐藏</text>
+  </g>
+
+  <g stroke="#2a4d6e" stroke-width="1.4" marker-end="url(#arwD12)">
+    <line x1="302" y1="335" x2="346" y2="335"/>
+    <line x1="562" y1="335" x2="606" y2="335"/>
+    <line x1="822" y1="335" x2="866" y2="335"/>
+  </g>
+
+  <!-- 风险提示 -->
+  <rect x="60" y="400" width="1080" height="46" rx="4" fill="#f6eaea" stroke="#7a3a3a" stroke-opacity="0.35"/>
+  <text x="76" y="419" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#7a3a3a"><tspan font-weight="700">风险：</tspan>isShooting 只在 Shoot() 里清。若换武器/切层把动画打断、事件没触发，玩家会被永远定身。</text>
+  <text x="76" y="437" font-family="ui-sans-serif, sans-serif" font-size="11" fill="#7a3a3a"><tspan font-weight="700">风险：</tspan>箭伤写死在 Arrow 预制体上，不走 StatsManger——升级加攻击只对近战生效。</text>
+</svg>

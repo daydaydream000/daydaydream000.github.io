@@ -26,6 +26,101 @@ git commit -m "post: 新文章"
 git push</code></pre></div><p>目录分工也很直白：</p><div class="table-wrap"><table><thead><tr><th>路径</th><th>用途</th></tr></thead><tbody><tr><td><code>posts/</code></td><td>文章源文件（Markdown）</td></tr><tr><td><code>pages/</code></td><td>独立页面，比如「关于」</td></tr><tr><td><code>images/</code></td><td>文章中引用的图片，构建时自动复制</td></tr><tr><td><code>assets/</code></td><td>手写的 CSS 与 JavaScript</td></tr><tr><td><code>templates/</code></td><td>页面模板</td></tr><tr><td><code>docs/</code></td><td>生成结果，也是 Pages 的发布目录</td></tr></tbody></table></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>生成器只用 Python 标准库，没有第三方依赖；换台机器 clone 下来就能跑。</p></div><h2 id="写在最后">写在最后</h2><blockquote><p>种一棵树最好的时间是十年前，其次是现在。</p></blockquote><p>开始记录吧，欢迎常来坐坐。</p>]]></content:encoded>
     </item>
     <item>
+      <title>ARPG 学习日志 Day 12：弓箭模块——方向瞄准、动画事件出箭、换武器切层</title>
+      <link>https://daydaydream000.github.io/post/arpg-day12-bow-module.html</link>
+      <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day12-bow-module.html</guid>
+      <pubDate>Tue, 27 Oct 2026 22:10:00 +0000</pubDate>
+      <author>daydaydream000@users.noreply.github.com (DayDayDream)</author>
+      <category>Unity</category><category>ARPG</category><category>游戏开发</category><category>弓箭</category><category>动画事件</category><category>2D物理</category><category>组件开关</category>
+      <description>把弓箭模块从头拆一遍：八向方向瞄准、按键只触发动画而真正出箭在 Animation Event、isShooting 定身、箭对敌人与障碍两种命中，以及换武器靠组件 enabled 驱动动画层。末尾列出 5 个真实隐患：定身可能永久锁死、箭伤不走 StatsManger、命中不判空、穿透语义未定、插墙箭 2 秒后消失。</description>
+      <content:encoded><![CDATA[<h2 id="一句话说清这天的内容">一句话说清这天的内容</h2><p>前几天都在收口旧代码，今天换方向：把<strong>弓箭模块</strong>从头捋一遍。它由 5 个脚本咬合而成——<code>Player_Bow</code> 管瞄准与射击、<code>Arrow</code> 管飞行与命中、<code>Player_ChangeEqiupment</code> 管近战⇄弓箭切换、<code>PlayerMovement</code> 管射击时定身、<code>Player_Combat</code> 是近战对照。最重要的是搞清一件事：<strong>按下射击键那一刻，箭并没有生成；真正 <code>Instantiate</code> 发生在动画事件的释放帧。</strong></p><h2 id="先说结论">先说结论</h2><p>弓箭模块能不能跑对，不取决于伤害填多大，而取决于三个<strong>时序</strong>：</p><ol><li><strong>方向要在出箭前算好</strong> —— <code>aimDirection</code> 由八向输入归一化，并同步给 Animator 选拉弓姿势；</li><li><strong>出箭要在动画释放帧</strong> —— 按键只 <code>SetBool</code> 触发动画，<code>Shoot()</code> 由 Animation Event 调；</li><li><strong>换武器靠 <code>enabled</code> 驱动动画层</strong> —— 不写 <code>if (当前武器 == 弓)</code>，组件在不在跑本身就是状态。</li></ol><p>这三条都成立时，手感是"拉弓—放手—箭出"，而不是"按键瞬间凭空冒出一支箭"。</p><h2 id="一、模块构成">一、模块构成</h2><div class="table-wrap"><table><thead><tr><th>脚本</th><th>职责</th><th>关键 API</th></tr></thead><tbody><tr><td><code>Player_Bow</code></td><td>瞄准、触发射击、切动画层</td><td><code>GetAxisRaw</code> / <code>SetBool</code> / <code>Instantiate</code></td></tr><tr><td><code>Arrow</code></td><td>飞行、命中判定、插墙</td><td><code>Rigidbody2D</code> / <code>OnCollisionEnter2D</code> / <code>SetParent</code></td></tr><tr><td><code>Player_ChangeEqiupment</code></td><td>近战 ⇄ 弓箭</td><td><code>enabled</code> 翻转</td></tr><tr><td><code>PlayerMovement</code></td><td>射击时定身</td><td><code>isShooting</code> → <code>velocity = 0</code></td></tr><tr><td><code>Player_Combat</code></td><td>近战对照（伤害/击退/范围）</td><td><code>OverlapCircleAll</code> / <code>StatsManger</code></td></tr></tbody></table></div><figure class="post-figure"><img src="https://daydaydream000.github.io/assets/images/arpg-day12-bowflow.svg" alt="射击时序与换武器联动" loading="lazy" decoding="async"><figcaption>上：按键只触发动画，出箭在 Animation Event；下：换武器翻 enabled，OnEnable/OnDisable 切动画层权重</figcaption></figure><h2 id="二、瞄准八向向量-animator-参数">二、瞄准：八向向量 + Animator 参数</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private Vector2 aimDirection = Vector2.right;
+
+private void HandleAiming()
+{
+    float horizontal = Input.GetAxisRaw("Horizontal");
+    float vertical   = Input.GetAxisRaw("Vertical");
+    if (horizontal != 0 || vertical != 0)
+    {
+        aimDirection = new Vector2(horizontal, vertical).normalized;
+        anim.SetFloat("aimX", aimDirection.x);
+        anim.SetFloat("aimY", aimDirection.y);
+    }
+}</code></pre></div><p>四个细节，每个都有用意：</p><ul><li><strong><code>GetAxisRaw</code> 而不是 <code>GetAxis</code></strong>：Raw 没有平滑插值，八向输入立刻生效。瞄准要的是"指哪打哪"，不能有过渡。</li><li><strong>只在有输入时更新</strong>：松手后 <code>aimDirection</code> 保留上一次的值——这是"记住最后瞄准方向"的常见做法，否则一松手箭就会默认往右飞。</li><li><strong><code>.normalized</code> 不能省</strong>：斜向输入是 <code>(1,1)</code>，长度 √2。方向向量不归一化，<code>direction * speed</code> 会让斜射比平射快 41%。</li><li><strong>同时写 <code>aimX</code> / <code>aimY</code> 给 Animator</strong>：Blend Tree 用这两个参数选上 / 下 / 侧向的拉弓姿势。方向和动画必须来自同一个源，否则会出现"箭往上飞、人朝右拉弓"。</li></ul><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>这是<strong>手柄/双摇杆式的方向瞄准</strong>，不是鼠标瞄准——全程没有 <code>ScreenToWorldPoint</code>。想改成鼠标，<code>HandleAiming</code> 要换成 <code>Camera.main.ScreenToWorldPoint(Input.mousePosition)</code> 再减自身位置，其余逻辑（归一化、写 anim 参数）可以原样保留。</p></div><h2 id="三、射击按键和出箭是两件事">三、射击：按键和出箭是两件事</h2><p><strong>第一段：按键只触发动画</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">void Update()
+{
+    shootTimer -= Time.deltaTime;
+    HandleAiming();
+    if (Input.GetButtonDown("Shoot") &amp;&amp; shootTimer &lt;= 0)
+    {
+        playerMovement.isShooting = true;      // 定身
+        anim.SetBool("isShooting", true);      // 触发动画
+    }
+}</code></pre></div><p><strong>第二段：动画事件才真正出箭</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void Shoot()          // 由 Animation Event 调用，Update 里没人调它
+{
+    if (shootTimer &lt;= 0)
+    {
+        Arrow arrow = Instantiate(arrowPrefab, launchPoint.position, Quaternion.identity)
+                        .GetComponent&lt;Arrow&gt;();
+        arrow.direction = aimDirection;
+        shootTimer = shootColldown;
+    }
+    anim.SetBool("isShooting", false);         // 复位动画
+    playerMovement.isShooting = false;         // 解除定身
+}</code></pre></div><p>为什么 <code>Shoot()</code> 是 <code>public</code> 却没人直接调？因为它是 <strong>Animation Event</strong>：在射击动画"放手"那一帧挂上这个方法。这样出箭时刻跟动画严格同步——早一帧箭在弦上就飞出去了，晚一帧则看着像空放。</p><p>三个值得记住的点：</p><ol><li><strong><code>shootTimer</code> 判了两次</strong>。<code>Update</code> 判一次，防连点重复触发动画；<code>Shoot()</code> 再判一次，防动画事件因状态机切换被重复派发时连发。冷却只在真正出箭时才写，所以"点了但没出箭"不会白吃冷却。</li><li><strong><code>direction</code> 在 <code>Instantiate</code> 之后赋值还能生效</strong>，是因为 <code>Arrow.Start()</code> 要到<strong>下一帧</strong>才跑。如果把初始化写进 <code>Awake()</code>，<code>Awake</code> 在 <code>Instantiate</code> 当下就执行，那时 <code>direction</code> 还是默认的 <code>Vector2.right</code>，箭会永远向右飞。这就是 Day 10/11 反复出现的那句话：<strong>生命周期顺序决定行为</strong>。</li><li><strong><code>Shoot()</code> 末尾同时复位动画 bool 和 <code>isShooting</code></strong>。玩家从"按键"到"出箭"这段时间是被锁住的，锁的解除点就在这一帧——所以它一旦不执行，玩家就永远锁着（后面第六节会讲这个洞）。</li></ol><h2 id="四、定身isshooting-的实现与代价">四、定身：<code>isShooting</code> 的实现与代价</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">void FixedUpdate()
+{
+    if (isShooting == true)
+    {
+        rb.velocity = Vector2.zero;      // 射击中钉住
+    }
+    else if (isKnockack == false)
+    {
+        // 正常移动
+    }
+}</code></pre></div><p>用 <code>FixedUpdate</code> 而不是 <code>Update</code> 是对的——速度是物理量，必须跟物理步长同步，否则会出现"设了零又被物理步覆盖"的抖动。</p><p>代价是：<strong><code>isShooting</code> 是一个只在一个地方被清掉的隐藏状态</strong>。它由 <code>Player_Bow.Update</code> 置 true、由 <code>Player_Bow.Shoot()</code> 置 false。中间这段窗口期，任何让 <code>Shoot()</code> 不执行的情况都会把玩家永久钉死：</p><ul><li>出箭动画被换武器打断；</li><li>Animator 层权重切换导致状态机离开射击节点；</li><li>动画事件配置漏了/改名了。</li></ul><p>这类"状态置位点与清除点不对称"的写法，是 Day 10 复盘里"UI 与数据不同步"的同一类问题的变种。</p><h2 id="五、箭的两种命中">五、箭的两种命中</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnCollisionEnter2D(Collision2D collision)
+{
+    if ((enemyLayer.value &amp; (1 &lt;&lt; collision.gameObject.layer)) &gt; 0)
+    {
+        collision.gameObject.GetComponent&lt;Enemy_Health&gt;().ChangeHealth(-damage);
+        collision.gameObject.GetComponent&lt;Enemy_Knockback&gt;().Knockback(
+            transform, knockbackForce, knockbackTime, stunTime);
+    }
+    else if ((obstacleLayer.value &amp; (1 &lt;&lt; collision.gameObject.layer)) &gt; 0)
+    {
+        AttachToTarget(collision.gameObject.transform);
+    }
+}
+
+private void AttachToTarget(Transform target)
+{
+    sr.sprite = buriedSprite;
+    rb.velocity = Vector2.zero;
+    rb.isKinematic = true;
+    transform.SetParent(target);
+}</code></pre></div><p><strong>打敌人</strong>：扣血 + 击退。注意它<strong>没有</strong>归零速度、也<strong>没有</strong>销毁自己——所以一支箭可以连续命中多个敌人，是事实上的"穿透箭"。这是设计还是巧合，得自己定（下一节展开）。</p><p><strong>打障碍</strong>：换成"插进去"的贴图、速度归零、改成 <code>isKinematic</code>、并且 <code>SetParent(target)</code>。最后这步让箭跟着障碍物走——插在移动平台上时箭会跟着平台移动，这个是加分项。</p><p><strong>其它层</strong>：两个分支都不进，箭直接穿过去。包括玩家自己所在的层——如果发射点离身体太近，箭有可能在出生瞬间和玩家碰撞体接触（取决于 Layer 配置），值得实际测一下。</p><p>另外，<code>OnCollisionEnter2D</code> 用的是<strong>碰撞</strong>不是触发：箭头预制体上的 Collider2D 必须是非 Trigger，且至少一方带 <code>Rigidbody2D</code>（箭有），否则整个回调都不会触发。</p><h2 id="六、换武器enabled-就是武器状态">六、换武器：<code>enabled</code> 就是武器状态</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class Player_ChangeEqiupment : MonoBehaviour
+{
+    public Player_Combat combat;
+    public Player_Bow bow;
+
+    void Update()
+    {
+        if (Input.GetButtonDown("ChangeEquipment"))
+        {
+            combat.enabled = !combat.enabled;
+            bow.enabled    = !bow.enabled;
+        }
+    }
+}</code></pre></div><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// Player_Bow
+private void OnEnable()
+{
+    anim.SetLayerWeight(0, 0);      // 基础层压掉
+    anim.SetLayerWeight(1, 1);      // 弓箭层拉起
+}
+private void OnDisable()
+{
+    anim.SetLayerWeight(0, 1);      // 恢复基础层
+    anim.SetLayerWeight(1, 0);
+}</code></pre></div><p>这段是本模块最漂亮的设计，原因有三：</p><ol><li><strong>不用维护"当前武器"枚举</strong>。组件的 <code>enabled</code> 就是状态本身，省掉一个字段、一个 switch、以及"枚举和实际行为不同步"的整类 bug。</li><li><strong><code>Update</code> 天然被关掉</strong>。<code>bow.enabled = false</code> 之后，<code>Player_Bow.Update</code> 不再跑，射击输入自然失效——<strong>拦截点在组件生命周期上，不在 if 判断里</strong>。</li><li><strong><code>OnEnable</code> / <code>OnDisable</code> 是免费的切换钩子</strong>。动画层权重的切换恰好就该在启用/停用的瞬间做，不需要额外的"切换武器"方法。</li></ol><div class="alert alert-tip"><p class="alert-title"><span class="alert-icon">💡</span>技巧</p><p>对比近战：<code>PlayerMovement.Update</code> 里是靠 <code>&amp;&amp; player_Combat.enabled == true</code> 在<strong>调用处</strong>拦。弓箭是靠<strong>组件自身不跑</strong>在<strong>源头</strong>拦。两种写法都能用，但后者更稳——调用方永远不用记得检查。</p></div><h2 id="七、和近战的对照伤害没统一">七、和近战的对照：伤害没统一</h2><div class="table-wrap"><table><thead><tr><th>维度</th><th>近战 <code>Player_Combat</code></th><th>弓箭 <code>Arrow</code></th></tr></thead><tbody><tr><td>伤害来源</td><td><code>StatsManger.Instance.damage</code></td><td>预制体上的 <code>public int damage</code></td></tr><tr><td>击退参数</td><td><code>StatsManger.knockbackForce/Time</code></td><td><code>Arrow.knockbackForce/Time</code></td></tr><tr><td>命中判定</td><td><code>OverlapCircleAll(weaponRange)</code></td><td>物理碰撞 + <code>LayerMask</code></td></tr><tr><td>冷却</td><td><code>cooldown = 2f</code></td><td><code>shootColldown = 0.5f</code></td></tr><tr><td>范围</td><td><code>StatsManger.weaponRange</code></td><td>无（飞到哪算哪）</td></tr></tbody></table></div><p>问题很清楚：<strong>近战读全局属性，弓箭读预制体常量</strong>。所以"升级加攻击力"这条线只对近战生效，弓箭伤害永远是预制体上填的那个数。要让属性系统真正统一，弓箭得改成从 <code>StatsManger</code> 取伤害（或者给属性单例加一个 <code>rangedDamage</code> 字段）。</p><h2 id="八、今天翻出来的账">八、今天翻出来的账</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>隐患</th><th>后果</th><th>一句话修法</th></tr></thead><tbody><tr><td>1</td><td><code>isShooting</code> 只在 <code>Shoot()</code> 里清</td><td>动画被打断 → 玩家永久定身</td><td><code>OnDisable</code> 里清一次 + 出箭超时兜底</td></tr><tr><td>2</td><td><code>Arrow.damage</code> 不走 <code>StatsManger</code></td><td>升级只加近战，弓箭不变强</td><td>命中时改读 <code>StatsManger</code></td></tr><tr><td>3</td><td><code>GetComponent&lt;Enemy_Health&gt;()</code> 不判空</td><td>敌人层有物体缺组件 → NRE</td><td>取到再判，或 <code>TryGetComponent</code></td></tr><tr><td>4</td><td>箭命中敌人不减速不销毁</td><td>一支箭连穿多个敌人</td><td>明确语义：要穿透就写清楚，要单发就归零/销毁</td></tr><tr><td>5</td><td>插墙箭 <code>Destroy(2s)</code> 仍在跑</td><td>"插着的箭"两秒后凭空消失</td><td>插住后 <code>CancelInvoke</code>，或交给独立清理逻辑</td></tr></tbody></table></div><p>第 3 条和 Day 11 修的那个 <code>combat</code> 漏拖是同一类——<strong>引用在解引用前必须确认存在</strong>。第 5 条则暴露了一个设计问题：箭的"生命周期归属"没定义清楚——它到底属于"飞行物"（2 秒必消失），还是属于"场景装饰"（插住就一直留着）？两种语义混在同一个 <code>Destroy(gameObject, lifeSpawn)</code> 里了。</p><h2 id="九、明天要补的洞">九、明天要补的洞</h2><ol><li>给 <code>isShooting</code> 加兜底（<code>OnDisable</code> 清零 + 出箭最长等待时间）。</li><li>箭伤接到 <code>StatsManger</code>，让远近战共用一套属性。</li><li><code>Arrow</code> 命中处改用 <code>TryGetComponent</code>，顺手删掉两个未使用的 <code>using</code>。</li><li>定下穿透语义，然后按语义改碰撞分支。</li><li>插墙箭的生命周期与飞行箭分开处理。</li></ol><h2 id="一句话总结">一句话总结</h2><p>Day 12 把弓箭模块拆成了三件事：<strong>瞄准是八向输入归一化后同步给 Animator；射击是"按键触发动画、动画事件才 <code>Instantiate</code>"的两段式；换武器是把 <code>enabled</code> 当状态、用 <code>OnEnable/OnDisable</code> 切动画层</strong>——模块跑起来靠的不是代码量，而是这三处时序对得上；同时也翻出 5 个隐患，最要命的是 <code>isShooting</code> 置位与清除不对称，一旦动画被打断玩家就会永久定身。</p>]]></content:encoded>
+    </item>
+    <item>
       <title>ARPG 技能树系统详解：从 ScriptableObject 到真正改游戏的完整链路</title>
       <link>https://daydaydream000.github.io/post/arpg-skilltree-deep-dive.html</link>
       <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-skilltree-deep-dive.html</guid>

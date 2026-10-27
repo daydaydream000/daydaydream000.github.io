@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARPG 学习日志 Day 12：弓箭模块——方向瞄准、动画事件出箭、换武器切层 · DayDayDream</title>
+<meta name="description" content="把弓箭模块从头拆一遍：八向方向瞄准、按键只触发动画而真正出箭在 Animation Event、isShooting 定身、箭对敌人与障碍两种命中，以及换武器靠组件 enabled 驱动动画层。末尾列出 5 个真实隐患：定身可能永久锁死、箭伤不走 StatsManger、命中不判空、穿透语义未定、插墙箭 2 秒后消失。">
+<link rel="canonical" href="https://daydaydream000.github.io/post/arpg-day12-bow-module.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DayDayDream">
+<meta property="og:title" content="ARPG 学习日志 Day 12：弓箭模块——方向瞄准、动画事件出箭、换武器切层">
+<meta property="og:description" content="把弓箭模块从头拆一遍：八向方向瞄准、按键只触发动画而真正出箭在 Animation Event、isShooting 定身、箭对敌人与障碍两种命中，以及换武器靠组件 enabled 驱动动画层。末尾列出 5 个真实隐患：定身可能永久锁死、箭伤不走 StatsManger、命中不判空、穿透语义未定、插墙箭 2 秒后消失。">
+<meta property="og:url" content="https://daydaydream000.github.io/post/arpg-day12-bow-module.html">
+<meta property="og:image" content="https://daydaydream000.github.io/assets/images/arpg-day12-cover.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f3f8f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="DayDayDream" href="../rss.xml">
+<link rel="stylesheet" href="../assets/style.css?v=db15b81cea">
+<script>
+/* 主题与公告状态在首次绘制前应用，避免闪烁 */
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('dsh-theme'); } catch (e) {}
+  if (saved !== 'light' && saved !== 'dark') saved = 'auto';
+  var root = document.documentElement;
+  root.dataset.theme = saved;
+  root.classList.toggle('dark', saved === 'dark' ||
+    (saved === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  try {
+    if (localStorage.getItem('dsh-notice') === 'off') root.classList.add('notice-off');
+  } catch (e) {}
+})();
+</script>
+
+</head>
+<body class="page-post">
+<div id="page-progress" aria-hidden="true"></div>
+<a class="skip-link" href="#main">跳到正文</a>
+
+<header class="topbar"><div class="topbar-inner"><a class="topbar-brand" href="../index.html"><img src="../assets/avatar.jpg" alt="" width="30" height="30"><span class="topbar-brand-text">DayDayDream</span></a><nav class="topbar-nav" aria-label="主导航"><a href="../index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg><span>首页</span></a><a href="../arpg-progress.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>ARPG</span></a><a href="../tags/index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span>标签</span></a><a href="../about.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>关于</span></a></nav><div class="topbar-tools"><button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索（按 /）"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题"><span class="icon-sun"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg></span><span class="icon-moon"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></svg></span></button></div></div></header>
+<header class="banner banner-short"><img class="banner-bg" src="../assets/banner.jpg" alt="" aria-hidden="true" decoding="async"><div class="banner-scrim"></div><div class="banner-inner"><p class="banner-title">DayDayDream</p><p class="banner-subtitle">醒着做梦，落笔成诗——记所思，存所学。</p></div></header>
+
+<main id="main" class="layout">
+  <div class="layout-inner">
+    <aside class="col col-left"><section class="card-panel profile-card" data-reveal="0"><a class="profile-avatar-link" href="../about.html" aria-label="关于我"><img class="profile-avatar" src="../assets/avatar.jpg" alt="DayDayDream" decoding="async"></a><p class="profile-name">DayDayDream</p><div class="profile-accent" aria-hidden="true"></div><p class="profile-greeting">Hello, I'm DayDayDream.</p><div class="profile-social"><a class="social-chip" href="https://github.com/daydaydream000" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener noreferrer"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.58.69.48A10.04 10.04 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/></svg></a><a class="social-chip" href="mailto:daydaydream000@users.noreply.github.com" title="邮箱" aria-label="邮箱"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></a><a class="social-chip" href="../rss.xml" title="RSS 订阅" aria-label="RSS 订阅"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18.5" r="1.4" fill="currentColor" stroke="none"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/></svg></a></div></section><section class="card-panel notice-card" id="notice" data-reveal="1"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5v3A1.5 1.5 0 0 0 5.5 15H7l1 4h2l-1-4h2l7 3.5V6.5L11 10H5.5A1.5 1.5 0 0 0 4 10.5Z"/></svg><span>公告</span></h2><p class="notice-text">欢迎来到 DayDayDream —— 醒着做梦，落笔成诗，记所思，存所学。</p><div class="notice-foot"><a class="notice-more" href="../about.html">前往关于</a><button class="notice-close" type="button" aria-label="关闭公告" title="关闭"><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></section></aside>
+    <div class="col col-main"><article class="card-panel post">
+  <header class="post-header">
+    <h1 class="post-title">ARPG 学习日志 Day 12：弓箭模块——方向瞄准、动画事件出箭、换武器切层</h1>
+    <div class="post-meta"><div class="post-badges"><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><time datetime="2026-10-27">2026 年 10 月 27 日</time></span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg>约 2702 字</span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>8 分钟阅读</span><a class="badge badge-pin" href="../tags/index.html#tag-unity"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>Unity</a><a class="badge badge-pin" href="../tags/index.html#tag-arpg"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>ARPG</a><a class="badge badge-pin" href="../tags/index.html#tag-游戏开发"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>游戏开发</a><a class="badge badge-pin" href="../tags/index.html#tag-弓箭"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>弓箭</a><a class="badge badge-pin" href="../tags/index.html#tag-动画事件"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>动画事件</a><a class="badge badge-pin" href="../tags/index.html#tag-2d物理"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>2D物理</a><a class="badge badge-pin" href="../tags/index.html#tag-组件开关"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>组件开关</a></div></div>
+  </header>
+  <div class="toc-mobile"><nav class="toc" aria-label="目录"><p class="toc-title">目录</p><div class="toc-list"><a href="#一句话说清这天的内容">一句话说清这天的内容</a><a href="#先说结论">先说结论</a><a href="#一、模块构成">一、模块构成</a><a href="#二、瞄准八向向量-animator-参数">二、瞄准：八向向量 + Animator 参数</a><a href="#三、射击按键和出箭是两件事">三、射击：按键和出箭是两件事</a><a href="#四、定身isshooting-的实现与代价">四、定身：isShooting 的实现与代价</a><a href="#五、箭的两种命中">五、箭的两种命中</a><a href="#六、换武器enabled-就是武器状态">六、换武器：enabled 就是武器状态</a><a href="#七、和近战的对照伤害没统一">七、和近战的对照：伤害没统一</a><a href="#八、今天翻出来的账">八、今天翻出来的账</a><a href="#九、明天要补的洞">九、明天要补的洞</a><a href="#一句话总结">一句话总结</a></div></nav></div>
+  <figure class="post-cover"><img src="../assets/images/arpg-day12-cover.svg" alt="ARPG 学习日志 Day 12：弓箭模块——方向瞄准、动画事件出箭、换武器切层" loading="lazy" decoding="async"></figure>
+  <div class="post-content"><h2 id="一句话说清这天的内容">一句话说清这天的内容</h2><p>前几天都在收口旧代码，今天换方向：把<strong>弓箭模块</strong>从头捋一遍。它由 5 个脚本咬合而成——<code>Player_Bow</code> 管瞄准与射击、<code>Arrow</code> 管飞行与命中、<code>Player_ChangeEqiupment</code> 管近战⇄弓箭切换、<code>PlayerMovement</code> 管射击时定身、<code>Player_Combat</code> 是近战对照。最重要的是搞清一件事：<strong>按下射击键那一刻，箭并没有生成；真正 <code>Instantiate</code> 发生在动画事件的释放帧。</strong></p><h2 id="先说结论">先说结论</h2><p>弓箭模块能不能跑对，不取决于伤害填多大，而取决于三个<strong>时序</strong>：</p><ol><li><strong>方向要在出箭前算好</strong> —— <code>aimDirection</code> 由八向输入归一化，并同步给 Animator 选拉弓姿势；</li><li><strong>出箭要在动画释放帧</strong> —— 按键只 <code>SetBool</code> 触发动画，<code>Shoot()</code> 由 Animation Event 调；</li><li><strong>换武器靠 <code>enabled</code> 驱动动画层</strong> —— 不写 <code>if (当前武器 == 弓)</code>，组件在不在跑本身就是状态。</li></ol><p>这三条都成立时，手感是"拉弓—放手—箭出"，而不是"按键瞬间凭空冒出一支箭"。</p><h2 id="一、模块构成">一、模块构成</h2><div class="table-wrap"><table><thead><tr><th>脚本</th><th>职责</th><th>关键 API</th></tr></thead><tbody><tr><td><code>Player_Bow</code></td><td>瞄准、触发射击、切动画层</td><td><code>GetAxisRaw</code> / <code>SetBool</code> / <code>Instantiate</code></td></tr><tr><td><code>Arrow</code></td><td>飞行、命中判定、插墙</td><td><code>Rigidbody2D</code> / <code>OnCollisionEnter2D</code> / <code>SetParent</code></td></tr><tr><td><code>Player_ChangeEqiupment</code></td><td>近战 ⇄ 弓箭</td><td><code>enabled</code> 翻转</td></tr><tr><td><code>PlayerMovement</code></td><td>射击时定身</td><td><code>isShooting</code> → <code>velocity = 0</code></td></tr><tr><td><code>Player_Combat</code></td><td>近战对照（伤害/击退/范围）</td><td><code>OverlapCircleAll</code> / <code>StatsManger</code></td></tr></tbody></table></div><figure class="post-figure"><img src="../assets/images/arpg-day12-bowflow.svg" alt="射击时序与换武器联动" loading="lazy" decoding="async"><figcaption>上：按键只触发动画，出箭在 Animation Event；下：换武器翻 enabled，OnEnable/OnDisable 切动画层权重</figcaption></figure><h2 id="二、瞄准八向向量-animator-参数">二、瞄准：八向向量 + Animator 参数</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private Vector2 aimDirection = Vector2.right;
+
+private void HandleAiming()
+{
+    float horizontal = Input.GetAxisRaw("Horizontal");
+    float vertical   = Input.GetAxisRaw("Vertical");
+    if (horizontal != 0 || vertical != 0)
+    {
+        aimDirection = new Vector2(horizontal, vertical).normalized;
+        anim.SetFloat("aimX", aimDirection.x);
+        anim.SetFloat("aimY", aimDirection.y);
+    }
+}</code></pre></div><p>四个细节，每个都有用意：</p><ul><li><strong><code>GetAxisRaw</code> 而不是 <code>GetAxis</code></strong>：Raw 没有平滑插值，八向输入立刻生效。瞄准要的是"指哪打哪"，不能有过渡。</li><li><strong>只在有输入时更新</strong>：松手后 <code>aimDirection</code> 保留上一次的值——这是"记住最后瞄准方向"的常见做法，否则一松手箭就会默认往右飞。</li><li><strong><code>.normalized</code> 不能省</strong>：斜向输入是 <code>(1,1)</code>，长度 √2。方向向量不归一化，<code>direction * speed</code> 会让斜射比平射快 41%。</li><li><strong>同时写 <code>aimX</code> / <code>aimY</code> 给 Animator</strong>：Blend Tree 用这两个参数选上 / 下 / 侧向的拉弓姿势。方向和动画必须来自同一个源，否则会出现"箭往上飞、人朝右拉弓"。</li></ul><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>这是<strong>手柄/双摇杆式的方向瞄准</strong>，不是鼠标瞄准——全程没有 <code>ScreenToWorldPoint</code>。想改成鼠标，<code>HandleAiming</code> 要换成 <code>Camera.main.ScreenToWorldPoint(Input.mousePosition)</code> 再减自身位置，其余逻辑（归一化、写 anim 参数）可以原样保留。</p></div><h2 id="三、射击按键和出箭是两件事">三、射击：按键和出箭是两件事</h2><p><strong>第一段：按键只触发动画</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">void Update()
+{
+    shootTimer -= Time.deltaTime;
+    HandleAiming();
+    if (Input.GetButtonDown("Shoot") &amp;&amp; shootTimer &lt;= 0)
+    {
+        playerMovement.isShooting = true;      // 定身
+        anim.SetBool("isShooting", true);      // 触发动画
+    }
+}</code></pre></div><p><strong>第二段：动画事件才真正出箭</strong></p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void Shoot()          // 由 Animation Event 调用，Update 里没人调它
+{
+    if (shootTimer &lt;= 0)
+    {
+        Arrow arrow = Instantiate(arrowPrefab, launchPoint.position, Quaternion.identity)
+                        .GetComponent&lt;Arrow&gt;();
+        arrow.direction = aimDirection;
+        shootTimer = shootColldown;
+    }
+    anim.SetBool("isShooting", false);         // 复位动画
+    playerMovement.isShooting = false;         // 解除定身
+}</code></pre></div><p>为什么 <code>Shoot()</code> 是 <code>public</code> 却没人直接调？因为它是 <strong>Animation Event</strong>：在射击动画"放手"那一帧挂上这个方法。这样出箭时刻跟动画严格同步——早一帧箭在弦上就飞出去了，晚一帧则看着像空放。</p><p>三个值得记住的点：</p><ol><li><strong><code>shootTimer</code> 判了两次</strong>。<code>Update</code> 判一次，防连点重复触发动画；<code>Shoot()</code> 再判一次，防动画事件因状态机切换被重复派发时连发。冷却只在真正出箭时才写，所以"点了但没出箭"不会白吃冷却。</li><li><strong><code>direction</code> 在 <code>Instantiate</code> 之后赋值还能生效</strong>，是因为 <code>Arrow.Start()</code> 要到<strong>下一帧</strong>才跑。如果把初始化写进 <code>Awake()</code>，<code>Awake</code> 在 <code>Instantiate</code> 当下就执行，那时 <code>direction</code> 还是默认的 <code>Vector2.right</code>，箭会永远向右飞。这就是 Day 10/11 反复出现的那句话：<strong>生命周期顺序决定行为</strong>。</li><li><strong><code>Shoot()</code> 末尾同时复位动画 bool 和 <code>isShooting</code></strong>。玩家从"按键"到"出箭"这段时间是被锁住的，锁的解除点就在这一帧——所以它一旦不执行，玩家就永远锁着（后面第六节会讲这个洞）。</li></ol><h2 id="四、定身isshooting-的实现与代价">四、定身：<code>isShooting</code> 的实现与代价</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">void FixedUpdate()
+{
+    if (isShooting == true)
+    {
+        rb.velocity = Vector2.zero;      // 射击中钉住
+    }
+    else if (isKnockack == false)
+    {
+        // 正常移动
+    }
+}</code></pre></div><p>用 <code>FixedUpdate</code> 而不是 <code>Update</code> 是对的——速度是物理量，必须跟物理步长同步，否则会出现"设了零又被物理步覆盖"的抖动。</p><p>代价是：<strong><code>isShooting</code> 是一个只在一个地方被清掉的隐藏状态</strong>。它由 <code>Player_Bow.Update</code> 置 true、由 <code>Player_Bow.Shoot()</code> 置 false。中间这段窗口期，任何让 <code>Shoot()</code> 不执行的情况都会把玩家永久钉死：</p><ul><li>出箭动画被换武器打断；</li><li>Animator 层权重切换导致状态机离开射击节点；</li><li>动画事件配置漏了/改名了。</li></ul><p>这类"状态置位点与清除点不对称"的写法，是 Day 10 复盘里"UI 与数据不同步"的同一类问题的变种。</p><h2 id="五、箭的两种命中">五、箭的两种命中</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnCollisionEnter2D(Collision2D collision)
+{
+    if ((enemyLayer.value &amp; (1 &lt;&lt; collision.gameObject.layer)) &gt; 0)
+    {
+        collision.gameObject.GetComponent&lt;Enemy_Health&gt;().ChangeHealth(-damage);
+        collision.gameObject.GetComponent&lt;Enemy_Knockback&gt;().Knockback(
+            transform, knockbackForce, knockbackTime, stunTime);
+    }
+    else if ((obstacleLayer.value &amp; (1 &lt;&lt; collision.gameObject.layer)) &gt; 0)
+    {
+        AttachToTarget(collision.gameObject.transform);
+    }
+}
+
+private void AttachToTarget(Transform target)
+{
+    sr.sprite = buriedSprite;
+    rb.velocity = Vector2.zero;
+    rb.isKinematic = true;
+    transform.SetParent(target);
+}</code></pre></div><p><strong>打敌人</strong>：扣血 + 击退。注意它<strong>没有</strong>归零速度、也<strong>没有</strong>销毁自己——所以一支箭可以连续命中多个敌人，是事实上的"穿透箭"。这是设计还是巧合，得自己定（下一节展开）。</p><p><strong>打障碍</strong>：换成"插进去"的贴图、速度归零、改成 <code>isKinematic</code>、并且 <code>SetParent(target)</code>。最后这步让箭跟着障碍物走——插在移动平台上时箭会跟着平台移动，这个是加分项。</p><p><strong>其它层</strong>：两个分支都不进，箭直接穿过去。包括玩家自己所在的层——如果发射点离身体太近，箭有可能在出生瞬间和玩家碰撞体接触（取决于 Layer 配置），值得实际测一下。</p><p>另外，<code>OnCollisionEnter2D</code> 用的是<strong>碰撞</strong>不是触发：箭头预制体上的 Collider2D 必须是非 Trigger，且至少一方带 <code>Rigidbody2D</code>（箭有），否则整个回调都不会触发。</p><h2 id="六、换武器enabled-就是武器状态">六、换武器：<code>enabled</code> 就是武器状态</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class Player_ChangeEqiupment : MonoBehaviour
+{
+    public Player_Combat combat;
+    public Player_Bow bow;
+
+    void Update()
+    {
+        if (Input.GetButtonDown("ChangeEquipment"))
+        {
+            combat.enabled = !combat.enabled;
+            bow.enabled    = !bow.enabled;
+        }
+    }
+}</code></pre></div><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// Player_Bow
+private void OnEnable()
+{
+    anim.SetLayerWeight(0, 0);      // 基础层压掉
+    anim.SetLayerWeight(1, 1);      // 弓箭层拉起
+}
+private void OnDisable()
+{
+    anim.SetLayerWeight(0, 1);      // 恢复基础层
+    anim.SetLayerWeight(1, 0);
+}</code></pre></div><p>这段是本模块最漂亮的设计，原因有三：</p><ol><li><strong>不用维护"当前武器"枚举</strong>。组件的 <code>enabled</code> 就是状态本身，省掉一个字段、一个 switch、以及"枚举和实际行为不同步"的整类 bug。</li><li><strong><code>Update</code> 天然被关掉</strong>。<code>bow.enabled = false</code> 之后，<code>Player_Bow.Update</code> 不再跑，射击输入自然失效——<strong>拦截点在组件生命周期上，不在 if 判断里</strong>。</li><li><strong><code>OnEnable</code> / <code>OnDisable</code> 是免费的切换钩子</strong>。动画层权重的切换恰好就该在启用/停用的瞬间做，不需要额外的"切换武器"方法。</li></ol><div class="alert alert-tip"><p class="alert-title"><span class="alert-icon">💡</span>技巧</p><p>对比近战：<code>PlayerMovement.Update</code> 里是靠 <code>&amp;&amp; player_Combat.enabled == true</code> 在<strong>调用处</strong>拦。弓箭是靠<strong>组件自身不跑</strong>在<strong>源头</strong>拦。两种写法都能用，但后者更稳——调用方永远不用记得检查。</p></div><h2 id="七、和近战的对照伤害没统一">七、和近战的对照：伤害没统一</h2><div class="table-wrap"><table><thead><tr><th>维度</th><th>近战 <code>Player_Combat</code></th><th>弓箭 <code>Arrow</code></th></tr></thead><tbody><tr><td>伤害来源</td><td><code>StatsManger.Instance.damage</code></td><td>预制体上的 <code>public int damage</code></td></tr><tr><td>击退参数</td><td><code>StatsManger.knockbackForce/Time</code></td><td><code>Arrow.knockbackForce/Time</code></td></tr><tr><td>命中判定</td><td><code>OverlapCircleAll(weaponRange)</code></td><td>物理碰撞 + <code>LayerMask</code></td></tr><tr><td>冷却</td><td><code>cooldown = 2f</code></td><td><code>shootColldown = 0.5f</code></td></tr><tr><td>范围</td><td><code>StatsManger.weaponRange</code></td><td>无（飞到哪算哪）</td></tr></tbody></table></div><p>问题很清楚：<strong>近战读全局属性，弓箭读预制体常量</strong>。所以"升级加攻击力"这条线只对近战生效，弓箭伤害永远是预制体上填的那个数。要让属性系统真正统一，弓箭得改成从 <code>StatsManger</code> 取伤害（或者给属性单例加一个 <code>rangedDamage</code> 字段）。</p><h2 id="八、今天翻出来的账">八、今天翻出来的账</h2><div class="table-wrap"><table><thead><tr><th>#</th><th>隐患</th><th>后果</th><th>一句话修法</th></tr></thead><tbody><tr><td>1</td><td><code>isShooting</code> 只在 <code>Shoot()</code> 里清</td><td>动画被打断 → 玩家永久定身</td><td><code>OnDisable</code> 里清一次 + 出箭超时兜底</td></tr><tr><td>2</td><td><code>Arrow.damage</code> 不走 <code>StatsManger</code></td><td>升级只加近战，弓箭不变强</td><td>命中时改读 <code>StatsManger</code></td></tr><tr><td>3</td><td><code>GetComponent&lt;Enemy_Health&gt;()</code> 不判空</td><td>敌人层有物体缺组件 → NRE</td><td>取到再判，或 <code>TryGetComponent</code></td></tr><tr><td>4</td><td>箭命中敌人不减速不销毁</td><td>一支箭连穿多个敌人</td><td>明确语义：要穿透就写清楚，要单发就归零/销毁</td></tr><tr><td>5</td><td>插墙箭 <code>Destroy(2s)</code> 仍在跑</td><td>"插着的箭"两秒后凭空消失</td><td>插住后 <code>CancelInvoke</code>，或交给独立清理逻辑</td></tr></tbody></table></div><p>第 3 条和 Day 11 修的那个 <code>combat</code> 漏拖是同一类——<strong>引用在解引用前必须确认存在</strong>。第 5 条则暴露了一个设计问题：箭的"生命周期归属"没定义清楚——它到底属于"飞行物"（2 秒必消失），还是属于"场景装饰"（插住就一直留着）？两种语义混在同一个 <code>Destroy(gameObject, lifeSpawn)</code> 里了。</p><h2 id="九、明天要补的洞">九、明天要补的洞</h2><ol><li>给 <code>isShooting</code> 加兜底（<code>OnDisable</code> 清零 + 出箭最长等待时间）。</li><li>箭伤接到 <code>StatsManger</code>，让远近战共用一套属性。</li><li><code>Arrow</code> 命中处改用 <code>TryGetComponent</code>，顺手删掉两个未使用的 <code>using</code>。</li><li>定下穿透语义，然后按语义改碰撞分支。</li><li>插墙箭的生命周期与飞行箭分开处理。</li></ol><h2 id="一句话总结">一句话总结</h2><p>Day 12 把弓箭模块拆成了三件事：<strong>瞄准是八向输入归一化后同步给 Animator；射击是"按键触发动画、动画事件才 <code>Instantiate</code>"的两段式；换武器是把 <code>enabled</code> 当状态、用 <code>OnEnable/OnDisable</code> 切动画层</strong>——模块跑起来靠的不是代码量，而是这三处时序对得上；同时也翻出 5 个隐患，最要命的是 <code>isShooting</code> 置位与清除不对称，一旦动画被打断玩家就会永久定身。</p></div>
+  <footer class="post-footer">
+    <div class="post-tags"><a class="tag" href="../tags/index.html#tag-unity">Unity</a><a class="tag" href="../tags/index.html#tag-arpg">ARPG</a><a class="tag" href="../tags/index.html#tag-游戏开发">游戏开发</a><a class="tag" href="../tags/index.html#tag-弓箭">弓箭</a><a class="tag" href="../tags/index.html#tag-动画事件">动画事件</a><a class="tag" href="../tags/index.html#tag-2d物理">2D物理</a><a class="tag" href="../tags/index.html#tag-组件开关">组件开关</a></div>
+    <p class="post-source"><a href="https://github.com/daydaydream000/daydaydream000.github.io/blob/main/posts/arpg-day12-bow-module.md">在 GitHub 上查看源文件</a></p>
+  </footer>
+</article>
+<nav class="post-nav" aria-label="上下篇"><a class="post-nav-item prev" href="../post/hello-daydaydream.html"><span class="post-nav-label">← 更新的一篇</span><span class="post-nav-title">你好，欢迎来到 DayDayDream</span></a><a class="post-nav-item next" href="../post/arpg-skilltree-deep-dive.html"><span class="post-nav-label">更早的一篇 →</span><span class="post-nav-title">ARPG 技能树系统详解：从 ScriptableObject 到真正改游戏的完整链路</span></a></nav>
+</div>
+    <aside class="col col-right"><nav class="card-panel toc-card" aria-label="文章目录" data-reveal="0"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span>文章目录</span></h2><div class="toc-list"><a class="" href="#一句话说清这天的内容">一句话说清这天的内容</a><a class="" href="#先说结论">先说结论</a><a class="" href="#一、模块构成">一、模块构成</a><a class="" href="#二、瞄准八向向量-animator-参数">二、瞄准：八向向量 + Animator 参数</a><a class="" href="#三、射击按键和出箭是两件事">三、射击：按键和出箭是两件事</a><a class="" href="#四、定身isshooting-的实现与代价">四、定身：isShooting 的实现与代价</a><a class="" href="#五、箭的两种命中">五、箭的两种命中</a><a class="" href="#六、换武器enabled-就是武器状态">六、换武器：enabled 就是武器状态</a><a class="" href="#七、和近战的对照伤害没统一">七、和近战的对照：伤害没统一</a><a class="" href="#八、今天翻出来的账">八、今天翻出来的账</a><a class="" href="#九、明天要补的洞">九、明天要补的洞</a><a class="" href="#一句话总结">一句话总结</a></div></nav><section class="card-panel" data-reveal="3"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>站点统计</span></h2><ul class="stat-list"><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span class="stat-label">文章</span><span class="stat-value">17</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span class="stat-label">标签</span><span class="stat-value">31</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span class="stat-label">总字数</span><span class="stat-value">46,906</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="stat-label">最近更新</span><span class="stat-value">2026-10-27</span></li></ul></section></aside>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>转载请注明出处</p>
+  <nav class="footer-nav" aria-label="页脚导航">
+    <a href="../index.html">首页</a>
+    <a href="../tags/index.html">标签</a>
+    <a href="../about.html">关于</a>
+    <a href="../rss.xml">RSS</a>
+    <a href="https://github.com/daydaydream000">GitHub</a>
+    <a href="https://github.com/daydaydream000/daydaydream000.github.io">源码</a>
+    <a href="mailto:daydaydream000@users.noreply.github.com">邮件</a>
+  </nav>
+  <p class="footer-note">本站是纯静态站点，由 build.py 生成，托管于 GitHub Pages。</p>
+</footer>
+
+<a class="back-to-top" id="back-to-top" href="#" aria-label="回到顶部" title="回到顶部">
+  <svg class="i" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</a>
+
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="搜索文章">
+    <div class="search-head">
+      <svg class="i" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off"
+             spellcheck="false" aria-label="搜索关键词">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<script src="../assets/search-index.js" defer></script>
+<script src="../assets/app.js?v=ffe2833a95" defer></script>
+</body>
+</html>
