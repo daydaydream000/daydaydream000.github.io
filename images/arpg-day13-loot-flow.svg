@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bg13f" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bg13f)"/>
+
+  <text x="600" y="32" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">拾取的三段时间：结算 0 秒，动画 0.333 秒，销毁 0.5 秒</text>
+  <text x="600" y="54" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">逻辑在接触的那一刻就完成了；后面 0.5 秒只是「演完再走」，物体仍然活着</text>
+
+  <!-- 时间轴 -->
+  <g transform="translate(0, 74)">
+    <line x1="90" y1="66" x2="1112" y2="66" stroke="#1a3d28" stroke-opacity="0.35"/>
+    <line x1="90" y1="60" x2="90" y2="72" stroke="#1a3d28"/>
+    <line x1="256" y1="60" x2="256" y2="72" stroke="#1a3d28"/>
+    <line x1="422" y1="60" x2="422" y2="72" stroke="#1a3d28"/>
+    <line x1="756" y1="60" x2="756" y2="72" stroke="#1a3d28"/>
+    <line x1="1090" y1="60" x2="1090" y2="72" stroke="#c43131"/>
+
+    <text x="90" y="88" font-family="ui-monospace, monospace" font-size="10" fill="#1a3d28">0 s</text>
+    <text x="256" y="88" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#5a3a20">0.083</text>
+    <text x="422" y="88" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#5a3a20">0.166</text>
+    <text x="756" y="88" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10" fill="#5a3a20">0.333（动画结束）</text>
+    <text x="1090" y="88" text-anchor="end" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">0.5（销毁）</text>
+
+    <!-- 逻辑段 -->
+    <rect x="90" y="18" width="8" height="40" fill="#c43131"/>
+    <text x="108" y="32" font-family="ui-sans-serif, sans-serif" font-size="10.5" font-weight="700" fill="#8a2a20">① OnTriggerEnter2D：事件已经发出（背包已加）</text>
+    <text x="108" y="48" font-family="ui-monospace, monospace" font-size="10" fill="#5a2a20">OnItemLooted?.Invoke(itemSo, quantity)</text>
+
+    <!-- 表现段 -->
+    <rect x="90" y="96" width="666" height="26" rx="3" fill="#8ecf6e" opacity="0.55" stroke="#4f9636"/>
+    <text x="423" y="114" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#1a3d28">LootPickup.anim　0 → 0.333 s</text>
+    <rect x="756" y="96" width="334" height="26" rx="3" fill="#f0e2c8" stroke="#b48a2a" stroke-dasharray="4 3"/>
+    <text x="923" y="114" text-anchor="middle" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">0.167 s 缓冲：等 Destroy 执行</text>
+  </g>
+
+  <!-- 事件出口 -->
+  <g transform="translate(40, 208)">
+    <rect x="0" y="0" width="1120" height="86" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#1a3d28">static event：每个订阅者收的是同一份 (ItemSo, int)</text>
+
+    <rect x="14" y="34" width="250" height="40" rx="3" fill="#e8f6ec" stroke="#1a7a3a"/>
+    <text x="26" y="52" font-family="ui-monospace, monospace" font-size="10" fill="#1a5a30">InventoryManager.AddItem</text>
+    <text x="26" y="67" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#1a5a30">堆叠 / 空槽 / 溢出丢回地上（Day 14）</text>
+
+    <rect x="278" y="34" width="222" height="40" rx="3" fill="#e8f6ec" stroke="#1a7a3a"/>
+    <text x="290" y="52" font-family="ui-monospace, monospace" font-size="10" fill="#1a5a30">isGold 分支</text>
+    <text x="290" y="67" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#1a5a30">gold += quantity（不进背包）</text>
+
+    <rect x="514" y="34" width="280" height="40" rx="3" fill="#f2f2f2" stroke="#9a9a9a" stroke-dasharray="4 3"/>
+    <text x="526" y="52" font-family="ui-monospace, monospace" font-size="10" fill="#5a5a5a">以后：音效 / 飘字 / 任务计数</text>
+    <text x="526" y="67" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#5a5a5a">谁订阅谁负责退订</text>
+
+    <text x="812" y="52" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">触发体在 Layer 0，没有 Rigidbody2D：</text>
+    <text x="812" y="68" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">靠玩家身上的刚体才有资格触发</text>
+  </g>
+
+  <!-- 底部：两个坑 -->
+  <g transform="translate(40, 306)">
+    <rect x="0" y="0" width="556" height="70" rx="4" fill="#fff1f0" stroke="#c43131" stroke-opacity="0.45"/>
+    <text x="14" y="21" font-family="ui-sans-serif, sans-serif" font-size="11" font-weight="700" fill="#8a2a20">坑：0.5 秒窗口内可以重复发放</text>
+    <text x="14" y="40" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a2a20">canBePickUp 在拾取时没有置 false</text>
+    <text x="14" y="56" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a2a20">玩家 exit → enter = 第二次 Invoke = 双倍物品</text>
+
+    <rect x="576" y="0" width="544" height="70" rx="4" fill="#fff1f0" stroke="#c43131" stroke-opacity="0.45"/>
+    <text x="590" y="21" font-family="ui-sans-serif, sans-serif" font-size="11" font-weight="700" fill="#8a2a20">坑：0.5 秒也吃 timeScale</text>
+    <text x="590" y="40" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a2a20">暂停时动画停在第一帧、Destroy 计时也停</text>
+    <text x="590" y="56" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a2a20">物品已进背包，却还躺在地上</text>
+  </g>
+</svg>

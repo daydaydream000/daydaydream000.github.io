@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bg14p" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bg14p)"/>
+
+  <text x="600" y="32" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">一个入口，四种结局：AddItem 的四段分流</text>
+  <text x="600" y="54" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">金币不进格子、同种物品先堆叠、再找空槽、全满了才回到地上</text>
+
+  <!-- 入口 -->
+  <g transform="translate(40, 84)">
+    <rect x="0" y="70" width="196" height="60" rx="4" fill="#1e2a22"/>
+    <text x="14" y="94" font-family="ui-monospace, monospace" font-size="10.5" fill="#9fd8a8">Loot.OnItemLooted</text>
+    <text x="14" y="116" font-family="ui-monospace, monospace" font-size="11" fill="#e8f0e8">(itemSo, quantity)</text>
+
+    <path d="M200,100 L236,100" stroke="#1a3d28" stroke-width="2" fill="none"/>
+    <path d="M236,100 L227,95 M236,100 L227,105" stroke="#1a3d28" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+    <rect x="240" y="78" width="104" height="44" rx="4" fill="#fff8e8" stroke="#b48a2a"/>
+    <text x="292" y="104" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#8a5a20">AddItem</text>
+  </g>
+
+  <!-- 分支 -->
+  <g transform="translate(384, 84)">
+    <!-- ① 金币 -->
+    <rect x="0" y="0" width="352" height="46" rx="4" fill="#e8f6ec" stroke="#1a7a3a"/>
+    <text x="14" y="20" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#1a5a30">① if (itemSo.isGold)</text>
+    <text x="14" y="38" font-family="ui-monospace, monospace" font-size="10" fill="#1a5a30">gold += quantity → goldText → return</text>
+
+    <!-- ② 堆叠 -->
+    <rect x="0" y="58" width="352" height="46" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="14" y="78" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#1a3d28">② slot.itemSo == itemSo &amp;&amp; 未满</text>
+    <text x="14" y="96" font-family="ui-monospace, monospace" font-size="10" fill="#3a4a3a">quantity += Min(剩余空间, 手上) ✓</text>
+
+    <!-- ③ 空槽 -->
+    <rect x="0" y="116" width="352" height="46" rx="4" fill="#fff1f0" stroke="#c43131" stroke-opacity="0.5"/>
+    <text x="14" y="136" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#8a2a20">③ 第一个 slot.itemSo == null</text>
+    <text x="14" y="154" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">slot.quantity = quantity　✗ 绕过 stackSize</text>
+
+    <!-- ④ 溢出 -->
+    <rect x="0" y="174" width="352" height="46" rx="4" fill="#fff8e8" stroke="#b48a2a"/>
+    <text x="14" y="194" font-family="ui-monospace, monospace" font-size="10.5" font-weight="700" fill="#8a5a20">④ 还有剩余 → DropLoot</text>
+    <text x="14" y="212" font-family="ui-monospace, monospace" font-size="10" fill="#8a5a20">在 player.position 生成 Loot（canBePickUp=false）</text>
+  </g>
+
+  <!-- 右侧：金币与背包两个去向 -->
+  <g transform="translate(768, 84)">
+    <rect x="0" y="0" width="392" height="70" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#1a3d28">金币：一个计数器，不是一件东西</text>
+    <text x="14" y="42" font-family="ui-monospace, monospace" font-size="10" fill="#3a4a3a">public int gold;  →  goldText.text = gold.ToString();</text>
+    <text x="14" y="58" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#6a5b3a">不占格、不堆叠、背包满了也捡得起来</text>
+
+    <rect x="0" y="82" width="392" height="70" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <text x="14" y="104" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#1a3d28">背包：3 个槽，每格 200 × 200</text>
+    <text x="14" y="124" font-family="ui-monospace, monospace" font-size="10" fill="#3a4a3a">Slots · GridLayoutGroup · 610 × 186 · 右上角</text>
+    <text x="14" y="140" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#6a5b3a">InventoryCanvas sortingOrder = −1，没有 CanvasGroup</text>
+
+    <rect x="0" y="164" width="392" height="56" rx="4" fill="#1e2a22"/>
+    <text x="14" y="184" font-family="ui-monospace, monospace" font-size="10" fill="#9fd8a8">// 一格上的两种键（IPointerClickHandler）</text>
+    <text x="14" y="202" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8f0e8">左键 UseItem(slot)　右键 DropItem(slot)</text>
+    <text x="14" y="216" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#7f9b86">满血时对回血物品 return，右键一次只丢 1 个</text>
+  </g>
+
+  <!-- 底部：bug 与 buff -->
+  <g transform="translate(40, 300)">
+    <rect x="0" y="0" width="556" height="76" rx="4" fill="#fff1f0" stroke="#c43131" stroke-opacity="0.45"/>
+    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#8a2a20">坑：算好的 amountToAdd 被丢掉了</text>
+    <text x="14" y="44" font-family="ui-monospace, monospace" font-size="10" fill="#5a2a20">int amountToAdd = Min(stackSize, quantity);　→　未使用</text>
+    <text x="14" y="62" font-family="ui-monospace, monospace" font-size="10" fill="#5a2a20">slot.quantity = quantity;　// 5 个蘑菇进一格（上限 3）</text>
+
+    <rect x="576" y="0" width="584" height="76" rx="4" fill="#fff1f0" stroke="#c43131" stroke-opacity="0.45"/>
+    <text x="590" y="22" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#8a2a20">坑：EffectTimer 挂在 UseItem 上</text>
+    <text x="590" y="44" font-family="ui-monospace, monospace" font-size="10" fill="#5a2a20">StartCoroutine 属于这个 MonoBehaviour</text>
+    <text x="590" y="62" font-family="ui-monospace, monospace" font-size="10" fill="#5a2a20">关掉 InventoryCanvas → 协程停 → speed 永久 +5</text>
+  </g>
+</svg>

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bg13p" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bg13p)"/>
+
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">LootPrefab 的四个零件，和它服务的四份数据</text>
+  <text x="600" y="56" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">根物体只管判定与逻辑，画东西的是子物体 Sprite；图标在运行时由 ItemSo 填进来</text>
+
+  <!-- 左：层级 -->
+  <g transform="translate(40, 84)">
+    <rect x="0" y="0" width="520" height="252" rx="5" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+
+    <rect x="16" y="14" width="488" height="52" rx="4" fill="#fff8e8" stroke="#b48a2a"/>
+    <text x="28" y="34" font-family="ui-monospace, monospace" font-size="12.5" font-weight="700" fill="#8a5a20">LootPrefab（Layer 0）</text>
+    <text x="28" y="52" font-family="ui-monospace, monospace" font-size="10" fill="#5a3a20">CircleCollider2D（IsTrigger · r 0.5）· Animator · Loot</text>
+
+    <path d="M48,66 L48,80 L48,92 M48,80 L210,80 L210,92" stroke="#b48a2a" fill="none"/>
+    <rect x="16" y="92" width="230" height="46" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="28" y="110" font-family="ui-monospace, monospace" font-size="11" font-weight="700" fill="#1a3d28">└ Sprite</text>
+    <text x="28" y="127" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a3a20">SpriteRenderer · m_Sprite 为空</text>
+
+    <rect x="258" y="92" width="246" height="46" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="270" y="110" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#1a3d28">为什么显示要拆到子物体？</text>
+    <text x="270" y="127" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#3a4a3a">动画可以随便缩放它，根物体位置不变</text>
+
+    <text x="16" y="166" font-family="ui-sans-serif, sans-serif" font-size="11" font-weight="700" fill="#1a3d28">两种出生方式</text>
+
+    <text x="16" y="190" font-family="ui-monospace, monospace" font-size="10" fill="#1a5a30">① Instantiate + Initialize(itemSo, n)</text>
+    <text x="24" y="206" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#1a5a30">canBePickUp = false → 必须先走开才能捡</text>
+
+    <text x="16" y="228" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">② 直接拖进场景</text>
+    <text x="24" y="244" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a2a20">itemSo 为空 → 图标空白、Invoke(null, 0) → 背包空引用</text>
+  </g>
+
+  <!-- 右：四份数据 -->
+  <g transform="translate(584, 84)">
+    <rect x="0" y="0" width="576" height="252" rx="5" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="16" y="24" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#1a3d28">ItemSo 四份资产：三份效果是 0</text>
+
+    <text x="16" y="46" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#6a5b3a">资产</text>
+    <text x="150" y="46" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#6a5b3a">金币</text>
+    <text x="196" y="46" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#6a5b3a">堆叠</text>
+    <text x="246" y="46" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#6a5b3a">效果</text>
+    <line x1="16" y1="52" x2="560" y2="52" stroke="#1a3d28" stroke-opacity="0.14"/>
+
+    <text x="16" y="72" font-family="ui-monospace, monospace" font-size="10.5" fill="#1a3d28">Steak</text>
+    <text x="150" y="72" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a8a8a">✗</text>
+    <text x="196" y="72" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">3</text>
+    <text x="246" y="72" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">全 0 —— 吃了没反应</text>
+
+    <text x="16" y="92" font-family="ui-monospace, monospace" font-size="10.5" fill="#1a3d28">Mushroom</text>
+    <text x="150" y="92" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a8a8a">✗</text>
+    <text x="196" y="92" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">3</text>
+    <text x="246" y="92" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">全 0 —— 吃了没反应</text>
+
+    <text x="16" y="112" font-family="ui-monospace, monospace" font-size="10.5" fill="#1a3d28">Pumpkin</text>
+    <text x="150" y="112" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a8a8a">✗</text>
+    <text x="196" y="112" font-family="ui-monospace, monospace" font-size="10.5" fill="#3a4a3a">3</text>
+    <text x="246" y="112" font-family="ui-monospace, monospace" font-size="10" fill="#1a5a30">speed +5 · duration 5</text>
+
+    <text x="16" y="132" font-family="ui-monospace, monospace" font-size="10.5" fill="#1a3d28">Gold</text>
+    <text x="150" y="132" font-family="ui-monospace, monospace" font-size="10.5" fill="#1a7a3a">✓</text>
+    <text x="196" y="132" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a8a8a">—</text>
+    <text x="246" y="132" font-family="ui-monospace, monospace" font-size="10" fill="#1a5a30">进 gold 计数，不占背包格</text>
+
+    <line x1="16" y1="150" x2="560" y2="150" stroke="#1a3d28" stroke-opacity="0.14"/>
+
+    <text x="16" y="172" font-family="ui-sans-serif, sans-serif" font-size="11" font-weight="700" fill="#1a3d28">ItemSo 的字段（全部数据，没有行为）</text>
+    <text x="16" y="192" font-family="ui-monospace, monospace" font-size="10" fill="#3a4a3a">itemName · itemDescription · icon · isGold</text>
+    <text x="16" y="210" font-family="ui-monospace, monospace" font-size="10" fill="#3a4a3a">stackSize（默认 3）· duration（float）</text>
+    <text x="16" y="228" font-family="ui-monospace, monospace" font-size="10" fill="#3a4a3a">currentHealth · maxHealth · speed · damage（int）</text>
+
+    <text x="16" y="244" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a2a20">效果不是 0 就是有用：UseItem 只对 &gt; 0 的字段生效</text>
+  </g>
+</svg>

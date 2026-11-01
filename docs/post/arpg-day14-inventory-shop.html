@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARPG 学习日志 Day 14：背包、物品数据与一块还没通电的商店 · DayDayDream</title>
+<meta name="description" content="把 Day 13 的掉落物接到真正的容器上：ItemSo 描述物品、InventoryManager 用 3 个槽接 Loot 事件（金币分流 / 先堆叠 / 再找空槽 / 满了丢回地上）、左键使用右键丢弃、UseItem 按字段生效并在 duration 后回滚。商店只做完了架子——8 个 ShopSlot、3 个 ShopButton、一个 InfoPopup，没有 ShopManager、没有购买、价格还是 prefab 上的占位 99。坑记六条，其中空槽分支把 quantity 直接写进槽里，绕过了 stackSize。">
+<link rel="canonical" href="https://daydaydream000.github.io/post/arpg-day14-inventory-shop.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DayDayDream">
+<meta property="og:title" content="ARPG 学习日志 Day 14：背包、物品数据与一块还没通电的商店">
+<meta property="og:description" content="把 Day 13 的掉落物接到真正的容器上：ItemSo 描述物品、InventoryManager 用 3 个槽接 Loot 事件（金币分流 / 先堆叠 / 再找空槽 / 满了丢回地上）、左键使用右键丢弃、UseItem 按字段生效并在 duration 后回滚。商店只做完了架子——8 个 ShopSlot、3 个 ShopButton、一个 InfoPopup，没有 ShopManager、没有购买、价格还是 prefab 上的占位 99。坑记六条，其中空槽分支把 quantity 直接写进槽里，绕过了 stackSize。">
+<meta property="og:url" content="https://daydaydream000.github.io/post/arpg-day14-inventory-shop.html">
+<meta property="og:image" content="https://daydaydream000.github.io/assets/images/arpg-day14-cover.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f3f8f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="DayDayDream" href="../rss.xml">
+<link rel="stylesheet" href="../assets/style.css?v=db15b81cea">
+<script>
+/* 主题与公告状态在首次绘制前应用，避免闪烁 */
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('dsh-theme'); } catch (e) {}
+  if (saved !== 'light' && saved !== 'dark') saved = 'auto';
+  var root = document.documentElement;
+  root.dataset.theme = saved;
+  root.classList.toggle('dark', saved === 'dark' ||
+    (saved === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  try {
+    if (localStorage.getItem('dsh-notice') === 'off') root.classList.add('notice-off');
+  } catch (e) {}
+})();
+</script>
+
+</head>
+<body class="page-post">
+<div id="page-progress" aria-hidden="true"></div>
+<a class="skip-link" href="#main">跳到正文</a>
+
+<header class="topbar"><div class="topbar-inner"><a class="topbar-brand" href="../index.html"><img src="../assets/avatar.jpg" alt="" width="30" height="30"><span class="topbar-brand-text">DayDayDream</span></a><nav class="topbar-nav" aria-label="主导航"><a href="../index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg><span>首页</span></a><a href="../arpg-progress.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>ARPG</span></a><a href="../tags/index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span>标签</span></a><a href="../about.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>关于</span></a></nav><div class="topbar-tools"><button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索（按 /）"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题"><span class="icon-sun"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg></span><span class="icon-moon"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></svg></span></button></div></div></header>
+<header class="banner banner-short"><img class="banner-bg" src="../assets/banner.jpg" alt="" aria-hidden="true" decoding="async"><div class="banner-scrim"></div><div class="banner-inner"><p class="banner-title">DayDayDream</p><p class="banner-subtitle">醒着做梦，落笔成诗——记所思，存所学。</p></div></header>
+
+<main id="main" class="layout">
+  <div class="layout-inner">
+    <aside class="col col-left"><section class="card-panel profile-card" data-reveal="0"><a class="profile-avatar-link" href="../about.html" aria-label="关于我"><img class="profile-avatar" src="../assets/avatar.jpg" alt="DayDayDream" decoding="async"></a><p class="profile-name">DayDayDream</p><div class="profile-accent" aria-hidden="true"></div><p class="profile-greeting">Hello, I'm DayDayDream.</p><div class="profile-social"><a class="social-chip" href="https://github.com/daydaydream000" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener noreferrer"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.58.69.48A10.04 10.04 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/></svg></a><a class="social-chip" href="mailto:daydaydream000@users.noreply.github.com" title="邮箱" aria-label="邮箱"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></a><a class="social-chip" href="../rss.xml" title="RSS 订阅" aria-label="RSS 订阅"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18.5" r="1.4" fill="currentColor" stroke="none"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/></svg></a></div></section><section class="card-panel notice-card" id="notice" data-reveal="1"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5v3A1.5 1.5 0 0 0 5.5 15H7l1 4h2l-1-4h2l7 3.5V6.5L11 10H5.5A1.5 1.5 0 0 0 4 10.5Z"/></svg><span>公告</span></h2><p class="notice-text">欢迎来到 DayDayDream —— 醒着做梦，落笔成诗，记所思，存所学。</p><div class="notice-foot"><a class="notice-more" href="../about.html">前往关于</a><button class="notice-close" type="button" aria-label="关闭公告" title="关闭"><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></section></aside>
+    <div class="col col-main"><article class="card-panel post">
+  <header class="post-header">
+    <h1 class="post-title">ARPG 学习日志 Day 14：背包、物品数据与一块还没通电的商店</h1>
+    <div class="post-meta"><div class="post-badges"><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><time datetime="2026-11-01">2026 年 11 月 01 日</time></span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg>约 4195 字</span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>13 分钟阅读</span><a class="badge badge-pin" href="../tags/index.html#tag-unity"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>Unity</a><a class="badge badge-pin" href="../tags/index.html#tag-arpg"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>ARPG</a><a class="badge badge-pin" href="../tags/index.html#tag-游戏开发"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>游戏开发</a><a class="badge badge-pin" href="../tags/index.html#tag-背包系统"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>背包系统</a><a class="badge badge-pin" href="../tags/index.html#tag-物品数据"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>物品数据</a><a class="badge badge-pin" href="../tags/index.html#tag-scriptableobject"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>ScriptableObject</a><a class="badge badge-pin" href="../tags/index.html#tag-ui"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>UI</a></div></div>
+  </header>
+  <div class="toc-mobile"><nav class="toc" aria-label="目录"><p class="toc-title">目录</p><div class="toc-list"><a href="#一句话说清这天的内容">一句话说清这天的内容</a><a href="#脚本关系">脚本关系</a><a href="#itemso一份数据没有一行行为">ItemSo：一份数据，没有一行行为</a><a href="#useitem只对大于-0-的字段生效">UseItem：只对大于 0 的字段生效</a><a href="#设计-1-0-是「这个字段要不要用」的开关" class="toc-h3">设计 1：&gt; 0 是「这个字段要不要用」的开关</a><a href="#设计-2duration-靠协程倒计时回滚" class="toc-h3">设计 2：duration 靠协程倒计时回滚</a><a href="#inventoryslot一个格子两种键">InventorySlot：一个格子，两种键</a><a href="#设计为什么用-ipointerclickhandler-而不是-button" class="toc-h3">设计：为什么用 IPointerClickHandler 而不是 Button</a><a href="#设计getcomponentinparent-找背包" class="toc-h3">设计：GetComponentInParent 找背包</a><a href="#inventorymanager四段分流">InventoryManager：四段分流</a><a href="#设计-1金币走特判不占格子" class="toc-h3">设计 1：金币走特判，不占格子</a><a href="#设计-2堆叠在「空槽之前」" class="toc-h3">设计 2：堆叠在「空槽之前」</a><a href="#设计-3溢出不是「扔掉」是「放回地上」" class="toc-h3">设计 3：溢出不是「扔掉」，是「放回地上」</a><a href="#商店架子搭完了电还没接">商店：架子搭完了，电还没接</a><a href="#坑">坑</a><a href="#坑-1空槽分支把-quantity-直接写进去绕过了-stacksize" class="toc-h3">💡 坑 1：空槽分支把 quantity 直接写进去，绕过了 stackSize</a><a href="#坑-2effecttimer-挂在-useitem-上协程会被对象停掉" class="toc-h3">💡 坑 2：EffectTimer 挂在 UseItem 上，协程会被对象停掉</a><a href="#坑-3属性字段名撞车语义也撞车" class="toc-h3">💡 坑 3：属性字段名撞车，语义也撞车</a><a href="#坑-4回血不播动画受击播-两条路径写同一个文本" class="toc-h3">💡 坑 4：回血不播动画，受击播 —— 两条路径写同一个文本</a><a href="#坑-5三个-update-刷新的东西各不相同" class="toc-h3">💡 坑 5：三个 Update* 刷新的东西各不相同</a><a href="#坑-6useitemslot-里的-quantity-0-等于没判断" class="toc-h3">💡 坑 6：UseItem(slot) 里的 quantity &gt;= 0 等于没判断</a><a href="#整体设计思路">整体设计思路</a><a href="#1-三层数据-容器-行为" class="toc-h3">1. 三层：数据 / 容器 / 行为</a><a href="#2-金币-vs-物品" class="toc-h3">2. 金币 vs 物品</a><a href="#3-商店真正缺的是什么" class="toc-h3">3. 商店真正缺的是什么</a><a href="#明天要补的洞">明天要补的洞</a><a href="#一句话总结">一句话总结</a></div></nav></div>
+  <figure class="post-cover"><img src="../assets/images/arpg-day14-cover.svg" alt="ARPG 学习日志 Day 14：背包、物品数据与一块还没通电的商店" loading="lazy" decoding="async"></figure>
+  <div class="post-content"><h2 id="一句话说清这天的内容">一句话说清这天的内容</h2><p>Day 13 把东西丢到了地上，今天把它接进背包：<code>ItemSo</code> 描述「一个物品是什么」，<code>InventoryManager</code> 用 <strong>3 个槽</strong>接住 <code>Loot.OnItemLooted</code>，按<strong>金币 → 堆叠 → 空槽 → 溢出</strong>四段处理；左键使用、右键丢弃；<code>UseItem</code> 按字段生效，有 <code>duration</code> 的过几秒再回滚。</p><p>商店只做完了<strong>架子</strong>：8 个 <code>ShopSlot</code>、3 个 <code>ShopButton</code>、一个 <code>InfoPopup</code>，但没有 <code>ShopManager</code>、没有购买逻辑，价格还是 prefab 上写死的 <code>99</code>。</p><hr><h2 id="脚本关系">脚本关系</h2><div class="table-wrap"><table><thead><tr><th>脚本</th><th>角色</th><th style="text-align:right">行数</th><th>关键能力</th></tr></thead><tbody><tr><td><code>ItemSo</code></td><td>新</td><td style="text-align:right">19</td><td>纯数据：名字、描述、图标、是否金币、堆叠上限、属性、持续时间</td></tr><tr><td><code>UseItem</code></td><td>新</td><td style="text-align:right">29</td><td>把 <code>ItemSo</code> 的属性写成 <code>StatsManger</code> 的调用，<code>duration</code> 到期回滚</td></tr><tr><td><code>InventorySlot</code></td><td>新</td><td style="text-align:right">50</td><td>一个格子：<code>IPointerClickHandler</code>，左键用、右键丢</td></tr><tr><td><code>InventoryManager</code></td><td>新</td><td style="text-align:right">91</td><td>3 个槽、金币计数、<code>AddItem</code> 四段分流、溢出丢回地上</td></tr><tr><td><code>StatsManger</code></td><td>改</td><td style="text-align:right">48</td><td>加 <code>statsUI</code> / <code>healthText</code> 引用与 <code>UpdateHealth</code> / <code>UpdateMaxHealth</code> / <code>UpdateSpeed</code></td></tr><tr><td><code>StatsUI</code></td><td>改</td><td style="text-align:right">47</td><td>开关时同步 <code>blocksRaycasts</code>；<code>UpdateAllStats</code> 改成 <code>public</code></td></tr></tbody></table></div><p><strong>调用链</strong>（拾取入包）：</p><p><code>Loot.OnItemLooted(itemSo, n) → InventoryManager.AddItem → isGold? gold += n : 堆叠 → 空槽 → 溢出 DropLoot</code></p><p><strong>调用链</strong>（左键使用）：</p><p><code>InventorySlot.OnPointerClick(Left) → InventoryManager.UseItem(slot) → UseItem.ApplyItemEffects → StatsManger.UpdateHealth / UpdateMaxHealth / UpdateSpeed → slot.quantity--</code></p><hr><h2 id="itemso一份数据没有一行行为">ItemSo：一份数据，没有一行行为</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">[CreateAssetMenu(fileName = "New Item")]
+public class ItemSo : ScriptableObject
+{
+    public string itemName;
+    [TextArea] public string itemDescription;
+    public Sprite icon;
+
+    public bool isGold;
+    public int stackSize = 3;
+
+    [Header("Stats")]
+    public int currentHealth;
+    public int maxHealth;
+    public int speed;
+    public int damage;
+
+    [Header("For Temporary Items")]
+    public float duration;
+}</code></pre></div><p>三组字段，对应三种用途：</p><div class="table-wrap"><table><thead><tr><th>组</th><th>字段</th><th>谁用</th></tr></thead><tbody><tr><td>外观</td><td><code>itemName</code> / <code>itemDescription</code> / <code>icon</code></td><td>掉落物（Day 13 的 <code>UpdateAppearance</code>）、未来的 tooltip</td></tr><tr><td>规则</td><td><code>isGold</code> / <code>stackSize</code></td><td><code>InventoryManager.AddItem</code> 的两处分流</td></tr><tr><td>效果</td><td><code>currentHealth</code> / <code>maxHealth</code> / <code>speed</code> / <code>damage</code> / <code>duration</code></td><td><code>UseItem.ApplyItemEffects</code></td></tr></tbody></table></div><p><strong>注意这里没有任何方法。</strong> <code>ItemSo</code> 是纯数据，效果写在 <code>UseItem</code> 里。这和 Day 8 的技能树是同一个套路：<code>SkillSO</code> 只放名字/上限/图标，效果写在 <code>SkillManager</code> 的 <code>switch</code> 里。</p><p>统一的理由是：<strong>数据资产给策划改，效果代码给程序写</strong>。代价是「新增一个效果类型」要改代码，而不是配一个资产。</p><hr><h2 id="useitem只对大于-0-的字段生效">UseItem：只对大于 0 的字段生效</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void ApplyItemEffects(ItemSo itemSo)
+{
+    if (itemSo.currentHealth &gt; 0) StatsManger.Instance.UpdateHealth(itemSo.currentHealth);
+    if (itemSo.maxHealth &gt; 0)     StatsManger.Instance.UpdateMaxHealth(itemSo.maxHealth);
+    if (itemSo.speed &gt; 0)         StatsManger.Instance.UpdateSpeed(itemSo.speed);
+
+    if (itemSo.duration &gt; 0)
+    {
+        StartCoroutine(EffectTimer(itemSo, itemSo.duration));
+    }
+}</code></pre></div><h3 id="设计-1-0-是「这个字段要不要用」的开关">设计 1：<code>&gt; 0</code> 是「这个字段要不要用」的开关</h3><p>四份物品资产里，<code>Steak</code> 和 <code>Mushroom</code> 的所有数值都是 0——它们进背包、能被吃、<strong>什么也不发生</strong>。系统没有报错，因为 <code>0</code> 被解释成「这项不生效」。</p><p>这个约定很省事（一份 <code>ItemSo</code> 能表达「只加血」「只加速」「都加」），但它把 <code>0</code> 变成了特殊值：</p><ul><li><strong>做不了「扣血」的道具</strong>（负数会被 <code>&gt; 0</code> 跳过）</li><li><strong>做不了「把速度设成 0」的效果</strong>（同样是 0）</li><li>资产 Inspector 里 0 和「没填」长得一模一样</li></ul><p>这就是坑 3 的根。</p><h3 id="设计-2duration-靠协程倒计时回滚">设计 2：<code>duration</code> 靠协程倒计时回滚</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private IEnumerator EffectTimer(ItemSo itemSo, float duration)
+{
+    yield return new WaitForSeconds(duration);
+
+    if (itemSo.currentHealth &gt; 0) StatsManger.Instance.UpdateHealth(-itemSo.currentHealth);
+    if (itemSo.maxHealth &gt; 0)     StatsManger.Instance.UpdateMaxHealth(-itemSo.maxHealth);
+    if (itemSo.speed &gt; 0)         StatsManger.Instance.UpdateSpeed(-itemSo.speed);
+}</code></pre></div><p><code>Pumpkin</code> 是唯一用到它的：<code>speed +5</code>、<code>duration 5</code>。吃下去 5 秒加速，然后 <code>UpdateSpeed(-5)</code> 掉回去。</p><p>「加多少、之后减多少」是成对的——<strong>只要两次都执行</strong>。而它到底会不会执行，取决于这个协程挂在谁身上、什么时候被停（坑 2）。</p><hr><h2 id="inventoryslot一个格子两种键">InventorySlot：一个格子，两种键</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void OnPointerClick(PointerEventData eventData)
+{
+    if (quantity &gt; 0)
+    {
+        if (eventData.button == PointerEventData.InputButton.Left)
+        {
+            if (itemSo.currentHealth &gt; 0 &amp;&amp;
+                StatsManger.Instance.currentHealth &gt;= StatsManger.Instance.maxHealth)
+            {
+                return;   // 满血时不让吃回血道具
+            }
+            inventoryManager.UseItem(this);
+        }
+        else if (eventData.button == PointerEventData.InputButton.Right)
+        {
+            inventoryManager.DropItem(this);
+        }
+    }
+}</code></pre></div><h3 id="设计为什么用-ipointerclickhandler-而不是-button">设计：为什么用 <code>IPointerClickHandler</code> 而不是 <code>Button</code></h3><p><code>Button</code> 只有一个 <code>onClick</code>，要分清左右键得再读一遍 <code>PointerEventData</code>——那还不如直接实现接口。</p><p><code>IPointerClickHandler</code> 收到的是<strong>完整的一次点击</strong>，<code>eventData.button</code> 直接告诉你是左还是右。代价是：<strong>它不会自动处理「按住/拖拽」</strong>，也不会像 <code>Button</code> 那样变色。对一个「点一下就吃」的格子，这正好。</p><h3 id="设计getcomponentinparent-找背包">设计：<code>GetComponentInParent</code> 找背包</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void Start()
+{
+    inventoryManager = GetComponentInParent&lt;InventoryManager&gt;();
+}</code></pre></div><p><code>InventorySlot</code> 是 <code>InventorySlot.prefab</code> 的实例，被摆在 <code>InventoryCanvas → Slots</code> 下面。它需要向上找 <code>InventoryManager</code>——而 <code>InventoryManager</code> 挂在<strong>画布根物体</strong>上，所以是「隔了两层」的父级。</p><p>用 <code>GetComponentInParent</code> 而不是拖引用，好处是<strong>复制格子不用重新拖线</strong>；坏处是这条依赖只存在于层级结构里：<strong>把格子挪到别的父级下，它就找不到背包了</strong>，而且是运行时才炸（<code>Start</code> 里拿到 <code>null</code>，点击时 NRE）。</p><hr><h2 id="inventorymanager四段分流">InventoryManager：四段分流</h2><figure class="post-figure"><img src="../assets/images/arpg-day14-item-pipeline.svg" alt="物品从事件到背包、金币、地上的三条去向" loading="lazy" decoding="async"><figcaption>一个入口、四种结局；最右边那条「地上」既是背包满时的溢出，也是右键丢弃的目标</figcaption></figure><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void AddItem(ItemSo itemSo, int quantity)
+{
+    // ① 金币：不进格子，直接加计数
+    if (itemSo.isGold)
+    {
+        gold += quantity;
+        goldText.text = gold.ToString();
+        return;
+    }
+
+    // ② 先堆到已有的同种物品上
+    foreach (var slot in inventorySlots)
+    {
+        if (slot.itemSo == itemSo &amp;&amp; slot.quantity &lt; itemSo.stackSize)
+        {
+            int availableSpace = itemSo.stackSize - slot.quantity;
+            int amountToAdd = Mathf.Min(availableSpace, quantity);
+            slot.quantity += amountToAdd;
+            quantity -= amountToAdd;
+            slot.UpdateUI();
+            if (quantity &lt;= 0) return;
+        }
+    }
+
+    // ③ 再找空槽
+    foreach (var slot in inventorySlots)
+    {
+        if (slot.itemSo == null)
+        {
+            int amountToAdd = Mathf.Min(itemSo.stackSize, quantity);
+            slot.itemSo = itemSo;
+            slot.quantity = quantity;      // ← 这里有问题，见坑 1
+            slot.UpdateUI();
+            return;
+        }
+    }
+
+    // ④ 还是塞不下：丢回地上
+    if (quantity &gt; 0) DropLoot(itemSo, quantity);
+}</code></pre></div><h3 id="设计-1金币走特判不占格子">设计 1：金币走特判，不占格子</h3><p><code>isGold</code> 的物品拾取后不进行李箱，而是 <code>gold += quantity</code>。理由很实际：<strong>货币不是「一件东西」</strong>。给它格子意味着：</p><ul><li>一格 3 个金币，捡到第 4 个要开新格</li><li>背包满了就捡不起钱（最气人的体验）</li><li>每次花钱还要在所有格子里找金币</li></ul><p>金币是<strong>计数器</strong>，物品是<strong>容器里的实例</strong>——两种数据模型，代码里就该分开。</p><h3 id="设计-2堆叠在「空槽之前」">设计 2：堆叠在「空槽之前」</h3><p>顺序是先堆叠、再开新格。反过来（先开新格）会让每种物品都占用一个新格子，背包立刻爆炸。这个顺序几乎不用想——但它的前提是<strong>「同种物品」要靠 <code>itemSo</code> 引用相等来判断</strong>：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">if (slot.itemSo == itemSo &amp;&amp; slot.quantity &lt; itemSo.stackSize)</code></pre></div><p><code>ScriptableObject</code> 的引用相等 = 「是不是同一个资产」。所以背包里不可能出现两个视觉相同但来自不同资产的蘑菇——除非有人复制了资产。</p><h3 id="设计-3溢出不是「扔掉」是「放回地上」">设计 3：溢出不是「扔掉」，是「放回地上」</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void DropLoot(ItemSo itemSo, int quantity)
+{
+    Loot loot = Instantiate(lootPrefab, player.position, Quaternion.identity).GetComponent&lt;Loot&gt;();
+    loot.Initialize(itemSo, quantity);
+}</code></pre></div><p>背包满了，物品不是消失，而是<strong>在玩家脚下重新生成一个 <code>Loot</code></strong>。配合 Day 13 的 <code>canBePickUp = false</code>，玩家必须走开再回来才能捡——形成了一个不会自锁的循环。</p><p>右键丢弃走的也是这个方法：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void DropItem(InventorySlot slot)
+{
+    DropLoot(slot.itemSo, 1);   // 一次只丢 1 个
+    slot.quantity--;
+    if (slot.quantity &lt;= 0) slot.itemSo = null;
+    slot.UpdateUI();
+}</code></pre></div><hr><h2 id="商店架子搭完了电还没接">商店：架子搭完了，电还没接</h2><figure class="post-figure"><img src="../assets/images/arpg-day14-ui-map.svg" alt="三块 UI 的接线状态：背包常驻、商店常驻、提示框空转" loading="lazy" decoding="async"><figcaption>三块画布里，只有背包是真的接了数据；商店的每个槽都还是 prefab 里的占位字</figcaption></figure><p>场景里的实际状态：</p><div class="table-wrap"><table><thead><tr><th>画布</th><th style="text-align:right">排序</th><th>CanvasGroup</th><th>开关脚本</th><th>数据来源</th></tr></thead><tbody><tr><td><code>InventoryCanvas</code></td><td style="text-align:right">−1</td><td><strong>没有</strong></td><td><strong>没有</strong></td><td><code>InventoryManager</code> + 3 个槽</td></tr><tr><td><code>ShopCanvas</code></td><td style="text-align:right">0</td><td>α 1 / 遮挡 1 / 可点 1</td><td><strong>没有</strong></td><td><strong>没有</strong></td></tr><tr><td><code>InfoPopup</code>（在 ShopPanel 下）</td><td style="text-align:right">—</td><td>α 1 / <strong>不遮挡</strong> / <strong>不可点</strong></td><td>没有</td><td><strong>没有</strong></td></tr></tbody></table></div><p><code>ShopCanvas</code> 的结构其实挺完整：</p><ul><li><code>TopPanel</code>：<code>GridLayoutGroup</code> 300×100、间距 20，摆着 <strong>3 个 <code>ShopButton</code></strong>（文字 <code>Items</code>）</li><li><code>ItemPanel</code>：<code>GridLayoutGroup</code> 260×230、间距 10，摆着 <strong>8 个 <code>ShopSlot</code></strong>，每个含 <code>ItemIcon</code> / <code>ItemName</code> / <code>Price</code>（占位 <code>Item Name</code> / <code>99</code>）</li><li><code>InfoPopup</code>：400×350，含 <code>Name</code> / <code>Description</code> / <code>Stats</code>（6 个 <code>StatText</code>，占位 <code>Health +1</code>）</li></ul><p>但这一整套<strong>没有一个脚本</strong>。所以：</p><ul><li>8 个格子的价格永远是 <code>99</code>，图标永远是 prefab 上那张</li><li>3 个按钮点了没反应（<code>onClick</code> 上没有监听）</li><li><code>InfoPopup</code> 的 <code>K</code> 不遮挡、不可点，意味着它<strong>看得见却永远不响应</strong>——鼠标会直接穿过它点到后面的槽上</li><li>因为没有开关，商店面板<strong>一直显示</strong></li></ul><p>这不是「写错了」，是<strong>做到一半</strong>。从工程顺序看也合理：先把容器和物品数据做出来（背包），商店是下一层——它需要「物品 + 价格 + 库存」三份数据，而价格现在还不存在任何地方。</p><hr><h2 id="坑">坑</h2><h3 id="坑-1空槽分支把-quantity-直接写进去绕过了-stacksize">💡 坑 1：空槽分支把 <code>quantity</code> 直接写进去，绕过了 <code>stackSize</code></h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">int amountToAdd = Mathf.Min(itemSo.stackSize, quantity);   // 算出来了
+slot.itemSo = itemSo;
+slot.quantity = quantity;                                  // ← 但用的是原始数量</code></pre></div><p><code>amountToAdd</code> 算完<strong>没被使用</strong>。后果：</p><div class="table-wrap"><table><thead><tr><th>拾取</th><th>期望</th><th>实际</th></tr></thead><tbody><tr><td>5 个 Mushroom（上限 3）</td><td>一格 3 + 一格 2</td><td>一格 <strong>5</strong>，UI 显示 <code>5</code></td></tr><tr><td>再捡 1 个 Mushroom</td><td>进第二格</td><td>第一个格子 <code>quantity &lt; 3</code> 不成立，开第二格</td></tr><tr><td>丢出 1 个</td><td>回到 4</td><td>回到 4（<code>5 − 1</code>），始终没被截断</td></tr></tbody></table></div><p><code>stackSize</code> 只挡住了「继续往里加」，<strong>挡不住「第一次加入时超量」</strong>。修法是一行：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">slot.quantity = amountToAdd;</code></pre></div><p>而且修完还要补一句：<strong>剩下的 <code>quantity -= amountToAdd</code> 必须继续走下去</strong>。现在因为直接写 <code>quantity</code> 再 <code>return</code>，多出来的量被一起塞进了同一格——看起来「没丢」，实际是<strong>超上限存放</strong>；改对之后如果不继续循环，那部分才会真的消失。</p><h3 id="坑-2effecttimer-挂在-useitem-上协程会被对象停掉">💡 坑 2：<code>EffectTimer</code> 挂在 <code>UseItem</code> 上，协程会被对象停掉</h3><p><code>StartCoroutine</code> 启动的协程<strong>属于这个 <code>MonoBehaviour</code></strong>：对象被 <code>SetActive(false)</code>、组件被 <code>enabled = false</code>、或者物体被销毁，协程就停，<strong>而且不会恢复</strong>。</p><p><code>UseItem</code> 挂在 <code>InventoryCanvas</code> 上。今天它常驻，所以没问题。但如果哪天给背包加个开关（<code>SetActive(false)</code> 隐藏面板），会发生：</p><ol><li>吃下南瓜，<code>speed +5</code>，协程开始等 5 秒</li><li>关背包 → 协程停</li><li>再开背包 → 协程<strong>不会接着跑</strong></li><li><strong><code>speed</code> 永久 +5</strong></li></ol><p>这类「加 buff 的协程被一起关掉」的 bug，和 Day 6 那节「暂停把 <code>WaitForSeconds</code> 冻住」是同一个家族：<strong>协程的生命周期绑在宿主上，而宿主常常被 UI 随手关掉</strong>。</p><p>稳的做法是把计时交给一个不随 UI 开关的对象（比如玩家身上的 <code>StatsManger</code>），或者改成「记录 buff 到期时间戳、每帧检查」。</p><h3 id="坑-3属性字段名撞车语义也撞车">💡 坑 3：属性字段名撞车，语义也撞车</h3><p><code>ItemSo.currentHealth</code> 和 <code>StatsManger.currentHealth</code> <strong>同名，但意思相反</strong>：</p><div class="table-wrap"><table><thead><tr><th>字段</th><th>在哪</th><th>含义</th></tr></thead><tbody><tr><td><code>ItemSo.currentHealth</code></td><td>物品资产</td><td><strong>恢复量</strong>（吃一口 +10）</td></tr><tr><td><code>StatsManger.currentHealth</code></td><td>玩家单例</td><td><strong>当前血量</strong>（现在剩 15）</td></tr></tbody></table></div><p><code>UseItem</code> 里同时出现两者：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">if (itemSo.currentHealth &gt; 0) StatsManger.Instance.UpdateHealth(itemSo.currentHealth);</code></pre></div><p>读起来像「如果物品的当前血量大于 0，就用玩家的更新它」——<strong>几乎读不出真实含义</strong>。更好的命名是 <code>healAmount</code> / <code>healthRestore</code>，<code>maxHealth</code> 同理（<code>maxHealthBonus</code>）。</p><p>而且 <code>&gt; 0</code> 的约定顺带把「扣血道具」这条路堵死了：毒蘑菇想做 <code>-5</code>，会被直接跳过。</p><h3 id="坑-4回血不播动画受击播-两条路径写同一个文本">💡 坑 4：回血不播动画，受击播 —— 两条路径写同一个文本</h3><div class="table-wrap"><table><thead><tr><th>路径</th><th>谁调用</th><th>播 <code>TextUpdate</code> 动画？</th></tr></thead><tbody><tr><td>受击扣血</td><td><code>Enemy_Combat</code> → <code>PlayerHealth.ChangeHealth</code></td><td>✓</td></tr><tr><td>吃道具回血</td><td><code>UseItem</code> → <code>StatsManger.UpdateHealth</code></td><td>✗</td></tr></tbody></table></div><p>两个方法都写 <code>healthText.text</code>，但只有 <code>PlayerHealth.ChangeHealth</code> 里有一行 <code>healthTextAnim.Play("TextUpdate")</code>。</p><p>玩家吃一口回血，血条数字是<strong>静默跳变</strong>的；被敌人打一下，数字会抖。反馈不一致，而根因是「同一份显示被两处代码各写一遍」。</p><p>正确形状是让 <code>StatsManger</code> 成为唯一写入点，动画也在那里播；<code>PlayerHealth.ChangeHealth</code> 只负责「扣血 + 归零处理」。</p><h3 id="坑-5三个-update-刷新的东西各不相同">💡 坑 5：三个 <code>Update*</code> 刷新的东西各不相同</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void UpdateMaxHealth(int amount)
+{
+    maxHealth += amount;
+    healthText.text = "HP: " + currentHealth + "/" + maxHealth;
+}
+public void UpdateHealth(int amount)
+{
+    currentHealth += amount;
+    if (currentHealth &gt;= maxHealth) currentHealth = maxHealth;
+    healthText.text = "HP: " + currentHealth + "/" + maxHealth;
+}
+public void UpdateSpeed(int amount)
+{
+    speed += amount;
+    statsUI.UpdateAllStats();          // 只有这个刷属性面板
+}</code></pre></div><div class="table-wrap"><table><thead><tr><th>方法</th><th>刷 HP 文本</th><th>刷属性面板（Esc）</th></tr></thead><tbody><tr><td><code>UpdateHealth</code></td><td>✓</td><td>✗</td></tr><tr><td><code>UpdateMaxHealth</code></td><td>✓</td><td>✗</td></tr><tr><td><code>UpdateSpeed</code></td><td>✗</td><td>✓</td></tr></tbody></table></div><p>所以：<strong>吃南瓜加速，Esc 面板立刻正确；但 <code>Max Health Boost</code> 技能加到 25 血，面板上没有任何东西变</strong>（面板只有 Damage / Speed 两个槽）。今天看起来没事，纯粹因为面板不显示最大生命。</p><p><code>UpdateHealth</code> 只挡了「超过上限」，没挡「低于 0」——不过吃道具不会给负数，所以暂时没暴露。</p><h3 id="坑-6useitemslot-里的-quantity-0-等于没判断">💡 坑 6：<code>UseItem(slot)</code> 里的 <code>quantity &gt;= 0</code> 等于没判断</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void UseItem(InventorySlot slot)
+{
+    if (slot.itemSo != null &amp;&amp; slot.quantity &gt;= 0)   // 恒真</code></pre></div><p><code>quantity</code> 不可能小于 0（只在 <code>DropItem</code> / <code>UseItem</code> 里自减，到 0 就清空 <code>itemSo</code>）。这个条件看起来像「还有剩余才能用」，实际是恒真的——真正的守卫是前面的 <code>itemSo != null</code>。</p><p>这类「写了但没用」的判断比不写更危险：读代码的人会以为它挡了什么。</p><hr><h2 id="整体设计思路">整体设计思路</h2><h3 id="1-三层数据-容器-行为">1. 三层：数据 / 容器 / 行为</h3><div class="table-wrap"><table><thead><tr><th>层</th><th>谁</th><th>职责</th><th>改动影响</th></tr></thead><tbody><tr><td>数据</td><td><code>ItemSo</code></td><td>物品是什么</td><td>所有引用它的地方</td></tr><tr><td>容器</td><td><code>InventorySlot</code> + <code>InventoryManager</code></td><td>放几个、怎么堆、满了怎么办</td><td>只有背包 UI</td></tr><tr><td>行为</td><td><code>UseItem</code></td><td>用下去发生什么</td><td>数值与 buff</td></tr></tbody></table></div><p>拆开的好处是<strong>「加物品」只碰数据</strong>：新建一个 <code>.asset</code>、填图标和数值，背包和丢弃全都自动支持。坏处是<strong>「加效果类型」要碰行为层</strong>，而且 <code>ItemSo</code> 的字段会越堆越多（今天已经有 4 个属性 + 1 个 duration）。</p><h3 id="2-金币-vs-物品">2. 金币 vs 物品</h3><div class="table-wrap"><table><thead><tr><th></th><th>金币（<code>gold</code> int）</th><th>物品（槽位）</th></tr></thead><tbody><tr><td>数据结构</td><td>一个数</td><td>若干个 <code>(ItemSo, int)</code></td></tr><tr><td>上限</td><td>无</td><td><code>stackSize</code> × 槽数</td></tr><tr><td>拾取</td><td><code>gold += n</code></td><td>堆叠 / 开格 / 溢出</td></tr><tr><td>显示</td><td>一个 <code>TMP_Text</code></td><td>每格 <code>Image</code> + <code>TMP_Text</code></td></tr></tbody></table></div><p>把 <code>Gold</code> 也做成 <code>ItemSo</code> 是个<strong>混合做法</strong>：它让「掉落物」这一层可以统一处理一切（不用特判预制体），但到了背包层又必须特判。这是「用同一套管线承载两种数据模型」的必然代价——可以接受，但要记住特判点只有一处：<code>AddItem</code> 的第一行。</p><h3 id="3-商店真正缺的是什么">3. 商店真正缺的是什么</h3><div class="table-wrap"><table><thead><tr><th>需要</th><th>现在有</th><th>缺</th></tr></thead><tbody><tr><td>商品列表</td><td>8 个 <code>ShopSlot</code> 占位</td><td><code>ItemSo</code> + 价格 + 库存</td></tr><tr><td>购买</td><td>无</td><td><code>ShopManager.Buy(slot)</code> + <code>gold &gt;= price</code> 校验</td></tr><tr><td>反馈</td><td><code>InfoPopup</code>（空）</td><td>悬停/选中时填 <code>Name</code> / <code>Description</code> / <code>Stats</code></td></tr><tr><td>开关</td><td>无</td><td>一个键 + <code>CanvasGroup</code>（照抄 <code>ToggleSkillTree</code>）</td></tr></tbody></table></div><p>四个都补上，商店才算「能用」。现在它是<strong>一张画好的 UI 图</strong>，鼠标能点但什么都不会发生。</p><hr><h2 id="明天要补的洞">明天要补的洞</h2><ol><li><strong><code>slot.quantity = amountToAdd</code></strong>：空槽分支绕过 <code>stackSize</code>，5 个蘑菇进一格。</li><li><strong>溢出没走到「丢回地上」</strong>：空槽分支直接 <code>return</code>，塞不下的部分没被单独安置，而是全塞进同一格（超上限）。</li><li><strong><code>EffectTimer</code> 随 <code>UseItem</code> 被停</strong>：关背包 = 永久 buff。</li><li><strong>两套 <code>currentHealth</code> 命名</strong>：<code>ItemSo</code> 的应该是 <code>healAmount</code>。</li><li><strong>回血不播动画</strong>：<code>StatsManger</code> 应成为唯一写入点。</li><li><strong><code>Max Health Boost</code> 不刷新属性面板</strong>：面板该加一个 MaxHealth 槽，或让 <code>UpdateMaxHealth</code> 也调 <code>UpdateAllStats</code>。</li><li><strong>背包没有开关</strong>：<code>InventoryCanvas</code> 常驻（<code>sortingOrder −1</code>），需要一个 <code>ToggleInventory</code> + <code>CanvasGroup</code>。</li><li><strong>商店没有逻辑</strong>：<code>ShopManager</code>、价格数据、购买校验、<code>InfoPopup</code> 填充、开关。</li><li><strong><code>InfoPopup</code> 不可点也不遮挡</strong>：鼠标会穿过去点到后面的槽，需要显式设 <code>blocksRaycasts = true</code> 或者干脆换成 hover 触发。</li><li><strong>金币与背包分离</strong>：<code>gold</code> 在 <code>InventoryManager</code> 上，换场景会归零（没有存档）。</li></ol><hr><h2 id="一句话总结">一句话总结</h2><p>今天把<strong>地上 → 背包 → 数值</strong>这条链接通了：<code>ItemSo</code> 只描述、<code>InventoryManager</code> 只分派、<code>UseItem</code> 只生效，金币被特判成计数器而不是一件东西。最值得记住的是那行 <code>slot.quantity = quantity</code>——<strong>算好的 <code>amountToAdd</code> 被扔掉了，于是 <code>stackSize</code> 只防住了「继续加」，防不住「一次加太多」</strong>；以及 <code>EffectTimer</code> 挂在 UI 上，<strong>关个面板就能把 buff 变成永久的</strong>。</p></div>
+  <footer class="post-footer">
+    <div class="post-tags"><a class="tag" href="../tags/index.html#tag-unity">Unity</a><a class="tag" href="../tags/index.html#tag-arpg">ARPG</a><a class="tag" href="../tags/index.html#tag-游戏开发">游戏开发</a><a class="tag" href="../tags/index.html#tag-背包系统">背包系统</a><a class="tag" href="../tags/index.html#tag-物品数据">物品数据</a><a class="tag" href="../tags/index.html#tag-scriptableobject">ScriptableObject</a><a class="tag" href="../tags/index.html#tag-ui">UI</a></div>
+    <p class="post-source"><a href="https://github.com/daydaydream000/daydaydream000.github.io/blob/main/posts/arpg-day14-inventory-shop.md">在 GitHub 上查看源文件</a></p>
+  </footer>
+</article>
+<nav class="post-nav" aria-label="上下篇"><a class="post-nav-item prev" href="../post/hello-daydaydream.html"><span class="post-nav-label">← 更新的一篇</span><span class="post-nav-title">你好，欢迎来到 DayDayDream</span></a><a class="post-nav-item next" href="../post/arpg-day13-loot-pickup.html"><span class="post-nav-label">更早的一篇 →</span><span class="post-nav-title">ARPG 学习日志 Day 13：掉落物、拾取动画与那 0.5 秒</span></a></nav>
+</div>
+    <aside class="col col-right"><nav class="card-panel toc-card" aria-label="文章目录" data-reveal="0"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span>文章目录</span></h2><div class="toc-list"><a class="" href="#一句话说清这天的内容">一句话说清这天的内容</a><a class="" href="#脚本关系">脚本关系</a><a class="" href="#itemso一份数据没有一行行为">ItemSo：一份数据，没有一行行为</a><a class="" href="#useitem只对大于-0-的字段生效">UseItem：只对大于 0 的字段生效</a><a class="toc-h3" href="#设计-1-0-是「这个字段要不要用」的开关">设计 1：&gt; 0 是「这个字段要不要用」的开关</a><a class="toc-h3" href="#设计-2duration-靠协程倒计时回滚">设计 2：duration 靠协程倒计时回滚</a><a class="" href="#inventoryslot一个格子两种键">InventorySlot：一个格子，两种键</a><a class="toc-h3" href="#设计为什么用-ipointerclickhandler-而不是-button">设计：为什么用 IPointerClickHandler 而不是 Button</a><a class="toc-h3" href="#设计getcomponentinparent-找背包">设计：GetComponentInParent 找背包</a><a class="" href="#inventorymanager四段分流">InventoryManager：四段分流</a><a class="toc-h3" href="#设计-1金币走特判不占格子">设计 1：金币走特判，不占格子</a><a class="toc-h3" href="#设计-2堆叠在「空槽之前」">设计 2：堆叠在「空槽之前」</a><a class="toc-h3" href="#设计-3溢出不是「扔掉」是「放回地上」">设计 3：溢出不是「扔掉」，是「放回地上」</a><a class="" href="#商店架子搭完了电还没接">商店：架子搭完了，电还没接</a><a class="" href="#坑">坑</a><a class="toc-h3" href="#坑-1空槽分支把-quantity-直接写进去绕过了-stacksize">💡 坑 1：空槽分支把 quantity 直接写进去，绕过了 stackSize</a><a class="toc-h3" href="#坑-2effecttimer-挂在-useitem-上协程会被对象停掉">💡 坑 2：EffectTimer 挂在 UseItem 上，协程会被对象停掉</a><a class="toc-h3" href="#坑-3属性字段名撞车语义也撞车">💡 坑 3：属性字段名撞车，语义也撞车</a><a class="toc-h3" href="#坑-4回血不播动画受击播-两条路径写同一个文本">💡 坑 4：回血不播动画，受击播 —— 两条路径写同一个文本</a><a class="toc-h3" href="#坑-5三个-update-刷新的东西各不相同">💡 坑 5：三个 Update* 刷新的东西各不相同</a><a class="toc-h3" href="#坑-6useitemslot-里的-quantity-0-等于没判断">💡 坑 6：UseItem(slot) 里的 quantity &gt;= 0 等于没判断</a><a class="" href="#整体设计思路">整体设计思路</a><a class="toc-h3" href="#1-三层数据-容器-行为">1. 三层：数据 / 容器 / 行为</a><a class="toc-h3" href="#2-金币-vs-物品">2. 金币 vs 物品</a><a class="toc-h3" href="#3-商店真正缺的是什么">3. 商店真正缺的是什么</a><a class="" href="#明天要补的洞">明天要补的洞</a><a class="" href="#一句话总结">一句话总结</a></div></nav><section class="card-panel" data-reveal="3"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>站点统计</span></h2><ul class="stat-list"><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span class="stat-label">文章</span><span class="stat-value">19</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span class="stat-label">标签</span><span class="stat-value">34</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span class="stat-label">总字数</span><span class="stat-value">54,343</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="stat-label">最近更新</span><span class="stat-value">2026-11-01</span></li></ul></section></aside>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>转载请注明出处</p>
+  <nav class="footer-nav" aria-label="页脚导航">
+    <a href="../index.html">首页</a>
+    <a href="../tags/index.html">标签</a>
+    <a href="../about.html">关于</a>
+    <a href="../rss.xml">RSS</a>
+    <a href="https://github.com/daydaydream000">GitHub</a>
+    <a href="https://github.com/daydaydream000/daydaydream000.github.io">源码</a>
+    <a href="mailto:daydaydream000@users.noreply.github.com">邮件</a>
+  </nav>
+  <p class="footer-note">本站是纯静态站点，由 build.py 生成，托管于 GitHub Pages。</p>
+</footer>
+
+<a class="back-to-top" id="back-to-top" href="#" aria-label="回到顶部" title="回到顶部">
+  <svg class="i" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</a>
+
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="搜索文章">
+    <div class="search-head">
+      <svg class="i" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off"
+             spellcheck="false" aria-label="搜索关键词">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<script src="../assets/search-index.js" defer></script>
+<script src="../assets/app.js?v=ffe2833a95" defer></script>
+</body>
+</html>

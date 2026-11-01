@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="sky14" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#cfe6f7"/>
+      <stop offset="1" stop-color="#eef6fb"/>
+    </linearGradient>
+    <linearGradient id="grass14" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#9edb6c"/>
+      <stop offset="1" stop-color="#5fa841"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#sky14)"/>
+  <path d="M0,300 L1200,300 L1200,400 L0,400 Z" fill="url(#grass14)" opacity="0.45"/>
+  <path d="M0,300 L210,206 L430,264 L650,198 L870,262 L1050,204 L1200,270 L1200,300 Z" fill="#7bb661" opacity="0.32"/>
+
+  <text x="600" y="44" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="23" font-weight="700" fill="#1a3d28">ARPG 学习日志 Day 14：背包、物品数据与一块还没通电的商店</text>
+  <text x="600" y="70" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">ItemSo 只描述 · InventoryManager 只分派 · UseItem 只生效</text>
+
+  <!-- 左：物品数据 -->
+  <g transform="translate(40, 96)">
+    <text x="0" y="12" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#5a2a20">① ItemSo（4 份资产）</text>
+    <rect x="0" y="26" width="300" height="150" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <rect x="14" y="40" width="128" height="28" rx="3" fill="#fff8e8" stroke="#b48a2a"/>
+    <text x="24" y="59" font-family="ui-monospace, monospace" font-size="10" fill="#8a5a20">Pumpkin　speed +5</text>
+    <rect x="152" y="40" width="134" height="28" rx="3" fill="#fff8e8" stroke="#b48a2a"/>
+    <text x="162" y="59" font-family="ui-monospace, monospace" font-size="10" fill="#8a5a20">Gold　isGold = 1</text>
+    <rect x="14" y="74" width="128" height="28" rx="3" fill="#f7f7f7" stroke="#b0b0b0" stroke-dasharray="3 2"/>
+    <text x="24" y="93" font-family="ui-monospace, monospace" font-size="10" fill="#6a6a6a">Steak　全 0</text>
+    <rect x="152" y="74" width="134" height="28" rx="3" fill="#f7f7f7" stroke="#b0b0b0" stroke-dasharray="3 2"/>
+    <text x="162" y="93" font-family="ui-monospace, monospace" font-size="10" fill="#6a6a6a">Mushroom　全 0</text>
+
+    <text x="14" y="124" font-family="ui-monospace, monospace" font-size="9.5" fill="#3a4a3a">itemName · desc · icon · isGold</text>
+    <text x="14" y="140" font-family="ui-monospace, monospace" font-size="9.5" fill="#3a4a3a">stackSize 3 · duration</text>
+    <text x="14" y="156" font-family="ui-monospace, monospace" font-size="9.5" fill="#3a4a3a">currentHealth · maxHealth · speed · damage</text>
+    <text x="14" y="172" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a2a20">没有一行方法：数据与行为分开</text>
+  </g>
+
+  <!-- 中：背包 -->
+  <g transform="translate(364, 96)">
+    <text x="210" y="12" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#1a5a30">② 背包：3 个槽 + 金币计数</text>
+    <rect x="0" y="26" width="420" height="150" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <rect x="0" y="26" width="420" height="150" fill="#8ed46a" opacity="0.08"/>
+
+    <rect x="18" y="44" width="86" height="86" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.35"/>
+    <rect x="44" y="66" width="34" height="24" rx="2" fill="#e8a33d" stroke="#8a5a20"/>
+    <text x="88" y="124" text-anchor="end" font-family="ui-monospace, monospace" font-size="10" font-weight="700" fill="#1a3d28">3</text>
+
+    <rect x="116" y="44" width="86" height="86" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.35"/>
+    <rect x="142" y="66" width="34" height="24" rx="2" fill="#b8b0a0" stroke="#6a5b3a"/>
+    <text x="186" y="124" text-anchor="end" font-family="ui-monospace, monospace" font-size="10" font-weight="700" fill="#1a3d28">1</text>
+
+    <rect x="214" y="44" width="86" height="86" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.35" stroke-dasharray="4 3"/>
+    <text x="257" y="96" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a8a8a">空槽</text>
+
+    <rect x="316" y="44" width="88" height="44" rx="3" fill="#fff8e8" stroke="#b48a2a"/>
+    <text x="326" y="62" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a5a20">Gold</text>
+    <text x="326" y="80" font-family="ui-monospace, monospace" font-size="13" font-weight="700" fill="#8a5a20">120</text>
+
+    <text x="18" y="150" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a5a30">左键用 · 右键丢 · 满血不让吃回血</text>
+    <text x="18" y="166" font-family="ui-monospace, monospace" font-size="9.5" fill="#8a2a20">空槽分支：slot.quantity = quantity（绕过上限）</text>
+  </g>
+
+  <!-- 右：商店 -->
+  <g transform="translate(812, 96)">
+    <text x="170" y="12" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#5a2a20">③ 商店：8 个格子，全是占位</text>
+    <rect x="0" y="26" width="340" height="150" rx="4" fill="#ffffff" stroke="#b48a2a"/>
+    <g>
+      <rect x="14" y="40" width="72" height="48" rx="3" fill="#f7f7f7" stroke="#b0b0b0" stroke-dasharray="3 2"/>
+      <rect x="94" y="40" width="72" height="48" rx="3" fill="#f7f7f7" stroke="#b0b0b0" stroke-dasharray="3 2"/>
+      <rect x="174" y="40" width="72" height="48" rx="3" fill="#f7f7f7" stroke="#b0b0b0" stroke-dasharray="3 2"/>
+      <rect x="254" y="40" width="72" height="48" rx="3" fill="#f7f7f7" stroke="#b0b0b0" stroke-dasharray="3 2"/>
+      <rect x="14" y="94" width="72" height="48" rx="3" fill="#f7f7f7" stroke="#b0b0b0" stroke-dasharray="3 2"/>
+      <rect x="94" y="94" width="72" height="48" rx="3" fill="#f7f7f7" stroke="#b0b0b0" stroke-dasharray="3 2"/>
+      <rect x="174" y="94" width="72" height="48" rx="3" fill="#f7f7f7" stroke="#b0b0b0" stroke-dasharray="3 2"/>
+      <rect x="254" y="94" width="72" height="48" rx="3" fill="#f7f7f7" stroke="#b0b0b0" stroke-dasharray="3 2"/>
+    </g>
+    <text x="50" y="62" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="7.5" fill="#8a8a8a">Item Name</text>
+    <text x="130" y="62" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="7.5" fill="#8a8a8a">Item Name</text>
+    <text x="210" y="62" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="7.5" fill="#8a8a8a">Item Name</text>
+    <text x="290" y="62" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="7.5" fill="#8a8a8a">Item Name</text>
+    <text x="50" y="80" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#8a8a8a">99</text>
+    <text x="130" y="80" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#8a8a8a">99</text>
+    <text x="210" y="80" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#8a8a8a">99</text>
+    <text x="290" y="80" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8" fill="#8a8a8a">99</text>
+
+    <text x="14" y="162" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a2a20">α=1 · 挡射线 · 没有开关 → 一直显示，但点了没反应</text>
+  </g>
+
+  <!-- 底部 -->
+  <g transform="translate(0, 330)">
+    <rect x="60" y="0" width="1080" height="42" rx="4" fill="#1a3d28" opacity="0.06"/>
+    <text x="600" y="19" text-anchor="middle" font-family="ui-monospace, monospace" font-size="11" fill="#1a3d28">Loot 事件 → AddItem（金币 / 堆叠 / 空槽 / 溢出）→ 左键 UseItem → StatsManger.Update* → 面板</text>
+    <text x="600" y="35" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#3a4a3a" opacity="0.72">背包是真的接了数据；商店只是把格子摆好了</text>
+  </g>
+</svg>

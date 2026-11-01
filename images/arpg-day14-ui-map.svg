@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bg14u" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bg14u)"/>
+
+  <text x="600" y="32" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">三块 UI 的接线状态：一块通电，两块空转</text>
+  <text x="600" y="54" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">背包有脚本、有数据；商店只有预制体；提示框连脚本都没有，而且不挡鼠标</text>
+
+  <!-- 三列 -->
+  <!-- Inventory -->
+  <g transform="translate(36, 80)">
+    <rect x="0" y="0" width="360" height="200" rx="5" fill="#ffffff" stroke="#1a7a3a" stroke-opacity="0.55"/>
+    <text x="14" y="24" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#1a5a30">InventoryCanvas · sort −1</text>
+
+    <rect x="14" y="34" width="332" height="30" rx="3" fill="#e8f6ec" stroke="#1a7a3a"/>
+    <text x="26" y="54" font-family="ui-monospace, monospace" font-size="10" fill="#1a5a30">UseItem + InventoryManager（挂在根上）</text>
+
+    <rect x="14" y="72" width="150" height="42" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <text x="26" y="90" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">Gold · 300 × 300</text>
+    <text x="26" y="106" font-family="ui-monospace, monospace" font-size="9.5" fill="#3a4a3a">AmountText "00"</text>
+
+    <rect x="174" y="72" width="172" height="42" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <text x="186" y="90" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">Slots · 3 个格子</text>
+    <text x="186" y="106" font-family="ui-monospace, monospace" font-size="9.5" fill="#3a4a3a">Grid 200 × 200</text>
+
+    <text x="14" y="134" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#1a5a30">✓ 有数据、有交互、有事件订阅</text>
+    <text x="14" y="152" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">✗ 没有 CanvasGroup、没有开关 → 一直显示</text>
+    <text x="14" y="170" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">✗ gold 是 Manager 上的 int，换场景归零</text>
+    <text x="14" y="190" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#6a5b3a">参考 1920 × 1080 · 根物体上只有 Canvas + Scaler + Raycaster</text>
+  </g>
+
+  <!-- Shop -->
+  <g transform="translate(420, 80)">
+    <rect x="0" y="0" width="360" height="200" rx="5" fill="#ffffff" stroke="#b48a2a"/>
+    <text x="14" y="24" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#8a5a20">ShopCanvas · sort 0 · α 1 · 挡射线</text>
+
+    <rect x="14" y="34" width="332" height="30" rx="3" fill="#fff1f0" stroke="#c43131" stroke-opacity="0.5"/>
+    <text x="26" y="54" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">没有 ShopManager / 没有开关 / 没有价格数据</text>
+
+    <rect x="14" y="72" width="150" height="42" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <text x="26" y="90" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">TopPanel · 3 个按钮</text>
+    <text x="26" y="106" font-family="ui-monospace, monospace" font-size="9.5" fill="#3a4a3a">Grid 300 × 100 · "Items"</text>
+
+    <rect x="174" y="72" width="172" height="42" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <text x="186" y="90" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">ItemPanel · 8 个格子</text>
+    <text x="186" y="106" font-family="ui-monospace, monospace" font-size="9.5" fill="#3a4a3a">Grid 260 × 230 · 间距 10</text>
+
+    <text x="14" y="134" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#1a5a30">✓ 布局完整，8 个槽已经摆好</text>
+    <text x="14" y="152" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">✗ 每格 ItemName = 'Item Name'、Price = 99（prefab 占位）</text>
+    <text x="14" y="170" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">✗ 3 个按钮的 onClick 上没有监听</text>
+    <text x="14" y="190" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#6a5b3a">槽里没有 itemSo 字段：ShopSlot 没有脚本，只是拼好的图</text>
+  </g>
+
+  <!-- InfoPopup -->
+  <g transform="translate(804, 80)">
+    <rect x="0" y="0" width="360" height="200" rx="5" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <text x="14" y="24" font-family="ui-monospace, monospace" font-size="12" font-weight="700" fill="#1a3d28">InfoPopup · 400 × 350</text>
+
+    <rect x="14" y="34" width="332" height="30" rx="3" fill="#f2f2f2" stroke="#9a9a9a" stroke-dasharray="4 3"/>
+    <text x="26" y="54" font-family="ui-monospace, monospace" font-size="10" fill="#5a5a5a">CanvasGroup：α 1 · 不挡射线 · 不可点</text>
+
+    <rect x="14" y="72" width="150" height="42" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.22"/>
+    <text x="26" y="90" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">NameBacking → Name</text>
+    <text x="26" y="106" font-family="ui-monospace, monospace" font-size="9.5" fill="#6a5b3a">空</text>
+
+    <rect x="174" y="72" width="172" height="42" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.22"/>
+    <text x="186" y="90" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">Description → Text</text>
+    <text x="186" y="106" font-family="ui-monospace, monospace" font-size="9.5" fill="#6a5b3a">空</text>
+
+    <rect x="14" y="122" width="332" height="34" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.22"/>
+    <text x="26" y="143" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">Stats · 6 个 StatText（Grid 110 × 25，"Health +1"）</text>
+
+    <text x="14" y="176" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">✗ 不可点 + 不挡射线 = 鼠标直接穿过去点到后面的槽</text>
+    <text x="14" y="194" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#3a4a3a">要工作得先有「悬停/选中是谁」这个信息 —— 而 ShopSlot 没有脚本</text>
+  </g>
+
+  <!-- 底部：四行清单 -->
+  <g transform="translate(36, 302)">
+    <rect x="0" y="0" width="1128" height="74" rx="4" fill="#1e2a22"/>
+    <text x="16" y="22" font-family="ui-monospace, monospace" font-size="10.5" fill="#9fd8a8">// 商店要「能用」，还差四样东西（和背包的对照）</text>
+    <text x="16" y="42" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8f0e8">① 商品数据：ItemSo + price + stock　② ShopManager.Buy：校验 gold ≥ price　③ InfoPopup 填充：悬停时写 Name/Description/Stats</text>
+    <text x="16" y="60" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8f0e8">④ 开关：一个键 + CanvasGroup（照抄 ToggleSkillTree 的 alpha / blocksRaycasts 三件套）</text>
+  </g>
+</svg>
