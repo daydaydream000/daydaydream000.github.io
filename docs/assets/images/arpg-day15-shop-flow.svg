@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bg15f" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bg15f)"/>
+
+  <text x="600" y="32" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">买入与卖出：两条链路，同一份数据</text>
+  <text x="600" y="54" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">买走 AddItem、卖出走 SellItem；两边都要碰 gold 和 itemSlots —— 耦合点就在这里</text>
+
+  <!-- 左：买入 -->
+  <g transform="translate(36, 80)">
+    <text x="0" y="12" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#1a5a30">① 买入（玩家发起）</text>
+    <rect x="0" y="26" width="360" height="60" rx="4" fill="#e8f6ec" stroke="#1a7a3a"/>
+    <text x="14" y="46" font-family="ui-monospace, monospace" font-size="10.5" fill="#1a5a30">ShopSlot 按钮 → OnBuyBottonClicked()</text>
+    <text x="14" y="66" font-family="ui-monospace, monospace" font-size="10.5" fill="#1a5a30">shopManager.TryBuyItem(itemSo, price)</text>
+
+    <rect x="0" y="98" width="360" height="82" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="14" y="118" font-family="ui-monospace, monospace" font-size="10" fill="#1a3d28">itemSo != null</text>
+    <text x="14" y="136" font-family="ui-monospace, monospace" font-size="10" fill="#1a3d28">gold &gt;= price　✓ 有校验</text>
+    <text x="14" y="154" font-family="ui-monospace, monospace" font-size="10" fill="#1a3d28">HasSpaceForItem(itemSo)　✓ 有校验</text>
+    <text x="14" y="172" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a2a20">失败时：静默，没有变灰也没有提示</text>
+
+    <rect x="0" y="192" width="360" height="46" rx="4" fill="#1e2a22"/>
+    <text x="14" y="212" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8f0e8">gold -= price; goldText.text = ...;</text>
+    <text x="14" y="228" font-family="ui-monospace, monospace" font-size="10.5" fill="#9fd8a8">inventoryManager.AddItem(itemSo, 1)</text>
+  </g>
+
+  <!-- 中：共享数据 -->
+  <g transform="translate(430, 80)">
+    <text x="170" y="12" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#1a3d28">② 共享的两份数据</text>
+    <rect x="0" y="26" width="340" height="96" rx="4" fill="#fff8e8" stroke="#b48a2a"/>
+    <text x="14" y="48" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">InventoryManager.gold（int）</text>
+    <text x="14" y="68" font-family="ui-monospace, monospace" font-size="10" fill="#5a3a20">初始 10 · goldText 三处手写刷新</text>
+    <line x1="14" y1="78" x2="326" y2="78" stroke="#b48a2a" stroke-opacity="0.35"/>
+    <text x="14" y="98" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a5a20">InventoryManager.itemSlots[3]</text>
+    <text x="14" y="116" font-family="ui-monospace, monospace" font-size="10" fill="#5a3a20">ShopManager 直接 foreach 遍历它</text>
+
+    <rect x="0" y="134" width="340" height="70" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <text x="14" y="154" font-family="ui-monospace, monospace" font-size="10.5" fill="#1a3d28">shopItems（2 条）</text>
+    <text x="14" y="172" font-family="ui-monospace, monospace" font-size="10" fill="#3a4a3a">Mushroom 2 金 · Pumpkin 5 金</text>
+    <text x="14" y="190" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#6a5b3a">8 个槽填 2 个，其余 6 个 SetActive(false)</text>
+
+    <rect x="0" y="214" width="340" height="44" rx="4" fill="#f2f2f2" stroke="#9a9a9a" stroke-dasharray="4 3"/>
+    <text x="14" y="234" font-family="ui-monospace, monospace" font-size="10" fill="#5a5a5a">价格存两份：shopItems[i].price ＋ slot.price</text>
+    <text x="14" y="250" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#5a5a5a">只有重新 Populate 才会同步</text>
+  </g>
+
+  <!-- 右：卖出 -->
+  <g transform="translate(806, 80)">
+    <text x="0" y="12" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#5a2a20">③ 卖出（背包左键触发）</text>
+    <rect x="0" y="26" width="362" height="60" rx="4" fill="#fff1f0" stroke="#c43131" stroke-opacity="0.5"/>
+    <text x="14" y="46" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a2a20">InventorySlot 左键 → SellItem(itemSo)</text>
+    <text x="14" y="66" font-family="ui-monospace, monospace" font-size="10.5" fill="#8a2a20">quantity--　（不管卖没卖掉）</text>
+
+    <rect x="0" y="98" width="362" height="82" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="14" y="118" font-family="ui-monospace, monospace" font-size="10" fill="#1a3d28">foreach (shopSlots) 找同款</text>
+    <text x="14" y="136" font-family="ui-monospace, monospace" font-size="10" fill="#1a3d28">找到 → gold += slot.price（第一个匹配）</text>
+    <text x="14" y="154" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">找不到 → 直接结束，不给钱</text>
+    <text x="14" y="172" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a2a20">✗ 没有返回值，调用方无从判断</text>
+
+    <rect x="0" y="192" width="362" height="46" rx="4" fill="#1e2a22"/>
+    <text x="14" y="212" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8f0e8">gold += slot.price; goldText.text = ...;</text>
+    <text x="14" y="228" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8a0a0">卖价 = 买价（同一份 price）</text>
+  </g>
+
+  <!-- 底部 -->
+  <g transform="translate(36, 306)">
+    <rect x="0" y="0" width="556" height="74" rx="4" fill="#fff1f0" stroke="#c43131" stroke-opacity="0.45"/>
+    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#8a2a20">坑：卖不掉也照样扣数量 → 物品蒸发</text>
+    <text x="14" y="44" font-family="ui-monospace, monospace" font-size="10" fill="#5a2a20">背包里的 Steak（商店不卖）→ 左键</text>
+    <text x="14" y="62" font-family="ui-monospace, monospace" font-size="10" fill="#5a2a20">→ 没金币 → 但 quantity-- 已经执行 → 少一个</text>
+
+    <rect x="576" y="0" width="592" height="74" rx="4" fill="#fff8e8" stroke="#b48a2a"/>
+    <text x="590" y="22" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#8a5a20">坑：卖价 = 买价 + 第一个匹配</text>
+    <text x="590" y="44" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a3a20">现在两件商品不同，所以只是「无损交易」，不构成刷钱</text>
+    <text x="590" y="62" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a3a20">一旦同一物品出现两个价格，低价买高价卖的口子就自动打开</text>
+  </g>
+</svg>

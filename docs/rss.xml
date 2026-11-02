@@ -26,6 +26,115 @@ git commit -m "post: 新文章"
 git push</code></pre></div><p>目录分工也很直白：</p><div class="table-wrap"><table><thead><tr><th>路径</th><th>用途</th></tr></thead><tbody><tr><td><code>posts/</code></td><td>文章源文件（Markdown）</td></tr><tr><td><code>pages/</code></td><td>独立页面，比如「关于」</td></tr><tr><td><code>images/</code></td><td>文章中引用的图片，构建时自动复制</td></tr><tr><td><code>assets/</code></td><td>手写的 CSS 与 JavaScript</td></tr><tr><td><code>templates/</code></td><td>页面模板</td></tr><tr><td><code>docs/</code></td><td>生成结果，也是 Pages 的发布目录</td></tr></tbody></table></div><div class="alert alert-note"><p class="alert-title"><span class="alert-icon">📘</span>提示</p><p>生成器只用 Python 标准库，没有第三方依赖；换台机器 clone 下来就能跑。</p></div><h2 id="写在最后">写在最后</h2><blockquote><p>种一棵树最好的时间是十年前，其次是现在。</p></blockquote><p>开始记录吧，欢迎常来坐坐。</p>]]></content:encoded>
     </item>
     <item>
+      <title>ARPG 学习日志 Day 15：商店通电——买、卖，和那间关不掉的店</title>
+      <link>https://daydaydream000.github.io/post/arpg-day15-shop.html</link>
+      <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day15-shop.html</guid>
+      <pubDate>Mon, 02 Nov 2026 23:59:00 +0000</pubDate>
+      <author>daydaydream000@users.noreply.github.com (DayDayDream)</author>
+      <category>Unity</category><category>ARPG</category><category>游戏开发</category><category>商店系统</category><category>事件</category><category>UI</category><category>背包</category>
+      <description>把 Day 14 摆好的 8 个 ShopSlot 接上数据：ShopItems 表填了 2 件（Mushroom 2 金 / Pumpkin 5 金），其余 6 格隐藏；TryBuyItem 先查钱再查空间、扣钱后走 AddItem；卖东西反向走 ShopManager.SellItem。记这一天的坑：店铺状态只在 Start 广播一次 true、没有关店路径，于是背包左键被永久征用成「卖」；商店不认识的物品会被卖掉却拿不到钱；卖价＝买价 + 首个匹配留下套利口子；以及 goldText 在三个地方被手写。</description>
+      <content:encoded><![CDATA[<h2 id="一句话说清这天的内容">一句话说清这天的内容</h2><p>把 Day 14 摆好的 8 个空格子接上真数据：<code>ShopItems</code> 表里填 2 件（<code>Mushroom</code> 2 金、<code>Pumpkin</code> 5 金），<code>PopulateShopItems()</code> 把前 2 格填满、剩下 6 格 <code>SetActive(false)</code>；点格子上的按钮 → <code>TryBuyItem</code> → <strong>查钱、查空间、扣钱、<code>AddItem</code></strong>。反向就是卖：背包左键 → <code>activeShop.SellItem(itemSo)</code>。</p><p>买和卖都能跑了。但这间店<strong>没有关门的方法</strong>，代价落在下一节。</p><hr><h2 id="脚本关系">脚本关系</h2><div class="table-wrap"><table><thead><tr><th>脚本</th><th>角色</th><th style="text-align:right">行数</th><th>关键内容</th></tr></thead><tbody><tr><td><code>ShopManager</code></td><td>新</td><td style="text-align:right">75</td><td><code>ShopItems</code> 表、填充槽位、<code>TryBuyItem</code>、<code>SellItem</code>、<code>OnShopStateChanged</code></td></tr><tr><td><code>ShopSlot</code></td><td>新</td><td style="text-align:right">26</td><td>一个商品格：<code>Initialize(itemSo, price)</code>、购买按钮回调</td></tr><tr><td><code>InventorySlot</code></td><td>改</td><td style="text-align:right">73</td><td>加 <code>activeShop</code> 上下文：<strong>有店时左键＝卖，没店时左键＝用</strong></td></tr><tr><td><code>InventoryManager</code></td><td>改</td><td style="text-align:right">91</td><td>字段 <code>inventorySlots</code> 改名 <code>itemSlots</code>；其余逻辑不变</td></tr><tr><td><code>ShopSlot.prefab</code></td><td>改</td><td style="text-align:right">—</td><td>加了一个 <code>Button</code>，<code>onClick → ShopSlot.OnBuyBottonClicked</code></td></tr></tbody></table></div><p><strong>调用链</strong>（买）：</p><p><code>点击 ShopSlot 的按钮 → OnBuyBottonClicked() → shopManager.TryBuyItem(itemSo, price) → 钱够 &amp;&amp; 有空间 → gold -= price + 刷文本 → inventoryManager.AddItem(itemSo, 1)</code></p><p><strong>调用链</strong>（卖）：</p><p><code>背包格左键 → activeShop != null → activeShop.SellItem(itemSo) → 在 shopSlots 里找同款 → gold += 那格的价格</code></p><p><strong>调用链</strong>（店铺状态）：</p><p><code>ShopManager.Start() → PopulateShopItems() → OnShopStateChanged?.Invoke(this, true) → 每个 InventorySlot 记下 activeShop</code></p><hr><h2 id="商品数据一个-serializable-类而不是-scriptableobject">商品数据：一个 <code>[Serializable]</code> 类，而不是 ScriptableObject</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">[System.Serializable]
+public class ShopItems
+{
+    public ItemSo itemSo;
+    public int price;
+}</code></pre></div><p><code>ShopManager</code> 上挂的是一个 <code>List&lt;ShopItems&gt;</code>，场景里实际填了两条：</p><div class="table-wrap"><table><thead><tr><th>商品</th><th><code>itemSo</code></th><th style="text-align:right"><code>price</code></th></tr></thead><tbody><tr><td><code>Mushroom</code></td><td>蘑菇资产</td><td style="text-align:right">2</td></tr><tr><td><code>Pumpkin</code></td><td>南瓜资产</td><td style="text-align:right">5</td></tr></tbody></table></div><p>玩家初始 <code>gold = 10</code>——正好够买 2 个蘑菇 + 1 个南瓜，或者 5 个蘑菇。</p><p><strong>为什么这里不用 <code>ScriptableObject</code>？</strong> Day 8 的技能、Day 14 的物品都用 SO，因为它们要「被引用」：技能树节点要指向一份技能，掉落物要指向一份物品。而「这家店卖什么、卖多少」是<strong>这个商店实例的配置</strong>，不是一份可以在别处复用的资产。挂在 <code>ShopManager</code> 上、跟着场景走，是最省的结构。</p><p>真要做「连锁商店」「限时折扣」时，才会把「商品表」独立成 SO 或配置表；现在这样写，改价格只能进场景改 Inspector。</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void PopulateShopItems()
+{
+    for (int i = 0; i &lt; shopItems.Count &amp;&amp; i &lt; shopSlots.Length; i++)
+    {
+        ShopItems shopItem = shopItems[i];
+        shopSlots[i].Initialize(shopItem.itemSo, shopItem.price);
+        shopSlots[i].gameObject.SetActive(true);
+    }
+    for (int i = shopItems.Count; i &lt; shopSlots.Length; i++)
+    {
+        shopSlots[i].gameObject.SetActive(false);
+    }
+}</code></pre></div><p>两个循环：<strong>填有数据的</strong>，<strong>藏没数据的</strong>。8 个槽、2 条数据 → 屏幕上只会出现 2 格，剩下 6 格是模板位。</p><p>这个写法比「手动删掉多余 6 个槽」好：以后商品加到 5 件，只改 <code>shopItems</code>，不用回场景摆 UI。</p><hr><h2 id="买入三个条件缺一不可">买入：三个条件，缺一不可</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void TryBuyItem(ItemSo itemSo, int price)
+{
+    if (itemSo != null &amp;&amp; inventoryManager.gold &gt;= price)
+    {
+        if (HasSpaceForItem(itemSo))
+        {
+            inventoryManager.gold -= price;
+            inventoryManager.goldText.text = inventoryManager.gold.ToString();
+            inventoryManager.AddItem(itemSo, 1);
+        }
+    }
+}
+
+private bool HasSpaceForItem(ItemSo itemSo)
+{
+    foreach (var slot in inventoryManager.itemSlots)
+    {
+        if (slot.itemSo == itemSo &amp;&amp; slot.quantity &lt; itemSo.stackSize) return true;
+        else if (slot.itemSo == null) return true;
+    }
+    return false;
+}</code></pre></div><h3 id="设计-1先查空间再扣钱">设计 1：先查空间，再扣钱</h3><p>顺序很关键：<strong>扣钱在前、<code>AddItem</code> 在后，但「有没有空间」必须在扣钱之前判断</strong>。反过来的话，钱花出去了、物品因为背包满而被 <code>DropLoot</code> 丢回地上——玩家会看到「钱没了，东西掉在脚边」。这不算崩，但体验上是「买了却没买到」。</p><h3 id="设计-2hasspaceforitem-和-additem-是同一个判断的两份实现">设计 2：<code>HasSpaceForItem</code> 和 <code>AddItem</code> 是同一个判断的两份实现</h3><p><code>HasSpaceForItem</code> 里的两个分支（同款未满 / 有空槽）和 <code>InventoryManager.AddItem</code> 里的前两段<strong>是同一套规则写了两遍</strong>。</p><p>两处一起改才不会漂移；改一处就会出现「这里说有空间、那里塞不进去」。更稳的形状是把判断收进 <code>InventoryManager</code>：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public bool CanAccept(ItemSo item, int quantity) { ... }
+public bool AddItem(ItemSo item, int quantity) { if (!CanAccept(...)) return false; ... }</code></pre></div><p>现在 <code>ShopManager</code> 直接遍历别人的 <code>public</code> 数组，耦合点就在这句 <code>inventoryManager.itemSlots</code> 上（见坑 6）。</p><h3 id="设计-3买进来的东西走的是「拾取」的同一个入口">设计 3：买进来的东西走的是「拾取」的同一个入口</h3><p><code>AddItem(itemSo, 1)</code> —— 和地上捡起来走的是同一个方法。所以买来的东西会自动堆叠、自动找空槽、背包满时自动掉地上。</p><p>这是「一个入口」的好处：<strong>商店不需要知道背包怎么组织</strong>。代价是坑 4 那个「买 1 个没事、买 5 个就出事」的隐患（Day 14 的空槽分支）。</p><hr><h2 id="卖出反向的路径两个问题">卖出：反向的路径，两个问题</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void SellItem(ItemSo itemSo)
+{
+    if (itemSo == null) return;
+    foreach (var slot in shopSlots)
+    {
+        if (slot.itemSo == itemSo)
+        {
+            inventoryManager.gold += slot.price;
+            inventoryManager.goldText.text = inventoryManager.gold.ToString();
+            return;
+        }
+    }
+}</code></pre></div><h3 id="设计卖价直接借用商品价">设计：卖价直接借用商品价</h3><p>店铺是「以同样的价格回收」——买 2 金，卖也是 2 金。省掉「收购价」这一层数据，交易没有摩擦。</p><p>真正的二手交易通常要 <code>买入价 &gt; 卖出价</code>，否则玩家可以「买了立刻卖」来回避选择成本。现在没有摩擦，也没关系——因为<strong>买和卖用的是同一份 <code>price</code></strong>，一进一出刚好抵消。</p><p>但「刚好抵消」只在「同款同价」时成立。见坑 3。</p><h3 id="问题卖不出去的东西也会被扣掉">问题：卖不出去的东西，也会被扣掉</h3><p><code>SellItem</code> 里 <code>foreach</code> 找不到同款时<strong>直接结束，什么都不返回</strong>；而调用它的地方已经把数量减了：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">if (activeShop != null)
+{
+    activeShop.SellItem(itemSo);
+    quantity--;          // 不管 SellItem 有没有成功
+    UpdateUI();
+}</code></pre></div><p>背包里的 <code>Steak</code> 商店不卖 → 左键 → <code>SellItem</code> 找不到、不给钱 → <strong><code>quantity--</code> 照样执行 → 物品凭空少一个</strong>。</p><p><code>SellItem</code> 应该返回 <code>bool</code>，调用方据此决定要不要减数量：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">if (!activeShop.TrySell(itemSo)) return;
+quantity--;</code></pre></div><hr><h2 id="坑-1最严重店铺状态只广播一次-true于是背包左键永远是「卖」">坑 1（最严重）：店铺状态只广播一次 <code>true</code>，于是背包左键永远是「卖」</h2><p><code>ShopManager</code> 定义了一个状态事件：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public static event Action&lt;ShopManager, bool&gt; OnShopStateChanged;</code></pre></div><p>但全项目只有一处 <code>Invoke</code>，在 <code>Start()</code> 里：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void Start()
+{
+    PopulateShopItems();
+    OnShopStateChanged?.Invoke(this, true);
+}</code></pre></div><p><strong>没有任何地方发过 <code>false</code>。</strong> 场景里也没有 <code>ToggleShop</code> 的输入轴（只有 <code>ToggleStats</code> / <code>ToggleSkillTree</code>），<code>ShopCanvas</code> 的 <code>CanvasGroup</code> 是 <code>α 1 / 挡射线 1</code>——它从游戏一开始就是开着的。</p><p>于是 <code>InventorySlot</code> 里的这段变成永真：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void HandleShopStateChanged(ShopManager shopManager, bool isOpen)
+{
+    activeShop = isOpen ? shopManager : null;   // 只会被设成 shopManager
+}</code></pre></div><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">if (eventData.button == PointerEventData.InputButton.Left)
+{
+    if (activeShop != null)      // ← 永远成立
+    {
+        activeShop.SellItem(itemSo);   // ← 左键永远在卖
+        quantity--;
+    }
+    else
+    {
+        ... 使用道具的分支永远走不到 ...
+    }
+}</code></pre></div><p>后果：<strong>蘑菇吃不了、南瓜吃不了、回血也用不了</strong>——所有「左键使用」的功能在这个版本里全部失效，左键只剩下「卖」。</p><p>这是今天最值得记的一条，因为它不是「忘了写」，而是<strong>写了一半的状态机</strong>：<code>OnShopStateChanged(ShopManager, bool)</code> 这个签名明确为「开/关」两种状态留了位，<code>InventorySlot</code> 也老老实实按 <code>isOpen ? shop : null</code> 写，唯独「关」的那一次广播没人发。</p><div class="table-wrap"><table><thead><tr><th>缺的东西</th><th>现在的样子</th></tr></thead><tbody><tr><td>开关输入</td><td>无（<code>InputManager</code> 里只有 Stats / SkillTree）</td></tr><tr><td><code>Invoke(this, false)</code></td><td>不存在</td></tr><tr><td>面板可见性</td><td>恒 <code>α 1</code>、恒挡射线</td></tr><tr><td>「离店」触发</td><td>无（没有触发器、没有对话、没有 NPC）</td></tr></tbody></table></div><p>修法不复杂：给一个 <code>ToggleShop</code> 轴，开时 <code>alpha=1 + blocksRaycasts=true + Invoke(this, true)</code>，关时反过来 <code>Invoke(this, false)</code>。<strong>关键是那一次 <code>false</code> 必须发</strong>，否则背包的左键永远被商店占着。</p><figure class="post-figure"><img src="https://daydaydream000.github.io/assets/images/arpg-day15-shop-state.svg" alt="店铺状态机：只有一条 open=true 的边，没有关回去的路" loading="lazy" decoding="async"><figcaption>状态机里只有「开」这条边；于是 activeShop 永不为 null，左键的路由被锁死</figcaption></figure><hr><h2 id="坑-2goldtext-在三个地方被手写">坑 2：<code>goldText</code> 在三个地方被手写</h2><p><code>gold</code> 的每一次变化都跟着一句手写刷新：</p><div class="table-wrap"><table><thead><tr><th>位置</th><th>代码</th></tr></thead><tbody><tr><td><code>InventoryManager.AddItem</code></td><td><code>gold += quantity; goldText.text = gold.ToString();</code></td></tr><tr><td><code>ShopManager.TryBuyItem</code></td><td><code>inventoryManager.gold -= price; inventoryManager.goldText.text = ...</code></td></tr><tr><td><code>ShopManager.SellItem</code></td><td><code>inventoryManager.gold += slot.price; inventoryManager.goldText.text = ...</code></td></tr></tbody></table></div><p>三处任何一处漏写，HUD 就和真实值不同步——而且这种不同步很隐蔽：<strong>金币在逻辑上是对的，只有屏幕上是错的</strong>。</p><p>正确形状是给 <code>InventoryManager</code> 一个唯一的写入口：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void AddGold(int amount)
+{
+    gold += amount;
+    goldText.text = gold.ToString();
+}</code></pre></div><p>这样 <code>ShopManager</code> 就只需要 <code>inventoryManager.AddGold(-price)</code>，不用碰别人的 <code>goldText</code>。</p><p>顺带一提：<code>ShopManager</code> 为了改钱，直接访问了 <code>inventoryManager.gold</code> 和 <code>inventoryManager.goldText</code> <strong>两个 public 字段</strong>。这已经不只是「读」，是「跨对象改显示层」。</p><h2 id="坑-3卖价买价且「第一个匹配」留下套利口子">坑 3：卖价＝买价，且「第一个匹配」留下套利口子</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">foreach (var slot in shopSlots)
+{
+    if (slot.itemSo == itemSo)
+    {
+        inventoryManager.gold += slot.price;   // 用第一格的价格
+        return;
+    }
+}</code></pre></div><p>如果同一件商品在表里出现两次、价格不同（比如限时折扣 + 原价），<code>SellItem</code> 永远用<strong>数组里第一个</strong>的价格结算：低价买入、高价卖出 → 无风险套利。</p><p>现在场景里两件商品不同，所以不构成刷钱；但只要价格表出现「同物品两价」，这个口子就自动打开。稳妥的做法是让「收购价」独立于「售价」：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">[System.Serializable]
+public class ShopItems
+{
+    public ItemSo itemSo;
+    public int buyPrice;    // 玩家买
+    public int sellPrice;   // 玩家卖（通常更低）
+}</code></pre></div><h2 id="坑-4买-1-个没事买-5-个就会踩-day-14-的空槽-bug">坑 4：买 1 个没事，买 5 个就会踩 Day 14 的空槽 bug</h2><p><code>TryBuyItem</code> 调的是 <code>AddItem(itemSo, 1)</code>——<strong>数量永远是 1</strong>。所以 Day 14 那个「空槽分支把 <code>quantity</code> 直接写进槽里、绕过 <code>stackSize</code>」的 bug，在这里不会发作。</p><p>一旦以后做「买 ×5」或者「一次买一组」，就会立刻变成「5 个蘑菇挤在一个上限 3 的格子里」。<strong>同一个 bug 会不会发作，取决于调用方传的数量</strong>——这类「潜伏 bug」比每次都炸的更难查。</p><h2 id="坑-5价格存了两份">坑 5：价格存了两份</h2><p><code>ShopItems.price</code> 和 <code>ShopSlot.price</code> 是两个字段，<code>Initialize</code> 时复制一次：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void Initialize(ItemSo newItemSo, int price)
+{
+    itemSo = newItemSo;
+    itemImage.sprite = itemSo.icon;
+    itemNameText.text = itemSo.itemName;
+    this.price = price;                 // ← 复制进槽
+    priceText.text = price.ToString();
+}</code></pre></div><p>于是「南瓜多少钱」有两个答案：<code>shopItems[1].price</code> 和 <code>shopSlots[1].price</code>。改配置文件改的是前者，运行时卖东西读的是后者。<strong>只有重新 <code>PopulateShopItems()</code> 才会同步</strong>。</p><p><code>ShopSlot.price</code> 其实是多余的——按钮回调里完全可以传表里的值，或者让槽只持有 <code>itemSo</code>，价格通过 <code>shopManager.GetPrice(itemSo)</code> 查。</p><h2 id="坑-6public-数组被跨脚本遍历改名即破坏">坑 6：<code>public</code> 数组被跨脚本遍历，改名即破坏</h2><p>Day 14 那个字段叫 <code>inventorySlots</code>，今天改成了 <code>itemSlots</code>：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public InventorySlot[] itemSlots;</code></pre></div><p><code>ShopManager.HasSpaceForItem</code> 直接遍历它：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">foreach (var slot in inventoryManager.itemSlots)</code></pre></div><p>这行代码把两个系统绑在了「一个 public 字段的名字」上。改名的时候必须全局搜一遍，漏一处就是编译错误——这次算幸运，因为名字引用的地方只有两处。</p><p>如果 <code>InventoryManager</code> 只暴露 <code>CanAccept</code> / <code>AddItem</code> / <code>AddGold</code> 三个方法，<code>ShopManager</code> 就再也不用知道「背包用什么容器装东西」。</p><h2 id="坑-7hasspaceforitem-为假时点击没有任何反馈">坑 7：<code>HasSpaceForItem</code> 为假时，点击没有任何反馈</h2><p>背包 3 格全满、且都是别的物品 → <code>TryBuyItem</code> 直接结束。按钮照样能被点、格子照样高亮、<strong>没有「背包已满」的提示，也没有变灰</strong>。</p><p>玩家会以为「这个按钮坏了」。这在没有音效和飘字的版本里尤其明显——所有失败都是静默的。</p><h2 id="坑-8隐藏的槽还在被遍历">坑 8：隐藏的槽还在被遍历</h2><p><code>PopulateShopItems</code> 把多余的 6 格 <code>SetActive(false)</code>，但 <code>shopSlots</code> 数组仍是 8 个，<code>SellItem</code> 依旧遍历全部 8 个。</p><p>目前没影响，因为隐藏格子的 <code>itemSo</code> 是空的。但「隐藏」和「清空」是两件事：如果哪天把某个隐藏槽的 <code>itemSo</code> 填上（比如先隐藏、后上架），<code>SellItem</code> 就会认一个玩家看不见的价格。</p><h2 id="坑-915001000-的面板在-19201080-里被裁">坑 9：1500×1000 的面板，在 1920×1080 里被裁</h2><p><code>ShopPanel</code>：中心锚点、<code>SizeDelta 1500×1000</code>、<code>AnchoredPosition (294, −103)</code>。</p><p>算一下边界：横向 <code>960 + 294 ± 750</code> → <code>504 … 2004</code>，<strong>右侧超出 84</strong>；纵向 <code>540 − 103 ± 500</code> → <code>−63 … 937</code>，<strong>底部超出 63</strong>。</p><p>也就是说面板的右边缘和底边缘在参考分辨率下是看不到的。今天没暴露，是因为 <code>ItemPanel</code> 只放 2 个商品、内容都在中间；商品一多、格子往下排，就会开始被裁。</p><figure class="post-figure"><img src="https://daydaydream000.github.io/assets/images/arpg-day15-shop-flow.svg" alt="买入与卖出两条链路，中间是同一份背包数据" loading="lazy" decoding="async"><figcaption>买走 AddItem、卖出走 SellItem；两条路都要碰 gold 和 itemSlots，所以耦合点也在这里</figcaption></figure><hr><h2 id="整体设计思路">整体设计思路</h2><h3 id="1-店铺状态为什么要用事件而不是让背包槽认识商店">1. 店铺状态为什么要用事件，而不是让背包槽认识商店</h3><p><code>InventorySlot</code> 是 24 个小格子之一（3 个背包格 + 未来更多），让它持有 <code>ShopManager</code> 引用意味着每格都要拖一根线。用静态事件广播「店开了/店关了」，槽只需要记住「当前有没有店」：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private ShopManager activeShop;</code></pre></div><p>这个字段的语义很干净：<strong>左键的默认行为是「使用」，只有在店里才变成「卖」</strong>。这是「上下文相关的输入」，比给背包加一个 <code>isSelling</code> 开关更不容易错。</p><p>代价就是坑 1：<strong>上下文的生命周期由广播方决定</strong>。广播方不发 <code>false</code>，上下文就永远存在。</p><h3 id="2-交易的两个方向本质是同一个操作">2. 交易的两个方向，本质是同一个操作</h3><div class="table-wrap"><table><thead><tr><th></th><th>买</th><th>卖</th></tr></thead><tbody><tr><td>谁发起</td><td><code>ShopSlot</code> 的按钮</td><td><code>InventorySlot</code> 的左键</td></tr><tr><td>改钱</td><td><code>gold -= price</code></td><td><code>gold += price</code></td></tr><tr><td>改背包</td><td><code>AddItem(item, 1)</code></td><td><code>quantity--</code></td></tr><tr><td>校验</td><td>钱够 + 有空间</td><td>商店收不收</td></tr></tbody></table></div><p>两边都有「校验没做全」的问题：买的时候没反馈，卖的时候没校验。<strong>交易是双向的，校验也得双向</strong>。</p><h3 id="3-商店还差什么才算「能用」">3. 商店还差什么才算「能用」</h3><div class="table-wrap"><table><thead><tr><th>需要</th><th>现在</th></tr></thead><tbody><tr><td>开关</td><td>✗（恒开，且把左键吃掉了）</td></tr><tr><td>价格策略</td><td>⚠ 买卖同价</td></tr><tr><td>失败反馈</td><td>✗（没空间、没钱都是静默）</td></tr><tr><td>商品详情</td><td>✗（<code>InfoPopup</code> 仍是空壳）</td></tr><tr><td>金币来源</td><td>⚠ <code>gold</code> 初始 10，掉落金币要等掉落表</td></tr><tr><td>存档</td><td>✗</td></tr></tbody></table></div><p>六项里前两项是「结构」，后四项是「内容与反馈」。今天补的是<strong>逻辑</strong>，没补<strong>体验</strong>。</p><hr><h2 id="明天要补的洞">明天要补的洞</h2><ol><li><strong>补上 <code>Invoke(this, false)</code></strong>：加 <code>ToggleShop</code> 输入 + 面板开关，让背包左键恢复「使用」。</li><li><strong><code>SellItem</code> 返回 <code>bool</code></strong>：卖不掉时不要扣数量（现在会蒸发物品）。</li><li><strong>买/卖价格分离</strong>：<code>buyPrice</code> / <code>sellPrice</code>，堵住「首个匹配」的套利。</li><li><strong><code>gold</code> 唯一写入口</strong>：<code>AddGold(int)</code>，三处手写刷新收成一处。</li><li><strong>失败反馈</strong>：没钱 / 没空间时按钮变灰或弹出提示。</li><li><strong><code>CanAccept</code> 收进 <code>InventoryManager</code></strong>：<code>ShopManager</code> 不再遍历别人的 public 数组。</li><li><strong><code>ShopSlot.price</code> 去重</strong>：价格只存在 <code>ShopItems</code> 里，槽只负责显示。</li><li><strong><code>ShopPanel</code> 尺寸对齐参考分辨率</strong>：1500×1000 在 1920×1080 里右侧裁 84、底部裁 63。</li><li><strong>买多件的入口</strong>：一旦有「×N」，Day 14 的空槽 bug 会立刻发作。</li></ol><hr><h2 id="一句话总结">一句话总结</h2><p>今天把「摆好的 8 个格子」接上了真数据：<code>ShopItems</code> 提供商品与价格、<code>ShopSlot</code> 负责显示与回调、<code>ShopManager</code> 用「钱够 + 有空间」两个条件把关，卖东西反向走同一条数据。最值得记住的不是买卖本身，而是<strong>店铺状态只广播了 <code>true</code></strong>——一个为「开关」设计的双参数事件，只写了「开」的那一半，于是背包的左键被永久征用；这类「写了一半的状态机」不会报错，只会让另一条分支静默地永远走不到。</p>]]></content:encoded>
+    </item>
+    <item>
       <title>ARPG 学习日志 Day 14：背包、物品数据与一块还没通电的商店</title>
       <link>https://daydaydream000.github.io/post/arpg-day14-inventory-shop.html</link>
       <guid isPermaLink="true">https://daydaydream000.github.io/post/arpg-day14-inventory-shop.html</guid>

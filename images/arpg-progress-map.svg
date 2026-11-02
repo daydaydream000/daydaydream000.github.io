@@ -7,118 +7,125 @@
   </defs>
   <rect x="0" y="0" width="1200" height="560" fill="url(#bgp)"/>
 
-  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="21" font-weight="700" fill="#183d2a">十四天做了什么：从「能动」到「能打、能升、能捡、能装」</text>
-  <text x="600" y="56" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12" fill="#3c5147">每个节点是一天的交付物；最后两个（D13 / D14）是本周新增，都是「容器 + 数据」型的一天</text>
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="21" font-weight="700" fill="#183d2a">十五天做了什么：从「能动」到「能买能卖」</text>
+  <text x="600" y="56" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12" fill="#3c5147">每个节点是一天的交付物；D13–D15 是本周新增，都是「容器 + 数据 + 一条交易链」型的一天</text>
 
-  <!-- 第一排 -->
-  <line x1="84" y1="122" x2="1116" y2="122" stroke="#183d2a" stroke-opacity="0.18" stroke-width="2"/>
+  <!-- 第一排 D1-D8 -->
+  <line x1="70" y1="122" x2="1127" y2="122" stroke="#183d2a" stroke-opacity="0.18" stroke-width="2"/>
   <g font-family="ui-sans-serif, sans-serif">
     <g>
-      <circle cx="84" cy="122" r="6" fill="#7fae8a"/>
-      <text x="84" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D1</text>
-      <text x="84" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">骑士能动</text>
-      <text x="84" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">移动 · 动画</text>
+      <circle cx="70" cy="122" r="6" fill="#7fae8a"/>
+      <text x="70" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D1</text>
+      <text x="70" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">骑士能动</text>
+      <text x="70" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">移动 · 动画</text>
     </g>
     <g>
-      <circle cx="256" cy="122" r="6" fill="#7fae8a"/>
-      <text x="256" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D2</text>
-      <text x="256" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">七层地形</text>
-      <text x="256" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">Tilemap · 钻山洞</text>
+      <circle cx="221" cy="122" r="6" fill="#7fae8a"/>
+      <text x="221" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D2</text>
+      <text x="221" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">七层地形</text>
+      <text x="221" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">Tilemap · 钻山洞</text>
     </g>
     <g>
-      <circle cx="428" cy="122" r="6" fill="#6f9f7c"/>
-      <text x="428" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D3</text>
-      <text x="428" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">相机与敌人</text>
-      <text x="428" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">Cinemachine · 状态机</text>
+      <circle cx="372" cy="122" r="6" fill="#6f9f7c"/>
+      <text x="372" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D3</text>
+      <text x="372" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">相机与敌人</text>
+      <text x="372" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">Cinemachine · 状态机</text>
     </g>
     <g>
-      <circle cx="600" cy="122" r="6" fill="#6f9f7c"/>
-      <text x="600" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D4</text>
-      <text x="600" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">主动感知</text>
-      <text x="600" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">OverlapCircle · 冷却</text>
+      <circle cx="523" cy="122" r="6" fill="#6f9f7c"/>
+      <text x="523" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D4</text>
+      <text x="523" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">主动感知</text>
+      <text x="523" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">OverlapCircle · 冷却</text>
     </g>
     <g>
-      <circle cx="772" cy="122" r="6" fill="#5a9470"/>
-      <text x="772" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D5</text>
-      <text x="772" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">互相伤害</text>
-      <text x="772" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">挥剑 · 击退</text>
+      <circle cx="674" cy="122" r="6" fill="#5a9470"/>
+      <text x="674" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D5</text>
+      <text x="674" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">互相伤害</text>
+      <text x="674" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">挥剑 · 击退</text>
     </g>
     <g>
-      <circle cx="944" cy="122" r="6" fill="#4f8a68"/>
-      <text x="944" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D6</text>
-      <text x="944" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">属性收拢</text>
-      <text x="944" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">单例 · Esc 面板</text>
+      <circle cx="825" cy="122" r="6" fill="#4f8a68"/>
+      <text x="825" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D6</text>
+      <text x="825" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">属性收拢</text>
+      <text x="825" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">单例 · Esc 面板</text>
     </g>
     <g>
-      <circle cx="1116" cy="122" r="6" fill="#4f8a68"/>
-      <text x="1116" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D7</text>
-      <text x="1116" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">击杀给经验</text>
-      <text x="1116" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">事件 · 升级曲线</text>
+      <circle cx="976" cy="122" r="6" fill="#4f8a68"/>
+      <text x="976" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D7</text>
+      <text x="976" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">击杀给经验</text>
+      <text x="976" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">事件 · 升级曲线</text>
+    </g>
+    <g>
+      <circle cx="1127" cy="122" r="6" fill="#3f7d5c"/>
+      <text x="1127" y="108" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D8</text>
+      <text x="1127" y="142" text-anchor="middle" font-size="9.5" fill="#3c5147">UI 收拢</text>
+      <text x="1127" y="156" text-anchor="middle" font-size="8.5" fill="#6a5b3a">UIManager · 骨架</text>
     </g>
   </g>
 
-  <!-- 第二排 -->
-  <line x1="84" y1="272" x2="1116" y2="272" stroke="#183d2a" stroke-opacity="0.18" stroke-width="2"/>
+  <!-- 第二排 D9-D15 -->
+  <line x1="84" y1="272" x2="1092" y2="272" stroke="#183d2a" stroke-opacity="0.18" stroke-width="2"/>
   <g font-family="ui-sans-serif, sans-serif">
     <g>
       <circle cx="84" cy="272" r="6" fill="#3f7d5c"/>
-      <text x="84" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D8</text>
-      <text x="84" y="292" text-anchor="middle" font-size="9.5" fill="#3c5147">UI 收拢</text>
-      <text x="84" y="306" text-anchor="middle" font-size="8.5" fill="#6a5b3a">UIManager · 面板骨架</text>
+      <text x="84" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D9</text>
+      <text x="84" y="292" text-anchor="middle" font-size="9.5" fill="#3c5147">技能格子</text>
+      <text x="84" y="306" text-anchor="middle" font-size="8.5" fill="#6a5b3a">SkillSO · 三崩溃</text>
     </g>
     <g>
-      <circle cx="256" cy="272" r="6" fill="#3f7d5c"/>
-      <text x="256" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D9</text>
-      <text x="256" y="292" text-anchor="middle" font-size="9.5" fill="#3c5147">技能格子</text>
-      <text x="256" y="306" text-anchor="middle" font-size="8.5" fill="#6a5b3a">SkillSO · 三个崩溃</text>
+      <circle cx="252" cy="272" r="6" fill="#3f7d5c"/>
+      <text x="252" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D10</text>
+      <text x="252" y="292" text-anchor="middle" font-size="9.5" fill="#3c5147">复盘与架构</text>
+      <text x="252" y="306" text-anchor="middle" font-size="8.5" fill="#6a5b3a">4 反模式 · 17 脚本</text>
     </g>
     <g>
-      <circle cx="428" cy="272" r="6" fill="#3f7d5c"/>
-      <text x="428" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D10</text>
-      <text x="428" y="292" text-anchor="middle" font-size="9.5" fill="#3c5147">复盘与架构</text>
-      <text x="428" y="306" text-anchor="middle" font-size="8.5" fill="#6a5b3a">4 反模式 · 17 脚本</text>
+      <circle cx="420" cy="272" r="6" fill="#3f7d5c"/>
+      <text x="420" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D11</text>
+      <text x="420" y="292" text-anchor="middle" font-size="9.5" fill="#3c5147">焊脆弱点</text>
+      <text x="420" y="306" text-anchor="middle" font-size="8.5" fill="#6a5b3a">gizmo · enabled</text>
     </g>
     <g>
-      <circle cx="600" cy="272" r="6" fill="#3f7d5c"/>
-      <text x="600" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D11</text>
-      <text x="600" y="292" text-anchor="middle" font-size="9.5" fill="#3c5147">焊脆弱点</text>
-      <text x="600" y="306" text-anchor="middle" font-size="8.5" fill="#6a5b3a">gizmo · enabled · 自动取</text>
+      <circle cx="588" cy="272" r="6" fill="#3f7d5c"/>
+      <text x="588" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D12</text>
+      <text x="588" y="292" text-anchor="middle" font-size="9.5" fill="#3c5147">弓箭模块</text>
+      <text x="588" y="306" text-anchor="middle" font-size="8.5" fill="#6a5b3a">八向瞄准 · 动画事件</text>
     </g>
     <g>
-      <circle cx="772" cy="272" r="6" fill="#3f7d5c"/>
-      <text x="772" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#183d2a">D12</text>
-      <text x="772" y="292" text-anchor="middle" font-size="9.5" fill="#3c5147">弓箭模块</text>
-      <text x="772" y="306" text-anchor="middle" font-size="8.5" fill="#6a5b3a">八向瞄准 · 动画事件</text>
+      <circle cx="756" cy="272" r="6" fill="#b48a2a"/>
+      <text x="756" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#8a5a20">D13</text>
+      <text x="756" y="292" text-anchor="middle" font-size="9.5" fill="#8a5a20">掉落物</text>
+      <text x="756" y="306" text-anchor="middle" font-size="8.5" fill="#8a5a20">Loot · 0.5 秒</text>
     </g>
     <g>
-      <circle cx="944" cy="272" r="6" fill="#b48a2a"/>
-      <text x="944" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#8a5a20">D13</text>
-      <text x="944" y="292" text-anchor="middle" font-size="9.5" fill="#8a5a20">掉落物</text>
-      <text x="944" y="306" text-anchor="middle" font-size="8.5" fill="#8a5a20">Loot · 0.5 秒</text>
+      <circle cx="924" cy="272" r="6" fill="#b48a2a"/>
+      <text x="924" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#8a5a20">D14</text>
+      <text x="924" y="292" text-anchor="middle" font-size="9.5" fill="#8a5a20">背包与物品</text>
+      <text x="924" y="306" text-anchor="middle" font-size="8.5" fill="#8a5a20">ItemSo · 四段分流</text>
     </g>
     <g>
-      <circle cx="1116" cy="272" r="6" fill="#b48a2a"/>
-      <text x="1116" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#8a5a20">D14</text>
-      <text x="1116" y="292" text-anchor="middle" font-size="9.5" fill="#8a5a20">背包与商店</text>
-      <text x="1116" y="306" text-anchor="middle" font-size="8.5" fill="#8a5a20">ItemSo · 四段分流</text>
+      <circle cx="1092" cy="272" r="6" fill="#c43131"/>
+      <text x="1092" y="258" text-anchor="middle" font-size="10" font-weight="700" fill="#8a2a20">D15</text>
+      <text x="1092" y="292" text-anchor="middle" font-size="9.5" fill="#8a2a20">商店通电</text>
+      <text x="1092" y="306" text-anchor="middle" font-size="8.5" fill="#8a2a20">买 · 卖 · 关不掉</text>
     </g>
   </g>
 
-  <!-- 左：四条链 -->
+  <!-- 左：已通 -->
   <g transform="translate(40, 344)">
     <rect x="0" y="0" width="548" height="184" rx="5" fill="#ffffff" stroke="#1a7a3a" stroke-opacity="0.45"/>
-    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="12" font-weight="700" fill="#1a5a30">四条链已经通了</text>
+    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="12" font-weight="700" fill="#1a5a30">五条链已经通了</text>
 
     <text x="14" y="46" font-family="ui-monospace, monospace" font-size="10" fill="#1a3d28">移动　Input → velocity → Animator</text>
     <text x="14" y="64" font-family="ui-monospace, monospace" font-size="10" fill="#1a3d28">战斗　Slash / Shoot → 命中 → 扣血 + 击退</text>
     <text x="14" y="82" font-family="ui-monospace, monospace" font-size="10" fill="#1a3d28">成长　击杀 → 经验 → 升级 → 能力点 → 技能</text>
     <text x="14" y="100" font-family="ui-monospace, monospace" font-size="10" fill="#1a3d28">物品　掉落 → 拾取 → 背包 → 使用 / 丢弃 → 回地上</text>
+    <text x="14" y="118" font-family="ui-monospace, monospace" font-size="10" fill="#1a3d28">交易　点商品 → 查钱查空间 → 扣钱 → 入包；背包左键 → 卖</text>
 
-    <line x1="14" y1="116" x2="534" y2="116" stroke="#1a3d28" stroke-opacity="0.14"/>
+    <line x1="14" y1="130" x2="534" y2="130" stroke="#1a3d28" stroke-opacity="0.14"/>
 
-    <text x="14" y="138" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#3c5147">26 个脚本、1137 行；17 个会「改游戏状态」，</text>
-    <text x="14" y="154" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#3c5147">其余是枚举、样板和那个空着的 ArrowPool。</text>
-    <text x="14" y="174" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a5a20">数值：近战 1 伤 / 箭 2 伤 / 敌人 3 血 · 10 经验</text>
+    <text x="14" y="150" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#3c5147">28 个脚本、1261 行；其中 19 个会真的改游戏状态。</text>
+    <text x="14" y="168" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#3c5147">商品 2 件：Mushroom 2 金 / Pumpkin 5 金；初始金币 10。</text>
+    <text x="14" y="184" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">数值：近战 1 伤 / 箭 2 伤 / 敌人 3 血 · 10 经验</text>
   </g>
 
   <!-- 右：还断着 -->
@@ -127,12 +134,12 @@
     <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="12" font-weight="700" fill="#8a2a20">还断着的四根线</text>
 
     <text x="14" y="46" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#5a2a20">① 没有掉落表：敌人只给经验，地上永远不会自然出现东西</text>
-    <text x="14" y="66" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#5a2a20">② 商店没通电：8 个格子、3 个按钮，没有 ShopManager</text>
-    <text x="14" y="86" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#5a2a20">③ 背包和商店都没有开关（sortingOrder −1 / α 1 常驻）</text>
+    <text x="14" y="66" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#5a2a20">② 商店关不掉：状态只在 Start 广播一次 true → 背包左键永远在卖</text>
+    <text x="14" y="86" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#5a2a20">③ 卖出不校验：商店不收的东西也会被扣掉（物品蒸发）</text>
     <text x="14" y="106" font-family="ui-sans-serif, sans-serif" font-size="10.5" fill="#5a2a20">④ 没有存档：等级、技能、背包、金币都只在内存里</text>
 
-    <text x="14" y="136" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#6a5b3a">四条都不是「写错了」，是「还没写到」——</text>
-    <text x="14" y="152" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#6a5b3a">容器都做好了，缺的是往容器里填东西的那一层。</text>
-    <text x="14" y="172" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">P0 里最该先动的：掉落表 与 面板开关</text>
+    <text x="14" y="136" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#6a5b3a">四条里 ①④ 是「还没写」，②③ 是「写了但缺一半」——</text>
+    <text x="14" y="152" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#6a5b3a">后者更难发现，因为代码看起来两件事都处理了。</text>
+    <text x="14" y="172" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">P0 里最该先动的：关店路径（一个 Invoke 的事）</text>
   </g>
 </svg>

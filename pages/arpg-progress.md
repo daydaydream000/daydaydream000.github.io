@@ -1,19 +1,19 @@
 ---
 title: ARPG 开发进度总览
 slug: arpg-progress
-date: 2026-11-01
-summary: Day 1–14 的全景快照：26 个脚本 1137 行、5 张 Canvas、6 套数据链。四条链已经通了（移动 / 战斗 / 成长 / 物品），还断着四根（掉落表、商店逻辑、面板开关、存档）。
+date: 2026-11-02
+summary: Day 1–15 的全景快照：28 个脚本 1261 行、5 张 Canvas、7 套数据链。五条链已经通了（移动 / 战斗 / 成长 / 物品 / 交易），还断着四根（掉落表、关店路径、存档、面板开关）。
 ---
 
-这是「ARPG 学习日志」系列的进度总览，随每篇日志一起更新。截至 **Day 14（2026-11-01）**，工程处于「能走、能打、能升级、能捡东西、能装东西，但世界里还没有东西可捡」的状态。
+这是「ARPG 学习日志」系列的进度总览，随每篇日志一起更新。截至 **Day 15（2026-11-02）**，工程处于「能走、能打、能升级、能捡、能装、能买卖，但世界里还没有东西可捡、店也关不掉」的状态。
 
-一句话概括：**从键盘到伤害、到成长、到物品的四条链都通了；断的是「世界里为什么会有这些东西」和「关得掉的面板」。**
+一句话概括：**从键盘到伤害、到成长、到物品、到交易的五条链都通了；断的是「世界里为什么会有这些东西」和「那间店为什么关不掉」。**
 
-<figure class="post-figure"><img src="images/arpg-progress-map.svg" alt="Day 1 到 Day 14 的时间线与四条已通的链、四根断着的线" loading="lazy" decoding="async"><figcaption>上面十四天的交付物，下面左侧是四条已通的链、右侧是还断着的四根线</figcaption></figure>
+<figure class="post-figure"><img src="images/arpg-progress-map.svg" alt="Day 1 到 Day 15 的时间线与五条已通的链、四根断着的线" loading="lazy" decoding="async"><figcaption>上面十五天的交付物，下面左侧是五条已通的链、右侧是还断着的四根线</figcaption></figure>
 
 ---
 
-## 十四天时间线
+## 十五天时间线
 
 | 天 | 主题 | 当天的交付物 |
 |---|---|---|
@@ -32,6 +32,7 @@ summary: Day 1–14 的全景快照：26 个脚本 1137 行、5 张 Canvas、6 �
 | [Day 12](post/arpg-day12-bow-module.html) · 10-27 | 弓箭模块 | `Player_Bow` 八向瞄准、动画事件出箭、`Player_ChangeEqiupment` 翻 `enabled` 切动画层 |
 | [Day 13](post/arpg-day13-loot-pickup.html) · 10-29 | 掉落物与拾取 | `LootPrefab` 四零件、`LootPickup` 动画、`OnItemLooted` 事件、0.5 秒销毁窗口 |
 | [Day 14](post/arpg-day14-inventory-shop.html) · 11-01 | 背包、物品数据与商店骨架 | `ItemSo` / `UseItem` / `InventorySlot` / `InventoryManager`；商店只有预制体 |
+| [Day 15](post/arpg-day15-shop.html) · 11-02 | 商店通电 | `ShopItems` 表 + `ShopSlot.Initialize` + `TryBuyItem` / `SellItem`；店铺状态事件 + 背包左键路由 |
 
 > [!NOTE]
 > 还有一篇横向专文：[ARPG 技能树系统详解](post/arpg-skilltree-deep-dive.html)，把 Day 8–9 的技能树从 SO 到「真正改游戏」的链路一次讲透，并更正了 Day 10 里「升级没真给点数」的误记。
@@ -46,14 +47,15 @@ summary: Day 1–14 的全景快照：26 个脚本 1137 行、5 张 Canvas、6 �
 | 相机跟随 + 地图边界约束 | 敌人刷新：全场仍只有一只 `Enemy_Torch`，打死后不重来 |
 | 挥剑命中：扣血、击退、眩晕 | 技能树：24 个节点里 15 个是同一份「Max Health Boost」，8 个落进 `default` |
 | 弓箭：八向瞄准、动画事件出箭、插墙、命中扣血 | 掉落表：敌人只给经验，**地上永远不会自然出现物品** |
-| 击杀 → 经验 → 升级 → 能力点 → 花点解锁技能 | 商店：8 个格子 + 3 个按钮摆好了，没有 `ShopManager`，价格还是占位 `99` |
-| Esc 属性面板、K 技能树面板（都会暂停） | 背包 / 商店面板没有开关：一个 `sortingOrder −1` 常驻，一个 `α 1` 常驻 |
-| 物品：拾取动画、堆叠、左键使用、右键丢弃、溢出回到地上 | 存档：等级、技能、背包、金币全部在内存里，重开归零 |
+| 击杀 → 经验 → 升级 → 能力点 → 花点解锁技能 | 商店关不掉：`OnShopStateChanged` 只在 `Start` 广播一次 `true`，于是背包左键被永久征用成「卖」 |
+| Esc 属性面板、K 技能树面板（都会暂停） | 卖出不校验：商店不收的东西也会被扣掉一个（物品蒸发） |
+| 物品：拾取动画、堆叠、左键使用、右键丢弃、溢出回到地上 | 背包 / 商店面板没有开关：一个 `sortingOrder −1` 常驻，一个 `α 1` 常驻 |
+| 买卖：`TryBuyItem` 查钱查空间、扣钱入包；卖价借用商品价 | 存档：等级、技能、背包、金币、商品状态全部在内存里，重开归零 |
 | 金币：`isGold` 分流进 `gold` 计数，不占背包格 | 面板互斥：两个暂停面板共享 `Time.timeScale`，关任一个时间就恢复 |
 
 ---
 
-## 六个层次
+## 七个层次
 
 | 层 | 主要内容 | 状态 |
 |---|---|---|
@@ -62,13 +64,14 @@ summary: Day 1–14 的全景快照：26 个脚本 1137 行、5 张 Canvas、6 �
 | ③ 数值 | `StatsManger` 单例（玩家）、`Enemy_*` 各自一套、`ItemSo` 的效果字段 | ⚠ 三处各有一份数 |
 | ④ 成长 | `Enemy_Health` 事件 → `ExpManager` → `SkillTreeManager` → `SkillManager` | ✓ 通 |
 | ⑤ 物品 | `Loot` 事件 → `InventoryManager` → `InventorySlot` / `UseItem` | ✓ 通（缺掉落源） |
-| ⑥ 表现 / UI | `UIManager`（Stats / Skill）、`ExpCanvas`、`PlayerUI`、`InventoryCanvas`、`ShopCanvas` | ⚠ 五张 Canvas、三套开关协议 |
+| ⑥ 交易 | `ShopItems` 表 → `ShopSlot` → `TryBuyItem` / `SellItem` → 背包与金币 | ⚠ 逻辑通、开关缺 |
+| ⑦ 表现 / UI | `UIManager`（Stats / Skill）、`ExpCanvas`、`PlayerUI`、`InventoryCanvas`、`ShopCanvas` | ⚠ 五张 Canvas、两套开关协议 |
 
 ---
 
 ## 脚本清单
 
-`Assets/Scripe/` 下共 **26 个脚本、1137 行**（含注释与空行）：
+`Assets/Scripe/` 下共 **28 个脚本、1261 行**（含注释与空行）：
 
 | 脚本 | 行数 | 挂载 | 职责 |
 |---|---:|---|---|
@@ -93,8 +96,10 @@ summary: Day 1–14 的全景快照：26 个脚本 1137 行、5 张 Canvas、6 �
 | `ArrowPool` | 5 | — | **空类**，对象池还没写 |
 | `ItemSo` | 19 | — | 物品数据资产（名字/图标/堆叠/属性/时长） |
 | `UseItem` | 29 | InventoryCanvas | 按字段写属性，`duration` 到点回滚 |
-| `InventorySlot` | 50 | 3 个格子 | 左键用、右键丢、满血不吃回血 |
+| `InventorySlot` | 73 | 3 个格子 | 左键用 / 有店时卖、右键丢、满血不吃回血 |
 | `InventoryManager` | 91 | InventoryCanvas | 金币分流、堆叠、空槽、溢出回地上 |
+| `ShopManager` | 75 | ShopCanvas | `ShopItems` 表、填充槽位、`TryBuyItem`、`SellItem`、店铺状态事件 |
+| `ShopSlot` | 26 | 8 个商品格 | `Initialize(itemSo, price)`、购买按钮回调 |
 | `Loot` | 46 | Loot 预制体 | 图标填充、触发拾取、事件广播、延迟销毁 |
 | `Elevation_Entry` | 24 | Non-Collision-Low | 进山：关山体碰撞、开内部围栏、提到 15 层 |
 | `Elevation_Exit` | 24 | Exit | 出山：三个操作全部反向 |
@@ -118,7 +123,7 @@ summary: Day 1–14 的全景快照：26 个脚本 1137 行、5 张 Canvas、6 �
 | `ExpCanvas` | 经验条 + 等级文本 + `ExpManager`（**仍未收进 UIManager**） |
 | `PlayerUI` | HP 文本 |
 | `InventoryCanvas` | `UseItem` + `InventoryManager` + `Slots`（3 格）+ `Gold`（**`sortingOrder −1`，无开关**） |
-| `ShopCanvas` | `ShopPanel`（TopPanel 3 按钮 / ItemPanel 8 格 / InfoPopup 空壳）（**`α 1`，无脚本**） |
+| `ShopCanvas` | `ShopPanel`（TopPanel 3 按钮 / ItemPanel 8 格填 2 / InfoPopup 空壳）+ `ShopManager`（**`α 1`，无开关**） |
 | `EventSystem` | 输入模块 |
 
 ---
@@ -143,6 +148,14 @@ summary: Day 1–14 的全景快照：26 个脚本 1137 行、5 张 Canvas、6 �
 | `knockbackTime` / `stunTime` | 0.5 s / 1 s | `Gold` | `isGold = 1` |
 | `lifeSpawn` | 2 s | 背包槽数 | 3 |
 
+| 交易（`ShopItems` / `ShopManager`） | 值 |
+|---|---|
+| 初始金币 | 10 |
+| 商品 1 | `Mushroom` · 2 金 |
+| 商品 2 | `Pumpkin` · 5 金 |
+| 商品槽 | 8 个（填 2 个，其余 `SetActive(false)`） |
+| 卖价 | 借用商品价（买 2 卖 2） |
+
 | 成长 | 值 |
 |---|---|
 | 初始等级 | 0 |
@@ -153,7 +166,7 @@ summary: Day 1–14 的全景快照：26 个脚本 1137 行、5 张 Canvas、6 �
 
 ---
 
-## 五条数据流
+## 六条数据流
 
 **移动**
 
@@ -175,6 +188,10 @@ summary: Day 1–14 的全景快照：26 个脚本 1137 行、5 张 Canvas、6 �
 
 `Loot.OnItemLooted(itemSo, n) → InventoryManager.AddItem（金币 / 堆叠 / 空槽 / 溢出）→ InventorySlot.OnPointerClick → UseItem.ApplyItemEffects → StatsManger.Update*`
 
+**交易**
+
+`ShopSlot 按钮 → ShopManager.TryBuyItem（钱够 + 有空间）→ gold -= price → InventoryManager.AddItem(itemSo, 1)`　｜　`背包左键 → activeShop.SellItem(itemSo) → 在 shopSlots 找同款 → gold += slot.price`
+
 ---
 
 ## 问题清单
@@ -184,39 +201,46 @@ summary: Day 1–14 的全景快照：26 个脚本 1137 行、5 张 Canvas、6 �
 | # | 问题 | 位置 | 后果 |
 |---|---|---|---|
 | 1 | 没有掉落表 | 无 | 敌人只给经验，地上永远不会自然出现物品 |
-| 2 | 商店没有逻辑 | `ShopCanvas` | 8 个格子价格是占位 `99`，3 个按钮点了没反应 |
-| 3 | 背包 / 商店没有开关 | `InventoryCanvas` / `ShopCanvas` | 一个常驻 −1 层、一个常驻并挡住鼠标 |
-| 4 | 静态事件没有 `?.Invoke` | `Enemy_Health.ChangeHealth` | 没订阅者时抛异常 → `Destroy` 不执行 → 敌人不死 |
-| 5 | `ExpManager` 挂在 Canvas 上 | `ExpCanvas` | 关 HUD 就退订，直接触发第 4 条 |
-| 6 | 升级判定用 `if` 不是 `while` | `ExpManager.GainExperience` | 一次给大额经验会卡在「条满、等级不动」 |
-| 7 | 玩家死亡只 `SetActive(false)` | `PlayerHealth` | 没有死亡 / 重生 / 重置流程 |
-| 8 | 没有存档 | 全部 | 等级、技能、背包、金币重开归零 |
+| 2 | 商店关不掉 | `ShopManager.Start` | `OnShopStateChanged` 只发过一次 `true`、没有 `false`；`activeShop` 永不为 null → 背包左键永远是「卖」，所有「使用道具」失效 |
+| 3 | 卖出不校验 | `ShopManager.SellItem` | 没有返回值；商店不收的物品也会被扣掉一个 → 物品蒸发 |
+| 4 | 背包 / 商店没有开关 | `InventoryCanvas` / `ShopCanvas` | 一个常驻 −1 层、一个常驻 `α 1` 并挡住鼠标 |
+| 5 | 静态事件没有 `?.Invoke` | `Enemy_Health.ChangeHealth` | 没订阅者时抛异常 → `Destroy` 不执行 → 敌人不死 |
+| 6 | `ExpManager` 挂在 Canvas 上 | `ExpCanvas` | 关 HUD 就退订，直接触发第 5 条 |
+| 7 | 升级判定用 `if` 不是 `while` | `ExpManager.GainExperience` | 一次给大额经验会卡在「条满、等级不动」 |
+| 8 | 玩家死亡只 `SetActive(false)` | `PlayerHealth` | 没有死亡 / 重生 / 重置流程 |
+| 9 | 没有存档 | 全部 | 等级、技能、背包、金币重开归零 |
 
 ### P1：能玩但不对
 
 | # | 问题 | 位置 |
 |---|---|---|
-| 9 | 空槽分支 `slot.quantity = quantity` 绕过 `stackSize` | `InventoryManager.AddItem` |
-| 10 | `EffectTimer` 挂在 `UseItem` 上：关面板 = 永久 buff | `UseItem` |
-| 11 | `UpdateMaxHealth` 不刷属性面板、不给 `currentHealth` 兜底 | `StatsManger` |
-| 12 | 回血不播 `TextUpdate`，受击才播（两处写同一个文本） | `PlayerHealth` / `UseItem` |
-| 13 | `ItemSo.currentHealth` 是「恢复量」，与 `StatsManger.currentHealth` 同名不同义 | `ItemSo` |
-| 14 | 拾取 0.5 秒窗口内可重复发放；销毁受 `timeScale` 影响 | `Loot` |
-| 15 | 两个暂停面板共享 `Time.timeScale`，关任一个时间就恢复 | `StatsUI` / `ToggleSkillTree` |
-| 16 | 商店 `InfoPopup` 可点性为 0：看得见却挡不住鼠标 | `ShopCanvas` |
-| 17 | 金币在 `InventoryManager.gold` 上，与背包数据分离 | `InventoryManager` |
-| 18 | `ArrowPool` 是空类，箭仍逐发 `Instantiate` | `ArrowPool` |
+| 10 | 空槽分支 `slot.quantity = quantity` 绕过 `stackSize` | `InventoryManager.AddItem` |
+| 11 | `EffectTimer` 挂在 `UseItem` 上：关面板 = 永久 buff | `UseItem` |
+| 12 | `UpdateMaxHealth` 不刷属性面板、不给 `currentHealth` 兜底 | `StatsManger` |
+| 13 | 回血不播 `TextUpdate`，受击才播（两处写同一个文本） | `PlayerHealth` / `UseItem` |
+| 14 | `ItemSo.currentHealth` 是「恢复量」，与 `StatsManger.currentHealth` 同名不同义 | `ItemSo` |
+| 15 | 拾取 0.5 秒窗口内可重复发放；销毁受 `timeScale` 影响 | `Loot` |
+| 16 | 两个暂停面板共享 `Time.timeScale`，关任一个时间就恢复 | `StatsUI` / `ToggleSkillTree` |
+| 17 | 商店 `InfoPopup` 可点性为 0：看得见却挡不住鼠标 | `ShopCanvas` |
+| 18 | 金币在 `InventoryManager.gold` 上，与背包数据分离 | `InventoryManager` |
+| 19 | `goldText` 在 `AddItem` / `TryBuyItem` / `SellItem` 三处手写刷新 | `InventoryManager` / `ShopManager` |
+| 20 | 价格存两份：`ShopItems.price` 与 `ShopSlot.price`，只有重新 `Populate` 才同步 | `ShopManager` / `ShopSlot` |
+| 21 | 卖价＝买价，`SellItem` 取「第一个匹配」的价格 → 同物两价即套利 | `ShopManager.SellItem` |
+| 22 | `HasSpaceForItem` 为假时点击零反馈（没变灰、没提示） | `ShopManager` |
+| 23 | `ShopPanel` 1500×1000 @ (294,−103)：在 1920×1080 里右侧裁 84、底部裁 63 | `ShopCanvas` |
+| 24 | `ArrowPool` 是空类，箭仍逐发 `Instantiate` | `ArrowPool` |
 
 ### P2：工程卫生
 
 | # | 问题 |
 |---|---|
-| 19 | 命名：`StatsManger`（少 a）、`isKnockack`（少 b）、`SkillSTile`、两个同名的 `CombatPanel`、`ToggleSkillTree.statsCanvas`、`Player_ChangeEqiupment`、`shootColldown` |
-| 20 | `ExpCanvas` 参考分辨率 `1920 × 108`（少个 0） |
-| 21 | Layer 混用：只有 `StatsCanvas` 在 5（UI），`SkillCanvass` / `ShopCanvas` / `InventoryCanvas` 整套在 0 |
-| 22 | 文案占位太像真数据：`LEVEL: 0`、`Skill Point: 10`、`Item Name`、`99`、`Strenth: 00` |
-| 23 | 技能树 15 个节点重复同一份 `Max Health Boost`；8 个落进 `SkillManager` 的 `default` |
-| 24 | 箭伤 / 击退写死在 `Arrow.prefab`，不走 `StatsManger`（近战 1、箭 2） |
+| 25 | 命名：`StatsManger`（少 a）、`isKnockack`（少 b）、`SkillSTile`、两个同名的 `CombatPanel`、`ToggleSkillTree.statsCanvas`、`Player_ChangeEqiupment`、`shootColldown` |
+| 26 | `ExpCanvas` 参考分辨率 `1920 × 108`（少个 0） |
+| 27 | Layer 混用：只有 `StatsCanvas` 在 5（UI），`SkillCanvass` / `ShopCanvas` / `InventoryCanvas` 整套在 0 |
+| 28 | 文案占位太像真数据：`LEVEL: 0`、`Skill Point: 10`、`Item Name`、`99`、`Strenth: 00` |
+| 29 | 技能树 15 个节点重复同一份 `Max Health Boost`；8 个落进 `SkillManager` 的 `default` |
+| 30 | 箭伤 / 击退写死在 `Arrow.prefab`，不走 `StatsManger`（近战 1、箭 2） |
+| 31 | `InventoryManager.itemSlots` 被 `ShopManager` 直接 `foreach`：改字段名就要全局搜 |
 
 ---
 
@@ -224,21 +248,21 @@ summary: Day 1–14 的全景快照：26 个脚本 1137 行、5 张 Canvas、6 �
 
 | 天 | 计划 | 验收标准 |
 |---|---|---|
-| Day 15 | `LootTable`（怪物 → 物品 / 概率 / 数量）+ 敌人死亡时按表生成 `Loot` | 打死怪会掉东西，可能掉 0 个 |
-| Day 16 | 商店通电：`ShopManager` + 价格字段 + `Buy()` + `InfoPopup` 填充 | 金币够就能买，买完进背包，钱不够按钮灰 |
-| Day 17 | 面板开关：`ToggleInventory` / `ToggleShop` + 引用计数的暂停栈 | 三个面板互斥，关掉最后一个才恢复时间 |
-| Day 18 | 存档：`level` / `currentExp` / 已学技能 / 背包 / `gold` 序列化 | 退出再进，一切都还在 |
+| Day 16 | 收尾交易：补一次 `Invoke(this, false)` + `ToggleShop`；`SellItem` 返回 `bool`；买卖价分离；`AddGold` 唯一写入口 | 关店后左键能吃药；卖不掉的东西不再蒸发 |
+| Day 17 | `LootTable`（怪物 → 物品 / 概率 / 数量）+ 敌人死亡时按表生成 `Loot` | 打死怪会掉东西，可能掉 0 个；金币有了稳定来源 |
+| Day 18 | 面板互斥：`ToggleInventory` / `ToggleShop` + 引用计数的暂停栈 | 三个面板互斥，关掉最后一个才恢复时间 |
+| Day 19 | 存档：`level` / `currentExp` / 已学技能 / 背包 / `gold` 序列化 | 退出再进，一切都还在 |
 
-**如果只能先修三件事**：给 `Enemy_Health` 补 `?.Invoke` 并把 `ExpManager` 挪出 Canvas（一个字符换一条命）、把 `slot.quantity = quantity` 改成 `amountToAdd`（一格蘑菇不再变成 5 个）、给背包和商店各加一个开关（现在它们关不掉）。
+**如果只能先修三件事**：给 `ShopManager` 补一次 `Invoke(this, false)`（背包左键立刻恢复成「使用」）、让 `SellItem` 返回 `bool` 再决定要不要 `quantity--`（物品不再蒸发）、给 `Enemy_Health` 补 `?.Invoke` 并把 `ExpManager` 挪出 Canvas（一个字符换一条命）。
 
 ---
 
 ## 怎么跟进
 
-十四篇日志各自只讲一天的事，这里是横向对照：
+十五篇日志各自只讲一天的事，这里是横向对照：
 
-- 想从头看：[Day 1](post/arpg-day1-player.html) → [Day 7](post/arpg-day7-exp-level.html) → [Day 14](post/arpg-day14-inventory-shop.html)
+- 想从头看：[Day 1](post/arpg-day1-player.html) → [Day 7](post/arpg-day7-exp-level.html) → [Day 15](post/arpg-day15-shop.html)
 - 想看战斗：[Day 4](post/arpg-day4-enemy-attack.html)、[Day 5](post/arpg-day5-player-combat.html)、[Day 12](post/arpg-day12-bow-module.html)
 - 想看数据与事件：[Day 6](post/arpg-day6-stats-ui.html)、[Day 7](post/arpg-day7-exp-level.html)、[Day 13](post/arpg-day13-loot-pickup.html)
-- 想看系统设计：[Day 9](post/arpg-day9-skill-system.html)、[技能树详解](post/arpg-skilltree-deep-dive.html)、[Day 14](post/arpg-day14-inventory-shop.html)
+- 想看系统设计：[Day 9](post/arpg-day9-skill-system.html)、[技能树详解](post/arpg-skilltree-deep-dive.html)、[Day 14](post/arpg-day14-inventory-shop.html)、[Day 15](post/arpg-day15-shop.html)
 - 想读复盘：[Day 10（上）](post/arpg-day10-review.html)、[Day 10（下）](post/arpg-day10-architecture.html)、[Day 11](post/arpg-day11-hardening-combat.html)

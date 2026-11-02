@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bg15s" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bg15s)"/>
+
+  <text x="600" y="34" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">店铺状态机：只有一条 open = true 的边</text>
+  <text x="600" y="56" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">OnShopStateChanged(ShopManager, bool) 为「开 / 关」留了位，但 false 从来没有被发出去</text>
+
+  <!-- 左：两个状态 -->
+  <g transform="translate(48, 84)">
+    <rect x="0" y="0" width="300" height="82" rx="5" fill="#fff1f0" stroke="#c43131" stroke-width="1.5"/>
+    <text x="16" y="24" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#8a2a20">① 店开着（事实上唯一的状态）</text>
+    <text x="16" y="46" font-family="ui-monospace, monospace" font-size="10.5" fill="#5a2a20">activeShop = shopManager</text>
+    <text x="16" y="64" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">Start() 里 Invoke(this, true) 一次</text>
+    <text x="16" y="78" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a2a20">背包左键 → 卖</text>
+
+    <rect x="0" y="122" width="300" height="82" rx="5" fill="#f7f7f7" stroke="#9a9a9a" stroke-dasharray="5 4"/>
+    <text x="16" y="146" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#6a6a6a">② 店关着（从未到达）</text>
+    <text x="16" y="168" font-family="ui-monospace, monospace" font-size="10.5" fill="#6a6a6a">activeShop = null</text>
+    <text x="16" y="186" font-family="ui-monospace, monospace" font-size="10" fill="#6a6a6a">需要 Invoke(this, false) —— 不存在</text>
+    <text x="16" y="200" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#6a6a6a">背包左键 → 使用道具</text>
+
+    <!-- 缺失的边 -->
+    <path d="M150,82 L150,122" stroke="#c43131" stroke-width="2" stroke-dasharray="6 4" fill="none"/>
+    <line x1="138" y1="96" x2="162" y2="110" stroke="#c43131" stroke-width="2"/>
+    <line x1="162" y1="96" x2="138" y2="110" stroke="#c43131" stroke-width="2"/>
+    <text x="176" y="106" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a2a20">缺少的这条边</text>
+
+    <text x="0" y="234" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">没有 ToggleShop 输入轴，也没有关店触发</text>
+    <text x="0" y="250" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#8a2a20">ShopCanvas 的 α 恒为 1、恒挡射线</text>
+  </g>
+
+  <!-- 右：左键路由 -->
+  <g transform="translate(384, 84)">
+    <rect x="0" y="0" width="520" height="176" rx="5" fill="#1e2a22"/>
+    <text x="16" y="24" font-family="ui-monospace, monospace" font-size="10.5" fill="#9fd8a8">// InventorySlot.OnPointerClick（左键）</text>
+    <text x="16" y="48" font-family="ui-monospace, monospace" font-size="11" fill="#e8f0e8">if (activeShop != null)</text>
+    <text x="32" y="68" font-family="ui-monospace, monospace" font-size="11" fill="#e8f0e8">{ activeShop.SellItem(itemSo); quantity--; }</text>
+    <text x="16" y="90" font-family="ui-monospace, monospace" font-size="11" fill="#e8f0e8">else</text>
+    <text x="32" y="110" font-family="ui-monospace, monospace" font-size="11" fill="#7f9b86">{ 吃 / 喝 / 回血 }</text>
+
+    <text x="16" y="138" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8a0a0">// activeShop 永不为 null → else 永远走不到</text>
+    <text x="16" y="158" font-family="ui-monospace, monospace" font-size="10.5" fill="#e8a0a0">// 这个版本里，所有「左键使用」的功能全部失效</text>
+
+    <rect x="0" y="188" width="520" height="76" rx="5" fill="#ffffff" stroke="#c43131" stroke-opacity="0.45"/>
+    <text x="16" y="210" font-family="ui-sans-serif, sans-serif" font-size="11" font-weight="700" fill="#8a2a20">为什么这类 bug 特别难发现</text>
+    <text x="16" y="230" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a2a20">不会报错、不会崩溃，只是另一条分支静默地永远不执行</text>
+    <text x="16" y="248" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a2a20">表现是「蘑菇点了没反应」，而代码看起来两件事都处理了</text>
+  </g>
+
+  <!-- 右下：缺的四样 -->
+  <g transform="translate(932, 84)">
+    <rect x="0" y="0" width="228" height="264" rx="5" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#1a3d28">补齐这四样</text>
+
+    <text x="14" y="48" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">① ToggleShop 输入轴</text>
+    <text x="14" y="70" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">② Invoke(this, false)</text>
+    <text x="14" y="92" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">③ α 0 + blocksRaycasts false</text>
+    <text x="14" y="114" font-family="ui-monospace, monospace" font-size="10" fill="#8a2a20">④ 离店触发（触发器 / 对话）</text>
+
+    <line x1="14" y1="132" x2="214" y2="132" stroke="#1a3d28" stroke-opacity="0.14"/>
+    <text x="14" y="154" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#3a4a3a">前三样照抄 ToggleSkillTree：</text>
+    <text x="14" y="172" font-family="ui-monospace, monospace" font-size="9.5" fill="#3a4a3a">timeScale = 0/1</text>
+    <text x="14" y="188" font-family="ui-monospace, monospace" font-size="9.5" fill="#3a4a3a">alpha = 1/0</text>
+    <text x="14" y="204" font-family="ui-monospace, monospace" font-size="9.5" fill="#3a4a3a">blocksRaycasts = true/false</text>
+
+    <text x="14" y="230" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a5a20">④ 才是真新东西：</text>
+    <text x="14" y="246" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a5a20">OnTriggerExit2D → 关店</text>
+  </g>
+
+  <!-- 底部 -->
+  <g transform="translate(48, 366)">
+    <rect x="0" y="0" width="1112" height="24" rx="3" fill="#1a3d28" opacity="0.06"/>
+    <text x="556" y="16" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#3c5147">状态事件的签名写对了，语义写对了，唯独「另一次广播」没写 —— 状态就成了常量</text>
+  </g>
+</svg>
