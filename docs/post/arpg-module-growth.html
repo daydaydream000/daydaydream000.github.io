@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARPG 模块专文（三）：成长链——一个 int 走完五段 · DayDayDream</title>
+<meta name="description" content="从击杀到「攻击力+1」中间隔了五段：敌人广播 expReward → ExpManager 累加经验并升级 → 发 OnLevelUp → SkillTreeManager 发点数 → 玩家点技能 → SkillManager 改 StatsManger。三段发布、三段订阅，靠三组静态事件串起来。同时指出这条链上的三个硬伤：升级从不碰属性、24 个格子只有 4 份 SkillSO、属性面板是启动快照。">
+<link rel="canonical" href="https://daydaydream000.github.io/post/arpg-module-growth.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DayDayDream">
+<meta property="og:title" content="ARPG 模块专文（三）：成长链——一个 int 走完五段">
+<meta property="og:description" content="从击杀到「攻击力+1」中间隔了五段：敌人广播 expReward → ExpManager 累加经验并升级 → 发 OnLevelUp → SkillTreeManager 发点数 → 玩家点技能 → SkillManager 改 StatsManger。三段发布、三段订阅，靠三组静态事件串起来。同时指出这条链上的三个硬伤：升级从不碰属性、24 个格子只有 4 份 SkillSO、属性面板是启动快照。">
+<meta property="og:url" content="https://daydaydream000.github.io/post/arpg-module-growth.html">
+<meta property="og:image" content="https://daydaydream000.github.io/assets/images/arpg-mod-c3.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f3f8f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="DayDayDream" href="../rss.xml">
+<link rel="stylesheet" href="../assets/style.css?v=db15b81cea">
+<script>
+/* 主题与公告状态在首次绘制前应用，避免闪烁 */
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('dsh-theme'); } catch (e) {}
+  if (saved !== 'light' && saved !== 'dark') saved = 'auto';
+  var root = document.documentElement;
+  root.dataset.theme = saved;
+  root.classList.toggle('dark', saved === 'dark' ||
+    (saved === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  try {
+    if (localStorage.getItem('dsh-notice') === 'off') root.classList.add('notice-off');
+  } catch (e) {}
+})();
+</script>
+
+</head>
+<body class="page-post">
+<div id="page-progress" aria-hidden="true"></div>
+<a class="skip-link" href="#main">跳到正文</a>
+
+<header class="topbar"><div class="topbar-inner"><a class="topbar-brand" href="../index.html"><img src="../assets/avatar.jpg" alt="" width="30" height="30"><span class="topbar-brand-text">DayDayDream</span></a><nav class="topbar-nav" aria-label="主导航"><a href="../index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg><span>首页</span></a><a href="../arpg-progress.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>ARPG</span></a><a href="../tags/index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span>标签</span></a><a href="../about.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>关于</span></a></nav><div class="topbar-tools"><button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索（按 /）"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题"><span class="icon-sun"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg></span><span class="icon-moon"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></svg></span></button></div></div></header>
+<header class="banner banner-short"><img class="banner-bg" src="../assets/banner.jpg" alt="" aria-hidden="true" decoding="async"><div class="banner-scrim"></div><div class="banner-inner"><p class="banner-title">DayDayDream</p><p class="banner-subtitle">醒着做梦，落笔成诗——记所思，存所学。</p></div></header>
+
+<main id="main" class="layout">
+  <div class="layout-inner">
+    <aside class="col col-left"><section class="card-panel profile-card" data-reveal="0"><a class="profile-avatar-link" href="../about.html" aria-label="关于我"><img class="profile-avatar" src="../assets/avatar.jpg" alt="DayDayDream" decoding="async"></a><p class="profile-name">DayDayDream</p><div class="profile-accent" aria-hidden="true"></div><p class="profile-greeting">Hello, I'm DayDayDream.</p><div class="profile-social"><a class="social-chip" href="https://github.com/daydaydream000" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener noreferrer"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.58.69.48A10.04 10.04 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/></svg></a><a class="social-chip" href="mailto:daydaydream000@users.noreply.github.com" title="邮箱" aria-label="邮箱"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></a><a class="social-chip" href="../rss.xml" title="RSS 订阅" aria-label="RSS 订阅"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18.5" r="1.4" fill="currentColor" stroke="none"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/></svg></a></div></section><section class="card-panel notice-card" id="notice" data-reveal="1"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5v3A1.5 1.5 0 0 0 5.5 15H7l1 4h2l-1-4h2l7 3.5V6.5L11 10H5.5A1.5 1.5 0 0 0 4 10.5Z"/></svg><span>公告</span></h2><p class="notice-text">欢迎来到 DayDayDream —— 醒着做梦，落笔成诗，记所思，存所学。</p><div class="notice-foot"><a class="notice-more" href="../about.html">前往关于</a><button class="notice-close" type="button" aria-label="关闭公告" title="关闭"><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></section></aside>
+    <div class="col col-main"><article class="card-panel post">
+  <header class="post-header">
+    <h1 class="post-title">ARPG 模块专文（三）：成长链——一个 int 走完五段</h1>
+    <div class="post-meta"><div class="post-badges"><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><time datetime="2026-11-05">2026 年 11 月 05 日</time></span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg>约 1376 字</span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>5 分钟阅读</span><a class="badge badge-pin" href="../tags/index.html#tag-unity"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>Unity</a><a class="badge badge-pin" href="../tags/index.html#tag-arpg"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>ARPG</a><a class="badge badge-pin" href="../tags/index.html#tag-游戏开发"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>游戏开发</a><a class="badge badge-pin" href="../tags/index.html#tag-经验系统"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>经验系统</a><a class="badge badge-pin" href="../tags/index.html#tag-技能树"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>技能树</a><a class="badge badge-pin" href="../tags/index.html#tag-事件"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>事件</a></div></div>
+  </header>
+  <div class="toc-mobile"><nav class="toc" aria-label="目录"><p class="toc-title">目录</p><div class="toc-list"><a href="#一句话说清">一句话说清</a><a href="#全链一张图">全链一张图</a><a href="#第一段敌人只说「我死了」">第一段：敌人只说「我死了」</a><a href="#第二段expmanager-累加与升级">第二段：ExpManager 累加与升级</a><a href="#第三段点数与技能">第三段：点数与技能</a><a href="#三个订阅者同时收到同一个事件">三个订阅者同时收到同一个事件</a><a href="#24-个格子4-份-skillso">24 个格子，4 份 SkillSO</a><a href="#前置解锁只判「前置满了」不判点数">前置解锁：只判「前置满了」，不判点数</a><a href="#属性面板为什么永远显示旧数字">属性面板为什么永远显示旧数字</a><a href="#这条链上最该补的一处">这条链上最该补的一处</a><a href="#一句话总结">一句话总结</a></div></nav></div>
+  <figure class="post-cover"><img src="../assets/images/arpg-mod-c3.svg" alt="ARPG 模块专文（三）：成长链——一个 int 走完五段" loading="lazy" decoding="async"></figure>
+  <div class="post-content"><h2 id="一句话说清">一句话说清</h2><p>成长链不是一条直线，是<strong>三段「发布—订阅」串起来的接力</strong>：</p><p><code>敌人死 → 经验 → 升级 → 能力点 → 花点 → 技能效果 → 属性</code></p><p>每一段都只发「发生了什么」，不指定谁来听。所以它能跑通，但也因此很难追——你没法在 <code>LevelUp()</code> 里按 Ctrl+F 找到「谁改了攻击力」，因为那里根本没有这行代码。</p><hr><h2 id="全链一张图">全链一张图</h2><figure class="post-figure"><img src="../assets/images/arpg-mod-5-growth.svg" alt="成长链：三段发布、三段订阅，以及一条断掉的边" loading="lazy" decoding="async"><figcaption>成长链：三段发布、三段订阅，以及一条断掉的边</figcaption></figure><hr><h2 id="第一段敌人只说「我死了」">第一段：敌人只说「我死了」</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public int expReward = 10;
+public delegate void MonsterDefeated(int amount);
+public static event MonsterDefeated OnMonsterDefeated;
+
+if (currentHealth &lt;= 0)
+{
+    OnMonsterDefeated(expReward);
+    Destroy(gameObject);
+}</code></pre></div><p><code>expReward</code> 写在<strong>敌人</strong>身上而不是玩家身上，理由是「值多少」属于敌人的配置，「怎么用」才是玩家的规则。</p><p>整条载荷只有一个 <code>int</code>。<code>Enemy_Health</code> 不认识 <code>ExpManager</code>，连它的类型都没出现在 <code>using</code> 里——这是全工程唯一一处完全解耦的边。</p><hr><h2 id="第二段expmanager-累加与升级">第二段：ExpManager 累加与升级</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void GainExperience(int amount)
+{
+    currentExp += amount;
+    if (currentExp &gt;= expToLevel) { LevelUp(); }
+    UpdateUI();
+}
+
+private void LevelUp()
+{
+    level++;
+    currentExp -= expToLevel;
+    expToLevel = Mathf.RoundToInt(expToLevel * expGrowthMultiplier);
+    OnLevelUp?.Invoke(1);
+}</code></pre></div><p>三个细节值得停一下：</p><p><strong>① <code>expToLevel</code> 是「本级门槛」，不是「累计经验」。</strong> 所以升级时是 <code>currentExp -= expToLevel</code>（把刚跨过的那道坎扣掉），进度条用 <code>expSlider.maxValue = expToLevel</code>（满格 = 本级满）。</p><p><strong>② 顺序是「先减、再乘」，两步都用旧门槛。</strong> 写反了会吞经验，而且每次都吞一点，很难查。</p><p><strong>③ 门槛序列：</strong> <code>10 → 12 → 14 → 17 → 20 → 24 → 29 → 35 → 42 → 50</code>。<code>RoundToInt</code> 把 ×1.2 打成了台阶。</p><hr><h2 id="第三段点数与技能">第三段：点数与技能</h2><p><code>OnLevelUp?.Invoke(1)</code> 被 <code>SkillTreeManager</code> 接住：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnEnable() { ExpManager.OnLevelUp += UpdateAbilityPoints; }
+
+public void UpdateAbilityPoints(int amount)
+{
+    availablePoints += amount;
+    pointsText.text = "Points: " + availablePoints;
+}</code></pre></div><p>玩家点格子走的是另一条路：<code>SkillTreeManager.Start()</code> 里给每个格子的按钮绑了监听。</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">foreach (SkillSlot slot in skillSlots)
+    slot.skillButton.onClick.AddListener(() =&gt; CheckAvailablePoints(slot));</code></pre></div><p>然后 <code>SkillSlot.TryUpgradeSkill()</code> 才是真正花点的地方：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">if (isUnlocked &amp;&amp; currentLevel &lt; skillSO.maxLevel)
+{
+    currentLevel++;
+    OnAbilityPointSpent?.Invoke(this);
+    if (currentLevel &gt;= skillSO.maxLevel) { OnSkillMaxed?.Invoke(this); }
+    UpdateUI();
+}</code></pre></div><p>注意 <code>OnAbilityPointSpent</code> 是在<strong>扣点之前</strong>发的，真正扣点的动作在订阅者里：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void HandleAbilityPointSpent(SkillSlot slot)
+{
+    if (availablePoints &gt; 0) { UpdateAbilityPoints(-1); }
+}</code></pre></div><hr><h2 id="三个订阅者同时收到同一个事件">三个订阅者同时收到同一个事件</h2><p><code>OnAbilityPointSpent</code> 有两个订阅者，加上发布者自己就是三方：</p><div class="table-wrap"><table><thead><tr><th>订阅者</th><th>收到后做什么</th></tr></thead><tbody><tr><td><code>SkillTreeManager</code></td><td>点数 −1</td></tr><tr><td><code>SkillManager</code></td><td>按 <code>skillName</code> 分支，改属性</td></tr><tr><td><code>SkillSlot</code>（自己）</td><td>判满级，满了再发 <code>OnSkillMaxed</code></td></tr></tbody></table></div><p><code>SkillManager</code> 里那个 <code>switch</code> 就是整个成长链唯一真正改属性的地方：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">switch (skillName)
+{
+    case "Max Health Boost": StatsManger.Instance.UpdateMaxHealth(1); break;
+    case "Sword Slash":      combat.enabled = true;                  break;
+    default: Debug.LogWarning("Error" + skillName);                  break;
+}</code></pre></div><p><strong>到目前为止，升级一共只带来两样东西：能力点 +1、以及点数花出去以后血上限 +1。</strong> 攻击力、移速、耐打程度全都没动。</p><hr><h2 id="24-个格子4-份-skillso">24 个格子，4 份 SkillSO</h2><p>场景里 24 个 <code>SkillSlot</code>，但它们只挂了 4 份资产：</p><div class="table-wrap"><table><thead><tr><th>SkillSO</th><th>skillName</th><th>maxLevel</th><th>用它的格子数</th></tr></thead><tbody><tr><td><code>MaxHealthBoost</code></td><td>Max Health Boost</td><td>5</td><td>15</td></tr><tr><td><code>2Boost</code></td><td>2Boost</td><td>5</td><td>4</td></tr><tr><td><code>3Boost</code></td><td>3Boost</td><td>5</td><td>4</td></tr><tr><td><code>Combat</code></td><td>Sword Slash</td><td>1</td><td>1</td></tr></tbody></table></div><p><code>2Boost</code> 和 <code>3Boost</code> 这两个名字<strong>不在 <code>SkillManager</code> 的 switch 里</strong>，所以点满它们只会打 20 行 <code>LogWarning("Error2Boost")</code>，什么也不发生。</p><p>加上 <code>availablePoints</code> 在 Inspector 里被硬编码成 5（不是存档、不跟等级走），这块面板现在的实际作用是「一个能加点血上限的 24 格占位图」。</p><hr><h2 id="前置解锁只判「前置满了」不判点数">前置解锁：只判「前置满了」，不判点数</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public bool CanUnlockSkill()
+{
+    foreach (SkillSlot slot in prerequisiteSkillSlots)
+        if (!slot.isUnlocked || slot.currentLevel &lt; slot.skillSO.maxLevel)
+            return false;
+    return true;
+}</code></pre></div><p><code>HandleSkillMaxed</code> 在某个技能满级时，对所有未解锁且满足前置的格子调一次 <code>Unlock()</code>。</p><p>24 个格子里 15 个没有前置、9 个有 1 个前置。所以「点亮第一个技能」之后会连锁解锁一批——但解锁不等于能点，点还是要花点数。</p><hr><h2 id="属性面板为什么永远显示旧数字">属性面板为什么永远显示旧数字</h2><p><code>StatsUI.UpdateAllStats()</code> 只在 <code>Start()</code> 里被调一次：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void Start() { UpdateAllStats(); }</code></pre></div><p>之后只有 <code>StatsManger.UpdateSpeed()</code> 会顺手调它：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void UpdateSpeed(int amount)
+{
+    speed += amount;
+    statsUI.UpdateAllStats();   // 只有这个更新面板
+}</code></pre></div><p>而 <code>UpdateMaxHealth()</code> 和 <code>UpdateHealth()</code> 里<strong>没有这一行</strong>。</p><p>结果：吃加速道具 → 面板刷新；升级加血上限 → 面板不动。同一个类里三个方法，两种命运，纯粹是分别手写的结果。</p><hr><h2 id="这条链上最该补的一处">这条链上最该补的一处</h2><p><code>LevelUp()</code> 只动 <code>level</code> / <code>currentExp</code> / <code>expToLevel</code> 三个字段，从不调用 <code>StatsManger</code>。所以：</p><ul><li>10 级和 1 级的手感完全一样</li><li><code>level</code> 目前是个「解锁点数用的计数器」，不是成长曲线</li></ul><p>补法不是在 <code>LevelUp()</code> 里直接改字段——那会让 <code>StatsUI</code> 继续显示旧值。正确的链条是：</p><p><code>升级 → StatsManger 暴露 AddDamage / AddMaxHealth 之类的方法 → StatsUI 订阅刷新</code></p><hr><h2 id="一句话总结">一句话总结</h2><p>成长链的骨架是三组静态事件：<code>OnMonsterDefeated</code>、<code>OnLevelUp</code>、<code>OnAbilityPointSpent</code>。它们让「敌人 / 经验 / 技能」三方互不认识，这是全工程最干净的设计；但也让「升级到底改了什么」这个问题必须顺着三张表一路查下去才能回答——答案是：<strong>只改了血上限，而且还只改一次。</strong></p><p>下一篇：<a href="/post/arpg-module-items-shop.html">物品与商店</a>。</p></div>
+  <footer class="post-footer">
+    <div class="post-tags"><a class="tag" href="../tags/index.html#tag-unity">Unity</a><a class="tag" href="../tags/index.html#tag-arpg">ARPG</a><a class="tag" href="../tags/index.html#tag-游戏开发">游戏开发</a><a class="tag" href="../tags/index.html#tag-经验系统">经验系统</a><a class="tag" href="../tags/index.html#tag-技能树">技能树</a><a class="tag" href="../tags/index.html#tag-事件">事件</a></div>
+    <p class="post-source"><a href="https://github.com/daydaydream000/daydaydream000.github.io/blob/main/posts/arpg-module-growth.md">在 GitHub 上查看源文件</a></p>
+  </footer>
+</article>
+<nav class="post-nav" aria-label="上下篇"><a class="post-nav-item prev" href="../post/arpg-module-items-shop.html"><span class="post-nav-label">← 更新的一篇</span><span class="post-nav-title">ARPG 模块专文（四）：物品与商店——从地上捡到换成钱</span></a><a class="post-nav-item next" href="../post/arpg-module-player-enemy.html"><span class="post-nav-label">更早的一篇 →</span><span class="post-nav-title">ARPG 模块专文（二）：玩家与敌人——两条武器链、一个状态机</span></a></nav>
+</div>
+    <aside class="col col-right"><nav class="card-panel toc-card" aria-label="文章目录" data-reveal="0"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span>文章目录</span></h2><div class="toc-list"><a class="" href="#一句话说清">一句话说清</a><a class="" href="#全链一张图">全链一张图</a><a class="" href="#第一段敌人只说「我死了」">第一段：敌人只说「我死了」</a><a class="" href="#第二段expmanager-累加与升级">第二段：ExpManager 累加与升级</a><a class="" href="#第三段点数与技能">第三段：点数与技能</a><a class="" href="#三个订阅者同时收到同一个事件">三个订阅者同时收到同一个事件</a><a class="" href="#24-个格子4-份-skillso">24 个格子，4 份 SkillSO</a><a class="" href="#前置解锁只判「前置满了」不判点数">前置解锁：只判「前置满了」，不判点数</a><a class="" href="#属性面板为什么永远显示旧数字">属性面板为什么永远显示旧数字</a><a class="" href="#这条链上最该补的一处">这条链上最该补的一处</a><a class="" href="#一句话总结">一句话总结</a></div></nav><section class="card-panel" data-reveal="3"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>站点统计</span></h2><ul class="stat-list"><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span class="stat-label">文章</span><span class="stat-value">25</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span class="stat-label">标签</span><span class="stat-value">40</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span class="stat-label">总字数</span><span class="stat-value">69,805</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="stat-label">最近更新</span><span class="stat-value">2026-11-05</span></li></ul></section></aside>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>转载请注明出处</p>
+  <nav class="footer-nav" aria-label="页脚导航">
+    <a href="../index.html">首页</a>
+    <a href="../tags/index.html">标签</a>
+    <a href="../about.html">关于</a>
+    <a href="../rss.xml">RSS</a>
+    <a href="https://github.com/daydaydream000">GitHub</a>
+    <a href="https://github.com/daydaydream000/daydaydream000.github.io">源码</a>
+    <a href="mailto:daydaydream000@users.noreply.github.com">邮件</a>
+  </nav>
+  <p class="footer-note">本站是纯静态站点，由 build.py 生成，托管于 GitHub Pages。</p>
+</footer>
+
+<a class="back-to-top" id="back-to-top" href="#" aria-label="回到顶部" title="回到顶部">
+  <svg class="i" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</a>
+
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="搜索文章">
+    <div class="search-head">
+      <svg class="i" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off"
+             spellcheck="false" aria-label="搜索关键词">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<script src="../assets/search-index.js" defer></script>
+<script src="../assets/app.js?v=ffe2833a95" defer></script>
+</body>
+</html>

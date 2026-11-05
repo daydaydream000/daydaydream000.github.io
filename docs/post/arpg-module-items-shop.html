@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARPG 模块专文（四）：物品与商店——从地上捡到换成钱 · DayDayDream</title>
+<meta name="description" content="物品模块是全场最长的一条链：Loot 触发器发 OnItemLooted → InventoryManager 分流金币/堆叠/空格/溢出 → InventorySlot 左键使用或卖出、右键丢弃 → UseItem 改 StatsManger；商店则是 ShopKeeper 触发圈 + K 开店 + OnShopStateChanged 通知背包「现在开着哪家店」。同时指出三处断链（击杀不掉物品、卖出不校验导致物品蒸发、背包没有开关）和两处实现 bug（空格能塞超 stackSize、ShopInfo 用 SO 名而不是 itemName）。">
+<link rel="canonical" href="https://daydaydream000.github.io/post/arpg-module-items-shop.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DayDayDream">
+<meta property="og:title" content="ARPG 模块专文（四）：物品与商店——从地上捡到换成钱">
+<meta property="og:description" content="物品模块是全场最长的一条链：Loot 触发器发 OnItemLooted → InventoryManager 分流金币/堆叠/空格/溢出 → InventorySlot 左键使用或卖出、右键丢弃 → UseItem 改 StatsManger；商店则是 ShopKeeper 触发圈 + K 开店 + OnShopStateChanged 通知背包「现在开着哪家店」。同时指出三处断链（击杀不掉物品、卖出不校验导致物品蒸发、背包没有开关）和两处实现 bug（空格能塞超 stackSize、ShopInfo 用 SO 名而不是 itemName）。">
+<meta property="og:url" content="https://daydaydream000.github.io/post/arpg-module-items-shop.html">
+<meta property="og:image" content="https://daydaydream000.github.io/assets/images/arpg-mod-c4.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f3f8f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="DayDayDream" href="../rss.xml">
+<link rel="stylesheet" href="../assets/style.css?v=db15b81cea">
+<script>
+/* 主题与公告状态在首次绘制前应用，避免闪烁 */
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('dsh-theme'); } catch (e) {}
+  if (saved !== 'light' && saved !== 'dark') saved = 'auto';
+  var root = document.documentElement;
+  root.dataset.theme = saved;
+  root.classList.toggle('dark', saved === 'dark' ||
+    (saved === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  try {
+    if (localStorage.getItem('dsh-notice') === 'off') root.classList.add('notice-off');
+  } catch (e) {}
+})();
+</script>
+
+</head>
+<body class="page-post">
+<div id="page-progress" aria-hidden="true"></div>
+<a class="skip-link" href="#main">跳到正文</a>
+
+<header class="topbar"><div class="topbar-inner"><a class="topbar-brand" href="../index.html"><img src="../assets/avatar.jpg" alt="" width="30" height="30"><span class="topbar-brand-text">DayDayDream</span></a><nav class="topbar-nav" aria-label="主导航"><a href="../index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg><span>首页</span></a><a href="../arpg-progress.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>ARPG</span></a><a href="../tags/index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span>标签</span></a><a href="../about.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>关于</span></a></nav><div class="topbar-tools"><button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索（按 /）"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题"><span class="icon-sun"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg></span><span class="icon-moon"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></svg></span></button></div></div></header>
+<header class="banner banner-short"><img class="banner-bg" src="../assets/banner.jpg" alt="" aria-hidden="true" decoding="async"><div class="banner-scrim"></div><div class="banner-inner"><p class="banner-title">DayDayDream</p><p class="banner-subtitle">醒着做梦，落笔成诗——记所思，存所学。</p></div></header>
+
+<main id="main" class="layout">
+  <div class="layout-inner">
+    <aside class="col col-left"><section class="card-panel profile-card" data-reveal="0"><a class="profile-avatar-link" href="../about.html" aria-label="关于我"><img class="profile-avatar" src="../assets/avatar.jpg" alt="DayDayDream" decoding="async"></a><p class="profile-name">DayDayDream</p><div class="profile-accent" aria-hidden="true"></div><p class="profile-greeting">Hello, I'm DayDayDream.</p><div class="profile-social"><a class="social-chip" href="https://github.com/daydaydream000" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener noreferrer"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.58.69.48A10.04 10.04 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/></svg></a><a class="social-chip" href="mailto:daydaydream000@users.noreply.github.com" title="邮箱" aria-label="邮箱"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></a><a class="social-chip" href="../rss.xml" title="RSS 订阅" aria-label="RSS 订阅"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18.5" r="1.4" fill="currentColor" stroke="none"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/></svg></a></div></section><section class="card-panel notice-card" id="notice" data-reveal="1"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5v3A1.5 1.5 0 0 0 5.5 15H7l1 4h2l-1-4h2l7 3.5V6.5L11 10H5.5A1.5 1.5 0 0 0 4 10.5Z"/></svg><span>公告</span></h2><p class="notice-text">欢迎来到 DayDayDream —— 醒着做梦，落笔成诗，记所思，存所学。</p><div class="notice-foot"><a class="notice-more" href="../about.html">前往关于</a><button class="notice-close" type="button" aria-label="关闭公告" title="关闭"><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></section></aside>
+    <div class="col col-main"><article class="card-panel post">
+  <header class="post-header">
+    <h1 class="post-title">ARPG 模块专文（四）：物品与商店——从地上捡到换成钱</h1>
+    <div class="post-meta"><div class="post-badges"><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><time datetime="2026-11-05">2026 年 11 月 05 日</time></span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg>约 1751 字</span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>6 分钟阅读</span><a class="badge badge-pin" href="../tags/index.html#tag-unity"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>Unity</a><a class="badge badge-pin" href="../tags/index.html#tag-arpg"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>ARPG</a><a class="badge badge-pin" href="../tags/index.html#tag-游戏开发"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>游戏开发</a><a class="badge badge-pin" href="../tags/index.html#tag-背包系统"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>背包系统</a><a class="badge badge-pin" href="../tags/index.html#tag-商店系统"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>商店系统</a><a class="badge badge-pin" href="../tags/index.html#tag-scriptableobject"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>ScriptableObject</a></div></div>
+  </header>
+  <div class="toc-mobile"><nav class="toc" aria-label="目录"><p class="toc-title">目录</p><div class="toc-list"><a href="#一句话说清">一句话说清</a><a href="#全链一张图">全链一张图</a><a href="#数据结构一个-so-撑起整个模块">数据结构：一个 SO 撑起整个模块</a><a href="#拾取触发器-静态事件">拾取：触发器 + 静态事件</a><a href="#additem四道分流">AddItem：四道分流</a><a href="#使用格子自己决定「这是用还是卖」">使用：格子自己决定「这是用还是卖」</a><a href="#商店五步开店">商店：五步开店</a><a href="#三处断链">三处断链</a><a href="#还有两个小问题">还有两个小问题</a><a href="#这个模块与外界的接缝">这个模块与外界的接缝</a><a href="#一句话总结">一句话总结</a></div></nav></div>
+  <figure class="post-cover"><img src="../assets/images/arpg-mod-c4.svg" alt="ARPG 模块专文（四）：物品与商店——从地上捡到换成钱" loading="lazy" decoding="async"></figure>
+  <div class="post-content"><h2 id="一句话说清">一句话说清</h2><p>物品模块的核心思想只有一句：<strong><code>ItemSo</code> 是数据，<code>InventorySlot</code> 只是它的投影。</strong></p><p>同一个 <code>ItemSo</code> 资产能躺在背包格里、挂在商店格上、也能躺在地上——三处都只是持有同一个 SO 引用，谁也不复制数据。所以改一次图标，三处一起变。</p><p>商店链则完全独立：它不改数据，只做「加减金币 + 调 <code>AddItem</code>」。</p><hr><h2 id="全链一张图">全链一张图</h2><figure class="post-figure"><img src="../assets/images/arpg-mod-6-items.svg" alt="物品与商店：拾取链、使用链、买卖链，以及三处断链" loading="lazy" decoding="async"><figcaption>物品与商店：拾取链、使用链、买卖链，以及三处断链</figcaption></figure><hr><h2 id="数据结构一个-so-撑起整个模块">数据结构：一个 SO 撑起整个模块</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">[CreateAssetMenu(fileName = "New Item")]
+public class ItemSo : ScriptableObject
+{
+    public string itemName;
+    [TextArea] public string itemDescription;
+    public Sprite icon;
+    public bool isGold;
+    public int stackSize = 3;
+    [Header("Stats")]
+    public int currentHealth, maxHealth, speed, damage;
+    [Header("For Temporary Items")]
+    public float duration;
+}</code></pre></div><p>工程里只有 4 份资产：</p><div class="table-wrap"><table><thead><tr><th>资产</th><th>属性</th><th>实际效果</th></tr></thead><tbody><tr><td><code>Gold</code></td><td><code>isGold = 1</code></td><td>只加金币计数，不占格子</td></tr><tr><td><code>Steak</code></td><td>全 0</td><td>纯道具，用了什么都不会发生</td></tr><tr><td><code>Mushroom</code></td><td>全 0</td><td>同上</td></tr><tr><td><code>Pumpkin</code></td><td><code>+1 血 / +1 上限 / +1 速度 / 5 秒</code></td><td>唯一一个真能改属性的</td></tr></tbody></table></div><hr><h2 id="拾取触发器-静态事件">拾取：触发器 + 静态事件</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnTriggerEnter2D(Collider2D collision)
+{
+    if (collision.CompareTag("Player") &amp;&amp; canBePickUp)
+    {
+        anim.Play("LootPickup");
+        OnItemLooted?.Invoke(itemSo, quantity);
+        Destroy(gameObject, 0.5f);
+    }
+}</code></pre></div><p>注意这里用了 <code>?.Invoke</code>——和敌人死亡那个裸调用正好相反。而且 <code>Initialize()</code> 会把 <code>canBePickUp</code> 先置为 <code>false</code>，防止刚扔出去的同帧被自己再捡回来。</p><p>事件被 <code>InventoryManager</code> 接住：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnEnable()  { Loot.OnItemLooted += AddItem; }
+private void OnDisable() { Loot.OnItemLooted -= AddItem; }</code></pre></div><hr><h2 id="additem四道分流">AddItem：四道分流</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void AddItem(ItemSo itemSo, int quantity)
+{
+    if (itemSo.isGold) { gold += quantity; goldText.text = gold.ToString(); return; }
+
+    foreach (var slot in itemSlots)            // ① 找同类未满格，补满
+        if (slot.itemSo == itemSo &amp;&amp; slot.quantity &lt; itemSo.stackSize) { ... }
+
+    foreach (var slot in itemSlots)            // ② 找空格，整批塞进去
+        if (slot.itemSo == null)
+        {
+            int amountToAdd = Mathf.Min(itemSo.stackSize, quantity);
+            slot.itemSo = itemSo;
+            slot.quantity = quantity;        // ← 不是 amountToAdd
+            slot.UpdateUI();
+            return;
+        }
+
+    if (quantity &gt; 0) DropLoot(itemSo, quantity);   // ③ 全满，溢出回地上
+}</code></pre></div><p>第 ② 步有个实现 bug：算出了 <code>amountToAdd</code>，赋值时却用了 <code>quantity</code>。<strong>结果是一个空格能塞下超过 <code>stackSize</code> 的数量</strong>（<code>stackSize = 3</code> 时塞进 10 个）。</p><hr><h2 id="使用格子自己决定「这是用还是卖」">使用：格子自己决定「这是用还是卖」</h2><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void OnPointerClick(PointerEventData eventData)
+{
+    if (quantity &gt; 0 &amp;&amp; eventData.button == PointerEventData.InputButton.Left)
+    {
+        if (activeShop != null) { activeShop.SellItem(itemSo); quantity--; UpdateUI(); }
+        else { inventoryManager.UseItem(this); }
+    }
+    else if (eventData.button == PointerEventData.InputButton.Right)
+        inventoryManager.DropItem(this);
+}</code></pre></div><p><code>activeShop</code> 从哪来？从事件来：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">private void OnEnable()  { ShopKeeper.OnShopStateChanged += HandleShopStateChanged; }
+private void HandleShopStateChanged(ShopManager shopManager, bool isOpen)
+{
+    activeShop = isOpen ? shopManager : null;
+}</code></pre></div><p>于是同一个左键，在店外是「吃」，在店内是「卖」。<strong>背包格自己不知道有没有开店，它只知道 <code>activeShop</code> 是不是空的。</strong></p><p><code>UseItem.ApplyItemEffects()</code> 再往下一层：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">if (itemSo.currentHealth &gt; 0) StatsManger.Instance.UpdateHealth(itemSo.currentHealth);
+if (itemSo.maxHealth &gt; 0)     StatsManger.Instance.UpdateMaxHealth(itemSo.maxHealth);
+if (itemSo.speed &gt; 0)         StatsManger.Instance.UpdateSpeed(itemSo.speed);
+if (itemSo.duration &gt; 0)      StartCoroutine(EffectTimer(itemSo, itemSo.duration));</code></pre></div><p><code>EffectTimer</code> 到期后把三项<strong>反向扣回去</strong>——所以「临时增益」的实现方式是「加一次、减一次」，中途没有任何状态记录。如果到期前又吃了第二个同类道具，两个协程会各自扣一次，属性就回不去了。</p><hr><h2 id="商店五步开店">商店：五步开店</h2><div class="table-wrap"><table><thead><tr><th>步骤</th><th>谁</th><th>做了什么</th></tr></thead><tbody><tr><td>① 进圈</td><td><code>ShopKeeper.OnTriggerEnter2D</code></td><td><code>playerInRange = true</code>，同时播动画</td></tr><tr><td>② 按 K</td><td><code>ShopKeeper.Update</code></td><td><code>timeScale = 0</code>、<code>currentShopKeeper = this</code>、发 <code>OnShopStateChanged(shopManager, true)</code></td></tr><tr><td>③ 亮面板</td><td>同上</td><td><code>alpha = 1</code>、<code>blocksRaycasts = true</code>、副相机就位并 <code>SetActive(true)</code></td></tr><tr><td>④ 填货</td><td><code>OpenItemShop()</code></td><td><code>shopManager.PopulateShopItems(shopItems)</code></td></tr><tr><td>⑤ 关店</td><td>按 Esc</td><td><code>timeScale = 1</code>、发 <code>false</code>、面板 α=0、副相机关掉</td></tr></tbody></table></div><p>填货是把静态配置铺到格子上的过程：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void PopulateShopItems(List&lt;ShopItems&gt; shopItems)
+{
+    for (int i = 0; i &lt; shopItems.Count &amp;&amp; i &lt; shopSlots.Length; i++)
+    {
+        shopSlots[i].Initialize(shopItems[i].itemSo, shopItems[i].price);
+        shopSlots[i].gameObject.SetActive(true);
+    }
+    for (int i = shopItems.Count; i &lt; shopSlots.Length; i++)
+        shopSlots[i].gameObject.SetActive(false);
+}</code></pre></div><p>买与卖都在 <code>ShopManager</code> 里，但两者的严谨程度差得很远：</p><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public void TryBuyItem(ItemSo itemSo, int price)
+{
+    if (itemSo != null &amp;&amp; inventoryManager.gold &gt;= price &amp;&amp; HasSpaceForItem(itemSo))
+    {
+        inventoryManager.gold -= price;
+        inventoryManager.goldText.text = inventoryManager.gold.ToString();
+        inventoryManager.AddItem(itemSo, 1);
+    }
+}
+
+public void SellItem(ItemSo itemSo)
+{
+    if (itemSo == null) return;
+    foreach (var slot in shopSlots)
+        if (slot.itemSo == itemSo) { inventoryManager.gold += slot.price; return; }
+}</code></pre></div><p><strong>买入查了三件事（东西存在、钱够、有空位），卖出只查「店里同款」——而且找不到时直接 <code>return</code>，不告诉调用方。</strong></p><hr><h2 id="三处断链">三处断链</h2><p><strong>① 敌人击杀不掉物品。</strong> 全工程没有任何一处「敌人死了 → 生成 <code>Loot</code>」。地上会出现的 <code>Loot</code> 只有三种来源：背包满时的 <code>DropLoot</code> 溢出、右键 <code>DropItem</code>、以及场景里手工摆的 5 个预制体。</p><p>这是整个 ARPG 里最值得先补的一条——两条通了的链（打怪→变强 / 拾取→成长）之间，就差一张掉落表。</p><p><strong>② 卖出会吞物品。</strong> <code>InventorySlot</code> 先调 <code>SellItem</code>，然后<strong>无条件</strong> <code>quantity--</code>。而 <code>SellItem</code> 在「这家店不收这件东西」时什么都不做就返回。于是卖一个店里没有的东西 = 物品凭空少一个、金币不变。</p><p>根因是 <code>SellItem</code> 返回 <code>void</code>，调用方无法知道成功与否。</p><p><strong>③ 背包没有开关。</strong> <code>InventoryCanvas</code> 上没有 Toggle 组件，<code>sortingOrder = −1</code>，常驻在场景最底层。它不在 <code>UIManager</code> 下，也不受 <code>Time.timeScale</code> 影响。</p><hr><h2 id="还有两个小问题">还有两个小问题</h2><p><strong><code>ShopInfo</code> 用错了字段。</strong> 悬停框的标题取的是 <code>itemSo.name</code>（SO 资产名），而商店格子显示的是 <code>itemSo.itemName</code>。两个字段一旦不一致，几处文案就会对不上。</p><p><strong>面板互斥靠同一个 <code>timeScale</code>。</strong> <code>StatsUI</code>、<code>ToggleSkillTree</code>、<code>ShopKeeper</code> 三处各自 <code>timeScale = 0</code>，各自记一个 bool，谁也不看谁。先开属性面板再按 K，两个面板会同时亮着。</p><hr><h2 id="这个模块与外界的接缝">这个模块与外界的接缝</h2><div class="table-wrap"><table><thead><tr><th>方向</th><th>接口</th><th>形态</th></tr></thead><tbody><tr><td>入（世界 → 背包）</td><td><code>OnItemLooted(ItemSo, int)</code></td><td>静态事件</td></tr><tr><td>内（背包 → 属性）</td><td><code>StatsManger.UpdateHealth / UpdateMaxHealth / UpdateSpeed</code></td><td>单例写入</td></tr><tr><td>内（背包 ↔ 商店）</td><td><code>ShopManager.TryBuyItem / SellItem / AddItem</code></td><td>直接调用</td></tr><tr><td>入（商店 → 背包）</td><td><code>OnShopStateChanged(ShopManager, bool)</code></td><td>静态事件</td></tr><tr><td>出（商店 → 世界）</td><td><code>PopupShopItems</code>、<code>shopCanvasGroup</code>、<code>shopkeeperCam</code></td><td>直接引用</td></tr></tbody></table></div><p><strong>物品模块是全场唯一一个「既发事件、又订阅事件、又写单例、又调别人方法」的模块</strong>——四种接线方式全用上了。这也是它行数最多的原因（<code>InventoryManager</code> 98 行，全场最长）。</p><hr><h2 id="一句话总结">一句话总结</h2><p>物品模块的设计分两半：<strong>数据那一半（<code>ItemSo</code> + 投影）很干净</strong>，同一个 SO 在三处共用、不复制；<strong>流程那一半（买卖、金币、面板）很松</strong>，<code>SellItem</code> 不返回结果、金币走独立分支、面板没有开关。</p><p>想让这个模块真正立起来，顺序是：先补掉落表（接通两条链）→ 再让买卖返回成功与否（堵住物品蒸发）→ 最后给背包加开关并统一面板互斥。</p><p>回到总览：<a href="/post/arpg-modules-overview.html">7 个模块的全景与五类接线</a>。</p></div>
+  <footer class="post-footer">
+    <div class="post-tags"><a class="tag" href="../tags/index.html#tag-unity">Unity</a><a class="tag" href="../tags/index.html#tag-arpg">ARPG</a><a class="tag" href="../tags/index.html#tag-游戏开发">游戏开发</a><a class="tag" href="../tags/index.html#tag-背包系统">背包系统</a><a class="tag" href="../tags/index.html#tag-商店系统">商店系统</a><a class="tag" href="../tags/index.html#tag-scriptableobject">ScriptableObject</a></div>
+    <p class="post-source"><a href="https://github.com/daydaydream000/daydaydream000.github.io/blob/main/posts/arpg-module-items-shop.md">在 GitHub 上查看源文件</a></p>
+  </footer>
+</article>
+<nav class="post-nav" aria-label="上下篇"><a class="post-nav-item prev" href="../post/hello-daydaydream.html"><span class="post-nav-label">← 更新的一篇</span><span class="post-nav-title">你好，欢迎来到 DayDayDream</span></a><a class="post-nav-item next" href="../post/arpg-module-growth.html"><span class="post-nav-label">更早的一篇 →</span><span class="post-nav-title">ARPG 模块专文（三）：成长链——一个 int 走完五段</span></a></nav>
+</div>
+    <aside class="col col-right"><nav class="card-panel toc-card" aria-label="文章目录" data-reveal="0"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span>文章目录</span></h2><div class="toc-list"><a class="" href="#一句话说清">一句话说清</a><a class="" href="#全链一张图">全链一张图</a><a class="" href="#数据结构一个-so-撑起整个模块">数据结构：一个 SO 撑起整个模块</a><a class="" href="#拾取触发器-静态事件">拾取：触发器 + 静态事件</a><a class="" href="#additem四道分流">AddItem：四道分流</a><a class="" href="#使用格子自己决定「这是用还是卖」">使用：格子自己决定「这是用还是卖」</a><a class="" href="#商店五步开店">商店：五步开店</a><a class="" href="#三处断链">三处断链</a><a class="" href="#还有两个小问题">还有两个小问题</a><a class="" href="#这个模块与外界的接缝">这个模块与外界的接缝</a><a class="" href="#一句话总结">一句话总结</a></div></nav><section class="card-panel" data-reveal="3"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>站点统计</span></h2><ul class="stat-list"><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span class="stat-label">文章</span><span class="stat-value">25</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span class="stat-label">标签</span><span class="stat-value">40</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span class="stat-label">总字数</span><span class="stat-value">69,805</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="stat-label">最近更新</span><span class="stat-value">2026-11-05</span></li></ul></section></aside>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>转载请注明出处</p>
+  <nav class="footer-nav" aria-label="页脚导航">
+    <a href="../index.html">首页</a>
+    <a href="../tags/index.html">标签</a>
+    <a href="../about.html">关于</a>
+    <a href="../rss.xml">RSS</a>
+    <a href="https://github.com/daydaydream000">GitHub</a>
+    <a href="https://github.com/daydaydream000/daydaydream000.github.io">源码</a>
+    <a href="mailto:daydaydream000@users.noreply.github.com">邮件</a>
+  </nav>
+  <p class="footer-note">本站是纯静态站点，由 build.py 生成，托管于 GitHub Pages。</p>
+</footer>
+
+<a class="back-to-top" id="back-to-top" href="#" aria-label="回到顶部" title="回到顶部">
+  <svg class="i" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</a>
+
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="搜索文章">
+    <div class="search-head">
+      <svg class="i" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off"
+             spellcheck="false" aria-label="搜索关键词">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<script src="../assets/search-index.js" defer></script>
+<script src="../assets/app.js?v=ffe2833a95" defer></script>
+</body>
+</html>
