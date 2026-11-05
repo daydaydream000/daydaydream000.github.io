@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bg16f" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bg16f)"/>
+
+  <text x="600" y="32" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">三条入口，一个出口：按键 / 按钮 / 悬停都落到 ShopManager</text>
+  <text x="600" y="54" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">开店走 Update 里的按键，切档走三个按钮转发，悬停走三个指针接口 —— 三条路都不碰对方</text>
+
+  <!-- 左：按键开店 -->
+  <g transform="translate(36, 80)">
+    <text x="0" y="12" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#1a5a30">① 按键开店（Esc 关店）</text>
+    <rect x="0" y="26" width="368" height="196" rx="4" fill="#e8f6ec" stroke="#1a7a3a"/>
+    <text x="14" y="48" font-family="ui-monospace, monospace" font-size="10" fill="#1a5a30">OnTriggerEnter2D → playerInRange = true</text>
+    <text x="14" y="68" font-family="ui-monospace, monospace" font-size="10" fill="#1a5a30">Input.GetButtonDown("Interact")</text>
+
+    <line x1="14" y1="80" x2="354" y2="80" stroke="#1a7a3a" stroke-opacity="0.35"/>
+    <text x="14" y="100" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">Time.timeScale = 0</text>
+    <text x="14" y="116" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">currentShopKeeper = this</text>
+    <text x="14" y="132" font-family="ui-monospace, monospace" font-size="9.5" fill="#8a2a20">OnShopStateChanged(shopManager, true)  ← 无 ?.Invoke</text>
+    <text x="14" y="148" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">alpha = 1 · blocksRaycasts = true · interactable = true</text>
+    <text x="14" y="164" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">相机就位 + SetActive(true)</text>
+    <text x="14" y="180" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">OpenItemShop()　← 默认停在第一档</text>
+
+    <line x1="14" y1="192" x2="354" y2="192" stroke="#1a7a3a" stroke-opacity="0.35"/>
+    <text x="14" y="210" font-family="ui-monospace, monospace" font-size="9" fill="#5a2a20">Esc → 五样全部反向，并且这次真的发了 false</text>
+  </g>
+
+  <!-- 中：切档 -->
+  <g transform="translate(418, 80)">
+    <text x="180" y="12" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#5a3a20">② 三个按钮切档</text>
+    <rect x="0" y="26" width="360" height="196" rx="4" fill="#fff8e8" stroke="#b48a2a"/>
+
+    <rect x="14" y="40" width="100" height="28" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="64" y="58" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">Items</text>
+    <rect x="126" y="40" width="100" height="28" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="176" y="58" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">Weapons</text>
+    <rect x="238" y="40" width="104" height="28" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="290" y="58" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">Armour</text>
+
+    <text x="14" y="88" font-family="ui-monospace, monospace" font-size="9.5" fill="#8a5a20">ShopButtonToggles.OpenItemShop()</text>
+    <text x="24" y="104" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a3a20">→ if (ShopKeeper.currentShopKeeper != null)</text>
+    <text x="36" y="120" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a3a20">currentShopKeeper.OpenItemShop()</text>
+
+    <text x="14" y="144" font-family="ui-monospace, monospace" font-size="9.5" fill="#8a5a20">→ shopManager.PopulateShopItems(shopItems)</text>
+    <line x1="14" y1="154" x2="346" y2="154" stroke="#b48a2a" stroke-opacity="0.35"/>
+    <text x="14" y="172" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a3a20">8 个槽：填 N 个 → SetActive(true)</text>
+    <text x="14" y="188" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a3a20">　　　　其余 → SetActive(false)</text>
+    <text x="14" y="208" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a2a20">每次切档都全量 Initialize，没有「只在变了才刷」</text>
+  </g>
+
+  <!-- 右：悬停 -->
+  <g transform="translate(814, 80)">
+    <text x="176" y="12" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="12.5" font-weight="700" fill="#1a3d28">③ 悬停信息框</text>
+    <rect x="0" y="26" width="352" height="196" rx="4" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.28"/>
+
+    <text x="14" y="48" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">OnPointerEnter → ShowItemInfo(itemSo)</text>
+    <text x="14" y="64" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">OnPointerExit　→ HideItemInfo()</text>
+    <text x="14" y="80" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">OnPointerMove　→ FollowMouse()</text>
+
+    <rect x="14" y="92" width="246" height="70" rx="3" fill="#f7f3e8" stroke="#8a7a52"/>
+    <text x="24" y="110" font-family="ui-monospace, monospace" font-size="9" fill="#5a3a20">Mushroom</text>
+    <text x="24" y="126" font-family="ui-sans-serif, sans-serif" font-size="8.5" fill="#6a5b3a">a mushroom</text>
+    <text x="24" y="142" font-family="ui-monospace, monospace" font-size="8.5" fill="#8a5a20">（无属性行 → 6 个全隐藏）</text>
+    <text x="24" y="156" font-family="ui-monospace, monospace" font-size="8.5" fill="#8a2a20">名字取的是 itemSo.name，不是 itemName</text>
+
+    <text x="14" y="184" font-family="ui-monospace, monospace" font-size="9" fill="#5a3a20">List&lt;string&gt; stats：逐条 &gt; 0 才加</text>
+    <text x="14" y="200" font-family="ui-monospace, monospace" font-size="9" fill="#5a3a20">Health+ · Damage+ · Speed+ · Duration+</text>
+    <text x="14" y="216" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a2a20">offset (10,−10) 无边界钳制 → 右下会出屏</text>
+  </g>
+
+  <!-- 底部 -->
+  <g transform="translate(36, 292)">
+    <rect x="0" y="0" width="564" height="80" rx="4" fill="#1e2a22"/>
+    <text x="14" y="22" font-family="ui-monospace, monospace" font-size="10" fill="#9fd8a8">// 三档分别指向三份 List，都住在 ShopKeeper 上</text>
+    <text x="14" y="42" font-family="ui-monospace, monospace" font-size="10" fill="#e8f0e8">shopItems:　Mushroom 2 · Pumpkin 5</text>
+    <text x="14" y="58" font-family="ui-monospace, monospace" font-size="10" fill="#e8f0e8">shopWeapons: Steak 10　　shopArmour: Steak 10</text>
+    <text x="14" y="74" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#7f9b86">Weapons 与 Armour 两档目前用的是同一件 Steak，只是价格不同</text>
+
+    <rect x="584" y="0" width="576" height="80" rx="4" fill="#fff1f0" stroke="#c43131" stroke-opacity="0.45"/>
+    <text x="598" y="22" font-family="ui-sans-serif, sans-serif" font-size="11" font-weight="700" fill="#8a2a20">最硬的一条：Interact 与 Slash 都绑在 K</text>
+    <text x="598" y="42" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a2a20">InputManager：Slash.k · Interact.k · Shoot.j · ChangeEquipment.q · Cancel.escape</text>
+    <text x="598" y="58" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a2a20">同一次按下，ShopKeeper 开店、PlayerMovement 也 Attack()</text>
+    <text x="598" y="74" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a2a20">表现：开店那一下会挥一刀，且 isAttacking 要等动画事件才复位</text>
+  </g>
+</svg>

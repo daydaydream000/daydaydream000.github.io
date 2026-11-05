@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" width="1200" height="400">
+  <defs>
+    <linearGradient id="bg16r" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#eef5ee"/>
+      <stop offset="1" stop-color="#dcebdc"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="400" fill="url(#bg16r)"/>
+
+  <text x="600" y="32" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="22" font-weight="700" fill="#1a3d28">店主立绘：一台只看得见 NPC 的副相机 + 一张 256×256 的 RT</text>
+  <text x="600" y="54" text-anchor="middle" font-family="ui-sans-serif, sans-serif" font-size="13" fill="#3a4a3a">主相机拍整个世界（depth −1，全部层）；副相机只拍 Layer 9（NPC），输出到 RenderTexture，再由 RawImage 贴进面板</text>
+
+  <!-- 世界 -->
+  <g transform="translate(40, 82)">
+    <rect x="0" y="0" width="380" height="180" rx="5" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#1a3d28">① 场景里有这两台相机</text>
+
+    <rect x="14" y="36" width="352" height="40" rx="3" fill="#e8f6ec" stroke="#1a7a3a"/>
+    <text x="26" y="54" font-family="ui-monospace, monospace" font-size="10" fill="#1a5a30">Main Camera　depth −1　mask 全部</text>
+    <text x="26" y="69" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#1a5a30">拍地面 / 玩家 / 敌人 / 店主（NPC 也在层 9，两层都看得见）</text>
+
+    <rect x="14" y="84" width="352" height="40" rx="3" fill="#fff8e8" stroke="#b48a2a"/>
+    <text x="26" y="102" font-family="ui-monospace, monospace" font-size="10" fill="#8a5a20">ShopKeeperCamera　depth 0　mask = 512（仅 Layer 9）</text>
+    <text x="26" y="117" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a5a20">世界里只剩店主 —— 其它一切都被剔除</text>
+
+    <rect x="14" y="134" width="352" height="36" rx="3" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.25"/>
+    <text x="26" y="152" font-family="ui-monospace, monospace" font-size="9.5" fill="#1a3d28">Layer 表：0 Default · 5 UI · 6 Player · 7 Enemy</text>
+    <text x="26" y="165" font-family="ui-monospace, monospace" font-size="9.5" font-weight="700" fill="#8a5a20">8 Obstacle · 9 NPC　← 今天新加的一层</text>
+
+    <text x="14" y="188" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#3a4a3a">店主整套挂的正是 Layer 9，所以这条 mask 才会有效</text>
+  </g>
+
+  <!-- 箭头 -->
+  <g stroke="#1a3d28" stroke-width="2" fill="none">
+    <path d="M428,172 L472,172" stroke-dasharray="5 4"/>
+    <path d="M472,172 L463,167 M472,172 L463,177" stroke-linecap="round"/>
+  </g>
+  <text x="450" y="160" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#1a3d28">渲染</text>
+
+  <!-- RT -->
+  <g transform="translate(482, 82)">
+    <rect x="0" y="0" width="248" height="180" rx="5" fill="#1e2a22"/>
+    <text x="14" y="22" font-family="ui-monospace, monospace" font-size="10.5" fill="#9fd8a8">ShopKeeperRennderTexture</text>
+    <rect x="24" y="36" width="100" height="100" rx="3" fill="#2c3b30" stroke="#42a9a4"/>
+    <circle cx="74" cy="72" r="18" fill="#3a5a48"/>
+    <path d="M74,84 L74,120" stroke="#3a5a48" stroke-width="5"/>
+    <text x="136" y="52" font-family="ui-monospace, monospace" font-size="9.5" fill="#e8f0e8">256 × 256</text>
+    <text x="136" y="70" font-family="ui-monospace, monospace" font-size="9.5" fill="#e8f0e8">AntiAliasing 1</text>
+    <text x="136" y="88" font-family="ui-monospace, monospace" font-size="9.5" fill="#e8f0e8">m_SRGB 0</text>
+    <text x="136" y="106" font-family="ui-monospace, monospace" font-size="9.5" fill="#9fd8a8">只要 256 见方</text>
+    <text x="136" y="122" font-family="ui-monospace, monospace" font-size="9.5" fill="#9fd8a8">够贴满 800 的槽</text>
+
+    <text x="14" y="156" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#7f9b86">相机 private 到材质吞掉的</text>
+    <text x="14" y="170" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#7f9b86">m_Depth 0 让它排在主相机之后</text>
+  </g>
+
+  <!-- 箭头 -->
+  <g stroke="#1a3d28" stroke-width="2" fill="none">
+    <path d="M738,172 L782,172" stroke-dasharray="5 4"/>
+    <path d="M782,172 L773,167 M782,172 L773,177" stroke-linecap="round"/>
+  </g>
+  <text x="760" y="160" text-anchor="middle" font-family="ui-monospace, monospace" font-size="9" fill="#1a3d28">贴图</text>
+
+  <!-- 面板 -->
+  <g transform="translate(792, 82)">
+    <rect x="0" y="0" width="368" height="180" rx="5" fill="#ffffff" stroke="#1a3d28" stroke-opacity="0.3"/>
+    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#1a3d28">② 面板左下角：ShopKeeperPortait</text>
+
+    <rect x="14" y="36" width="96" height="96" rx="3" fill="#efeadd" stroke="#8a7a52"/>
+    <circle cx="62" cy="72" r="18" fill="#c9b688"/>
+    <path d="M62,84 L62,118" stroke="#c9b688" stroke-width="5"/>
+    <text x="62" y="146" text-anchor="middle" font-family="ui-monospace, monospace" font-size="8.5" fill="#8a5a20">RawImage · 800 × 800</text>
+
+    <rect x="126" y="36" width="228" height="96" rx="3" fill="#f7f3e8" stroke="#8a7a52" stroke-opacity="0.6"/>
+    <text x="140" y="56" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a3a20">为什么必须是 RawImage</text>
+    <text x="140" y="76" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#5a3a20">RenderTexture 不是 Sprite，</text>
+    <text x="140" y="92" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#5a3a20">Image.sprite 接不住它；</text>
+    <text x="140" y="108" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#5a3a20">RawImage.texture 才行。</text>
+    <text x="140" y="126" font-family="ui-sans-serif, sans-serif" font-size="9" fill="#8a2a20">它的 CanvasGroup 不可点也不挡射线</text>
+
+    <text x="14" y="170" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a5a20">UI 排版用 1920×1080 算，店主位置用世界坐标算 —— RT 就是这两套坐标的转接头</text>
+  </g>
+
+  <!-- 底部 -->
+  <g transform="translate(40, 282)">
+    <rect x="0" y="0" width="524" height="88" rx="4" fill="#fff8e8" stroke="#b48a2a"/>
+    <text x="14" y="22" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#8a5a20">这套管道的三个好处</text>
+    <text x="14" y="44" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a3a20">① UI 排版不受店主的场景位置影响</text>
+    <text x="14" y="62" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a3a20">② 店主有自己的正面构图（offset (0,0,−1)）</text>
+    <text x="14" y="80" font-family="ui-sans-serif, sans-serif" font-size="10" fill="#5a3a20">③ 平时 SetActive(false)，只在开店那一刻付渲染成本</text>
+
+    <rect x="544" y="0" width="616" height="88" rx="4" fill="#fff1f0" stroke="#c43131" stroke-opacity="0.45"/>
+    <text x="558" y="22" font-family="ui-sans-serif, sans-serif" font-size="11.5" font-weight="700" fill="#8a2a20">代价：多一台相机就多一份要维护的状态</text>
+    <text x="558" y="44" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a2a20">关店忘 SetActive(false) → 它会在后台一直渲染那张 RT</text>
+    <text x="558" y="62" font-family="ui-monospace, monospace" font-size="9.5" fill="#5a2a20">两个 ShopKeeper 实例共用同一台相机 → 相机跟着「最后一个 who」走</text>
+    <text x="558" y="80" font-family="ui-sans-serif, sans-serif" font-size="9.5" fill="#8a2a20">相机位置写的是 transform.position + offset，且只在开店时算一次</text>
+  </g>
+</svg>
