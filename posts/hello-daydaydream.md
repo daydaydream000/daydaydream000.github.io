@@ -4,7 +4,7 @@ date: 2026-10-08 21:47:00
 tags: [随笔, 建站]
 cover: images/hello-daydaydream.svg
 summary: 这是这个博客的第一篇文章，也是一次推倒重来的记录。
-pinned: true
+pinned: false
 ---
 
 # 你好，欢迎来到 DayDayDream

@@ -132,6 +132,10 @@ git push
 - **侧栏组件**：`render_sidebar_left()` / `render_stats_card()` / `render_recent_card()` / `render_toc_card()` / `render_tag_bar()`，
   样式在 `assets/style.css` 的「侧栏组件」段落；
 - **文章卡片**：`render_post_card()` / `render_post_list()`；
+- **文章系列**：`CONFIG["series"]` 定义系列（`slug` / `name` / `tagline` / `desc` / `cls` / `match`）。
+  `match` 是 **slug 前缀元组**，先匹配先得，所以兜底系列（`match: ()`）必须放最后；
+  首页第一页的系列卡片、左栏系列挂件、`series/index.html` 与 `series/<slug>/index.html`
+  都由它自动生成，新增一个系列只要往 `CONFIG["series"]` 里加一条；
 - **社交分享图**：文章页优先用 front matter 里的 `cover`，其余页面回退到 `CONFIG["banner"]`。
 
 > 修改 `docs/` 里的任何文件都会在下次 `python build.py` 时被覆盖，请改源文件。

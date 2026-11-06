@@ -71,9 +71,49 @@ CONFIG = {
     "per_page": 10,
     "nav": [
         ("首页", "index.html", "home"),
+        ("系列", "series/index.html", "folder"),
         ("ARPG", "arpg-progress.html", "chart"),
         ("标签", "tags/index.html", "tag"),
         ("关于", "about.html", "user"),
+    ],
+    # 文章系列：首页按系列聚合，一篇只属于一个系列。
+    # 匹配按 slug 前缀，「先匹配先得」，因此兜底系列（match 为空）必须放在最后。
+    "series": [
+        {
+            "slug": "arpg-logs",
+            "name": "ARPG 开发日志",
+            "tagline": "Day 1 → Day 16，一天一篇",
+            "desc": "从「让骑士动起来」到「店主、商店与悬停信息框」，按天记录的踩坑与修正；"
+                    "另含十天复盘、架构全景与技能树专文。",
+            "cls": "series-logs",
+            "match": ("arpg-day", "arpg-skilltree-deep-dive"),
+        },
+        {
+            "slug": "arpg-modules",
+            "name": "ARPG 模块专文",
+            "tagline": "按「东西长在哪」重读一遍",
+            "desc": "不再按天，而是按模块讲：全景与五类接线、玩家与敌人、成长链、"
+                    "物品与商店、表现层、关卡与相机。",
+            "cls": "series-modules",
+            "match": ("arpg-module",),
+        },
+        {
+            "slug": "arpg-code",
+            "name": "ARPG 代码分析",
+            "tagline": "直接看 Assets/Scripe",
+            "desc": "对 31 个 .cs 做静态体检：P0/P1/P2 分级、6 类拼写、8 个反模式，"
+                    "以及一条六步重构路径。",
+            "cls": "series-code",
+            "match": ("arpg-code",),
+        },
+        {
+            "slug": "misc",
+            "name": "其他 · 游戏与随笔",
+            "tagline": "Unity 小游戏拆解 + 建站",
+            "desc": "《小恐龙》《楼梯》两个小游戏的代码拆解，以及这个站点的第一篇。",
+            "cls": "series-misc",
+            "match": (),
+        },
     ],
 }
 
@@ -1166,6 +1206,34 @@ def render_notice_card(root: str) -> str:
     )
 
 
+def render_series_widget(posts: list[Doc], root: str) -> str:
+    """左栏系列挂件：系列名 + 篇数，点进去看整个系列。"""
+    groups = series_groups(posts)
+    rows = []
+    for item in SERIES:
+        items = groups.get(item["slug"], [])
+        if not items:
+            continue
+        rows.append(
+            f'<li class="{item["cls"]}">'
+            f'<a href="{series_href(item, root)}">'
+            f'<span class="series-widget-dot" aria-hidden="true"></span>'
+            f'<span class="series-widget-name">{esc(item["name"])}</span>'
+            f'<span class="series-widget-count">{len(items)}</span>'
+            "</a></li>"
+        )
+    if not rows:
+        return ""
+    return (
+        '<section class="card-panel series-widget" data-reveal="2">'
+        f'<h2 class="widget-title">{icon_svg("folder", 16)}<span>文章系列</span></h2>'
+        f'<ul class="series-widget-list">{"".join(rows)}</ul>'
+        f'<a class="widget-more" href="{root}series/index.html">全部系列'
+        f'{icon_svg("arrow-right", 14)}</a>'
+        "</section>"
+    )
+
+
 def render_sidebar_left(root: str) -> str:
     return render_profile_card(root) + render_notice_card(root)
 
@@ -1282,6 +1350,9 @@ def post_meta_html(doc: Doc, root: str) -> str:
             f'<span class="badge">{icon_svg("clock", 13)}更新于 {esc(format_date(doc.updated))}</span>'
         )
     parts.append(f'<span class="badge">{icon_svg("file", 13)}约 {doc.word_count} 字</span>')
+    series_badge = series_badge_html(doc, root)
+    if series_badge:
+        parts.append(series_badge)
     parts.append(f'<span class="badge">{icon_svg("clock", 13)}{doc.reading} 分钟阅读</span>')
     for tag in doc.tag_links:
         parts.append(
@@ -1291,11 +1362,86 @@ def post_meta_html(doc: Doc, root: str) -> str:
     return f'<div class="post-badges">{"".join(parts)}</div>'
 
 
+SERIES = CONFIG["series"]
+
+
+def series_of(doc: Doc) -> dict | None:
+    """按 slug 前缀判断所属系列；match 为空的作为兜底。"""
+    for item in SERIES:
+        prefixes = item.get("match") or ()
+        if not prefixes:
+            return item
+        if any(doc.slug.startswith(p) for p in prefixes):
+            return item
+    return None
+
+
+def series_href(item: dict, root: str) -> str:
+    return f'{root}series/{item["slug"]}/index.html'
+
+
+def series_badge_html(doc: Doc, root: str) -> str:
+    item = series_of(doc)
+    if not item:
+        return ""
+    return (
+        f'<a class="badge badge-series {item["cls"]}" href="{series_href(item, root)}">'
+        f'{icon_svg("folder", 13)}{esc(item["name"])}</a>'
+    )
+
+
+def series_groups(posts: list[Doc]) -> dict[str, list[Doc]]:
+    """按系列分组，组内一律按日期倒序（不受首页「置顶优先」影响）。"""
+    groups: dict[str, list[Doc]] = {}
+    for doc in sorted(posts, key=lambda d: d.date, reverse=True):
+        item = series_of(doc)
+        if item:
+            groups.setdefault(item["slug"], []).append(doc)
+    return groups
+
+
+def render_series_cards(posts: list[Doc], root: str) -> str:
+    """首页顶部的系列入口：几个大卡片，一眼看出站里有哪几套内容。"""
+    groups = series_groups(posts)
+    cards = []
+    for item in SERIES:
+        items = groups.get(item["slug"], [])
+        if not items:
+            continue
+        latest, oldest = items[0], items[-1]
+        cards.append(
+            f'<a class="series-card {item["cls"]}" href="{series_href(item, root)}" '
+            f'title="{esc_attr(item["desc"])}">'
+            '<div class="series-card-head">'
+            f'<span class="series-card-name">{esc(item["name"])}</span>'
+            f'<span class="series-card-count">{len(items)} 篇</span>'
+            "</div>"
+            f'<p class="series-card-tagline">{esc(item["tagline"])}</p>'
+            f'<p class="series-card-latest">{icon_svg("file", 13)}'
+            f'<span>{esc(latest.title)}</span></p>'
+            '<div class="series-card-foot">'
+            f'<span class="series-card-range">{oldest.date_str} — {latest.date_str}</span>'
+            '<span class="series-card-more">进入 →</span>'
+            "</div></a>"
+        )
+    if not cards:
+        return ""
+    return (
+        '<section class="series-block" aria-label="文章系列">'
+        '<h2 class="section-title">文章系列</h2>'
+        f'<div class="series-grid">{"".join(cards)}</div>'
+        "</section>"
+    )
+
+
 def render_post_card(doc: Doc, root: str, reveal_index: int = 0) -> str:
     badges = []
     if doc.pinned:
         badges.append(f'<span class="badge badge-pin">{icon_svg("pin", 13)}置顶</span>')
     badges.append(f'<span class="badge">{icon_svg("calendar", 13)}{doc.date_str}</span>')
+    series_badge = series_badge_html(doc, root)
+    if series_badge:
+        badges.append(series_badge)
     if doc.tags:
         badges.append(f'<span class="badge">{icon_svg("folder", 13)}{esc(doc.tags[0])}</span>')
     badges.append(f'<span class="badge">{icon_svg("clock", 13)}{doc.reading} 分钟</span>')
@@ -1431,11 +1577,12 @@ def build_index(posts: list[Doc], per_page: int) -> None:
                 bits.append(f'<a class="pager-link" href="{root}page/{page_no + 1}/index.html">下一页 →</a>')
             pager = f'<nav class="pager">{"".join(bits)}</nav>'
 
-        # 标签栏只放在首页第一页，翻页后不再重复
+        # 标签栏与系列入口只放在首页第一页，翻页后不再重复
         tag_bar = render_tag_bar(posts, root) if page_no == 1 else ""
+        series_block = render_series_cards(posts, root) if page_no == 1 else ""
         body = fill(
             template("index.html"),
-            {"tag_bar": tag_bar, "posts": posts_html, "pager": pager},
+            {"tag_bar": tag_bar, "series": series_block, "posts": posts_html, "pager": pager},
         )
 
         if page_no == 1:
@@ -1451,7 +1598,90 @@ def build_index(posts: list[Doc], per_page: int) -> None:
             nav_active="index.html",
             body_class="page-index",
             banner=banner,
-            left=render_sidebar_left(root),
+            left=render_sidebar_left(root) + render_series_widget(posts, root),
+            right=render_recent_card(posts, root) + render_stats_card(posts),
+        )
+
+
+def _series_rows(items: list[Doc], root: str) -> str:
+    return "".join(
+        f'<li><time datetime="{d.date_str}">{d.date_str}</time>'
+        f'<a href="{root}{d.url}">{esc(d.title)}</a></li>'
+        for d in items
+    )
+
+
+def build_series(posts: list[Doc]) -> None:
+    """series/index.html 总览 + series/<slug>/index.html 每个系列一页。"""
+    groups = series_groups(posts)
+    live = [item for item in SERIES if groups.get(item["slug"])]
+
+    # --- 总览 ---
+    out_path = Path("series/index.html")
+    root = root_prefix(out_path)
+    sections = []
+    for item in live:
+        items = groups[item["slug"]]
+        sections.append(
+            f'<section class="series-section {item["cls"]}">'
+            '<h2 class="series-section-title">'
+            f'<span class="series-dot" aria-hidden="true"></span>'
+            f'<span>{esc(item["name"])}</span>'
+            f'<span class="tag-count">{len(items)} 篇</span></h2>'
+            f'<p class="series-desc">{esc(item["desc"])}</p>'
+            f'<ul class="tag-posts">{_series_rows(items, root)}</ul>'
+            f'<a class="series-section-more" href="{series_href(item, root)}">'
+            '单独打开系列页 →</a>'
+            "</section>"
+        )
+    body = fill(
+        template("series.html"),
+        {
+            "title": "文章系列",
+            "intro": f"站里共 {len(posts)} 篇，分属 {len(live)} 个系列。同一系列按时间倒序，"
+                     "从最近的一篇往前读，或直接进系列页看目录。",
+            "content": "".join(sections),
+            "cls": "",
+        },
+    )
+    render_page(
+        out_path=out_path,
+        page_title="文章系列",
+        body=body,
+        description="按系列浏览 DayDayDream 的全部文章。",
+        nav_active="series/index.html",
+        body_class="page-series",
+        banner=render_banner(root, CONFIG["title"], "文章系列", short=True),
+        left=render_sidebar_left(root),
+        right=render_recent_card(posts, root) + render_stats_card(posts),
+    )
+
+    # --- 每个系列一页 ---
+    for item in live:
+        items = groups[item["slug"]]
+        out_path = Path(f'series/{item["slug"]}/index.html')
+        root = root_prefix(out_path)
+        content = (
+            f'<ul class="tag-posts series-full-list">{_series_rows(items, root)}</ul>'
+        )
+        body = fill(
+            template("series.html"),
+            {
+                "title": f'{item["name"]}（{len(items)} 篇）',
+                "intro": item["desc"],
+                "content": content,
+                "cls": item["cls"],
+            },
+        )
+        render_page(
+            out_path=out_path,
+            page_title=item["name"],
+            body=body,
+            description=item["desc"],
+            nav_active="series/index.html",
+            body_class="page-series",
+            banner=render_banner(root, CONFIG["title"], item["name"], short=True),
+            left=render_sidebar_left(root) + render_series_widget(posts, root),
             right=render_recent_card(posts, root) + render_stats_card(posts),
         )
 
@@ -1492,7 +1722,7 @@ def build_posts(posts: list[Doc], pages: list[Doc]) -> None:
             body_class="page-post",
             image=absolute_url(doc.cover) if doc.cover else "",
             banner=render_banner(root, CONFIG["title"], CONFIG["subtitle"], short=True),
-            left=render_sidebar_left(root),
+            left=render_sidebar_left(root) + render_series_widget(posts, root),
             right=render_toc_card(doc.toc, root) + render_stats_card(posts),
         )
 
@@ -1519,7 +1749,7 @@ def build_posts(posts: list[Doc], pages: list[Doc]) -> None:
             nav_active=doc.url,
             body_class="page-single",
             banner=render_banner(root, CONFIG["title"], CONFIG["subtitle"], short=True),
-            left=render_sidebar_left(root),
+            left=render_sidebar_left(root) + render_series_widget(posts, root),
             right=render_recent_card(posts, root) + render_stats_card(posts),
         )
 
@@ -1621,6 +1851,9 @@ def build_rss(posts: list[Doc]) -> None:
 def build_sitemap(posts: list[Doc], pages: list[Doc]) -> None:
     urls = [("", None)] + [(d.url, d.date) for d in posts] + [(d.url, d.date) for d in pages]
     urls.append(("tags/index.html", None))
+    urls.append(("series/index.html", None))
+    for item in SERIES:
+        urls.append((f'series/{item["slug"]}/index.html', None))
     entries = []
     for url, date in urls:
         loc = f"{CONFIG['url']}/{url}".rstrip("/") or CONFIG["url"] + "/"
@@ -1696,6 +1929,7 @@ def main() -> int:
     print(f"  复制图片 {len(images)} 张")
 
     build_index(posts, max(1, int(CONFIG["per_page"])))
+    build_series(posts)
     build_posts(posts, pages)
     build_tags(posts)
     build_rss(posts)

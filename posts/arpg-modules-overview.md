@@ -4,7 +4,7 @@ date: 2026-11-05 21:00:00
 tags: Unity, ARPG, 游戏开发, 架构, 模块化, 耦合
 summary: 把 Day 1–16 散在各篇日志里的东西重新按「模块」讲一遍：31 个脚本 1565 行分成输入 / 逻辑 / 数据 / 表现三层，模块之间只有五种接线方式（拖引用、单例、静态事件、enabled 开关、动画事件），6 组静态事件和 2 个单例撑起了全部跨模块通信。配两张图：三层全景图与 7×7 耦合矩阵，并指出唯一一条该有却没有的边。
 cover: images/arpg-mod-c1.svg
-pinned: true
+pinned: false
 draft: false
 slug: arpg-modules-overview
 ---
