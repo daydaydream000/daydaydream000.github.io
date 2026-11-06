@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 ARPG 模块系列配图生成器
@@ -309,6 +309,31 @@ def finish(items, w, keys, bg=None):
     h = int(max(max(ys) + 28 if ys else 0, rmax) + 48)
     return svg_head(w, h, bg) + body + svg_tail(keys)
 
+
+
+def table(x, y, heads, rows, colw, rowh=27, accent="#3c6e8f", fs=10.6, headfs=10.4,
+          mono_cols=()):
+    """无连线的表格：只用矩形和文字，天然不会穿框。"""
+    w = sum(colw)
+    o = [f'<rect x="{x}" y="{y}" width="{w}" height="{rowh}" rx="6" '
+         f'fill="{accent}" fill-opacity="0.10"/>']
+    cx = x
+    for i, h in enumerate(heads):
+        o.append(T(cx + 12, y + rowh - 9, h, headfs, accent, weight="700"))
+        cx += colw[i]
+    yy = y + rowh
+    for r, row in enumerate(rows):
+        if r % 2 == 0:
+            o.append(f'<rect x="{x}" y="{yy}" width="{w}" height="{rowh}" fill="#ffffff" fill-opacity="0.62"/>')
+        cx = x
+        for i, cell in enumerate(row):
+            o.append(T(cx + 12, yy + rowh - 9, cell, fs, C["ink"],
+                       mono=(i in mono_cols)))
+            cx += colw[i]
+        yy += rowh
+    o.append(f'<rect x="{x}" y="{y}" width="{w}" height="{yy - y}" rx="6" fill="none" '
+             f'stroke="{accent}" stroke-opacity="0.22"/>')
+    return "".join(o), yy - y
 
 def _gap_y(flow, i):
     y = flow.y
@@ -958,7 +983,7 @@ def build_map():
                    "knockbackForce 20 · knockbackTime 0.15 · stunTime 0.2",
                    "maxHealth 20 · currentHealth 20",
                    "全项目 20 处 StatsManger.Instance"], C["data"], ts=12.8, ls=10.2))
-    s.append(card(614, cy, 542, ch, "⑦ 表现层 · 5 张 Canvas + 关卡触发器",
+    s.append(card(614, cy, 542, ch, "⑦ 表现层 · 6 张 Canvas + 关卡触发器",
                   ["ExpCanvas       经验条 / 等级文本",
                    "StatsPanel       Esc 属性面板（8 个格）",
                    "SkillCanvass     2 键技能树（24 个格）",
@@ -1211,7 +1236,7 @@ COVERS = [
     ("arpg-mod-c1.svg",
      "ARPG 模块全景：7 个模块、五类接线",
      "31 个脚本 / 1435 行 / 1 个场景 / 6 组静态事件 / 2 个单例",
-     [("① 三层结构", ["输入层：7 个轴", "逻辑层：玩家·敌人·成长·物品", "底层：数据单例 + 5 张 Canvas"]),
+     [("① 三层结构", ["输入层：7 个轴", "逻辑层：玩家·敌人·成长·物品", "底层：数据单例 + 6 张 Canvas"]),
       ("② 7×7 耦合矩阵", ["● 直接引用 14 条", "○ 单例读取 4 条", "⇢ 静态事件 1 条 · ✗ 缺口 1 条"]),
       ("③ 一条缺失的边", ["敌人 → 物品 不存在", "打怪只给经验", "地上没有掉落表"])],
      "#eef5ee", "#dbe9df", "#1a3d28"),
@@ -1236,6 +1261,20 @@ COVERS = [
       ("商店", ["ShopKeeper 触发圈 + K 开店", "三档货：Items/Weapons/Armour", "TryBuy 查钱查格 · Sell 找同款"]),
       ("三处断链", ["卖出不校验 → 物品蒸发", "击杀不掉物品", "背包没有开关常驻"])],
      "#f5effa", "#e7daf3", "#54306e"),
+    ("arpg-mod-c5.svg",
+     "表现层：六张 Canvas 与三个暂停者",
+     "6 张 Canvas 全走 Screen Space - Overlay，三处各自把 Time.timeScale 按到 0",
+     [("六张 Canvas", ["PlayerUI / ExpCanvas / StatsCanvas", "SkillCanvass / ShopCanvas / InventoryCanvas", "靠 sortingOrder 定前后（-1 到 1）"]),
+      ("三个暂停者", ["StatsUI（1 键）", "ToggleSkillTree（2 键）", "ShopKeeper（K / Esc）"]),
+      ("三个坑", ["逻辑挂在 Canvas 上，关 HUD 就断链", "屏幕坐标当画布坐标用", "面板互斥靠同一个 timeScale"])],
+     "#f2f0fa", "#e3def5", "#3d3369"),
+    ("arpg-mod-c6.svg",
+     "关卡与相机：七层瓦片与两条相机链",
+     "Tilemap 只做两件事：挡住不该走的地方、决定谁画在前面",
+     [("七层 Tilemap", ["Ground / Rocks / Water", "Collision-Low / High", "Non-Collision-Low / High + MountainBoundary"]),
+      ("两条相机链", ["Cinemachine → Main Camera → 屏幕", "ShopKeeperCamera → 256×256 RT", "→ RawImage 当立绘"]),
+      ("钻山洞", ["进：关山体碰撞 + 排序号 15", "出：开山体 + 排序号 10", "15 / 10 都是写死的"])],
+     "#f2f7ea", "#e2ecd6", "#3d4f1e"),
 ]
 
 
@@ -1247,6 +1286,224 @@ def build_covers():
     return out
 
 
+# ============================================================ 图 7 表现层
+def build_ui():
+    W = 1200
+    s = []
+    s.append(head(W, "表现层：6 张 Canvas、3 个暂停者、4 个 CanvasGroup",
+                  "逻辑层怎么知道「现在该不该停」？答案是：它不知道，三处各自把 Time.timeScale 按到 0。"))
+    s.append(legend(44, 108, [("ui", None, "表现层"), ("in", None, "输入"), ("bad", "5 4", "缺陷")]))
+
+    y0 = 148
+    s.append(section(y0, "① 六张 Canvas 的分层", C["ui"],
+                     "全部 Screen Space - Overlay，靠 sortingOrder 定前后"))
+    body, h = table(44, y0 + 34,
+                    ["Canvas", "sortingOrder", "参考分辨率", "开关方式", "装了什么"],
+                    [["PlayerUI", "0", "1920 x 1080", "常开", "HP 文本"],
+                     ["ExpCanvas", "0", "1920 x 108  (少一个 0)", "常开", "经验条 + 等级"],
+                     ["StatsCanvas", "0", "1920 x 1080", "1 键", "属性面板（8 格）"],
+                     ["SkillCanvass", "1", "1920 x 1080", "2 键", "技能树（24 格）"],
+                     ["ShopCanvas", "0", "1920 x 1080", "K 开店 / Esc 关店", "商品格 + 悬停框"],
+                     ["InventoryCanvas", "-1", "1920 x 1080", "没有开关", "背包 3 格 + 金币"]],
+                    [148, 118, 200, 186, 240], accent=C["ui"], mono_cols=(0, 1))
+    s.append(body)
+    y1 = y0 + 34 + h + 26
+    s.append(T(44, y1, "两处可疑：ExpCanvas 的参考高度是 108（其余都是 1080）；"
+                       "InventoryCanvas 的 sortingOrder 是 -1，没有开关，永远盖在场景上。", 10.8, C["bad"]))
+
+    y2 = y1 + 30
+    s.append(section(y2, "② 三个暂停者，同一套写法抄了三遍", C["in"],
+                     "StatsUI / ToggleSkillTree / ShopKeeper 各按同一模板改 timeScale 与 CanvasGroup"))
+    f = Flow(44, 560, y2 + 44, gap=48, side_x=628, side_w=528)
+    f.one("按键：三个不同的轴",
+           ["ToggleStats      -> 1",
+            "ToggleSkillTree  -> 2",
+            "Interact         -> K（与 Slash 同键）"], C["in"])
+    f.one("开：把世界停住",
+           ["Time.timeScale = 0",
+            "canvasGroup.alpha = 1",
+            "canvasGroup.blocksRaycasts = true",
+            "ShopKeeper 还多做三件：发事件、挪副相机、填货"], C["ui"],
+           side=("三份实现并不完全一样",
+                 ["ShopKeeper 关店时会把 interactable 也设回 false；",
+                  "StatsUI 与 ToggleSkillTree 只设 alpha 和 blocksRaycasts，",
+                  "  interactable 一直是 true。",
+                  "因为 alpha=0 且不挡射线，观感上看不出来 —— 但它是不一致。"], "gray"))
+    f.one("关：把世界放回去",
+           ["Time.timeScale = 1",
+            "canvasGroup.alpha = 0",
+            "canvasGroup.blocksRaycasts = false"], C["ui"],
+           side=("没有引用计数 = 面板不能叠加",
+                 ["三处各记一个 bool，谁也不看谁。",
+                  "先开属性面板（timeScale=0），再按 2 开技能树，",
+                  "然后关掉技能树 -> timeScale 变回 1。",
+                  "属性面板还亮着，但世界已经跑起来了。"], "bad"))
+    frag, endy = f.build()
+    s.append(frag)
+    s.append(gapchip(f, 0, "timeScale = 0", C["ui"], 24))
+
+    y3 = endy + 62
+    s.append(section(y3, "③ 四个 CanvasGroup 的初始值", C["ui"], None))
+    body2, h2 = table(44, y3 + 34,
+                      ["CanvasGroup", "alpha", "blocksRaycasts", "interactable", "意味着"],
+                      [["ShopCanvas", "0", "false", "false", "初始是关着的（对）"],
+                       ["SkillCanvass", "0", "false", "true", "初始关着，但 interactable 仍为 true"],
+                       ["StatsCanvas", "0", "false", "true", "同上"],
+                       ["InfoPopup", "1", "false", "false", "初始就是可见的（错）"]],
+                      [190, 100, 168, 158, 300], accent=C["ui"], mono_cols=(0,))
+    s.append(body2)
+    y4 = y3 + 34 + h2 + 24
+    s.append(T(44, y4, "InfoPopup 的 alpha 初值是 1 —— 悬停信息框在开店之前就一直贴在屏幕上。"
+                       "Day 16 的日志记过这条，现在仍然是这样。", 10.8, C["bad"]))
+
+    y5 = y4 + 34
+    s.append(section(y5, "④ 表现层的三个结构性问题", C["bad"], None))
+    cards = [
+        ("逻辑被挂在 UI 上", C["bad"],
+         ["ExpManager 不是挂在 Player 上，而是挂在 ExpCanvas 上。",
+          "关掉 HUD -> OnDisable 退订 OnMonsterDefeated",
+          "-> 事件没人听 -> 敌人打不死。",
+          "「关掉界面」变成了「关掉逻辑」，最贵的耦合。"]),
+        ("屏幕坐标当画布坐标用", C["bad"],
+         ["ShopInfo.FollowMouse() 直接写",
+          "infoPanelRect.position = Input.mousePosition + offset。",
+          "Overlay + CanvasScaler 缩放不为 1 时，",
+          "屏幕像素 != 画布单位，提示框会离鼠标越来越远。"]),
+        ("面板互斥靠同一个 timeScale", C["bad"],
+         ["三处都把 Time.timeScale 当自己的开关，",
+          "没有任何一方记录「现在是几层面板开着」。",
+          "同时开两个 -> 关掉其中一个",
+          "-> 世界在另一个面板后面继续跑。"]),
+    ]
+    cw = (1112 - 2 * 20) / 3
+    for i, (t, col, lines) in enumerate(cards):
+        x = 44 + i * (cw + 20)
+        s.append(f'<rect x="{x:.1f}" y="{y5 + 22}" width="{cw:.1f}" height="182" rx="9" '
+                 f'fill="#fffaf8" stroke="{col}" stroke-opacity="0.34"/>')
+        s.append(T(x + 16, y5 + 48, t, 12.4, col, weight="700"))
+        yy = y5 + 72
+        for ln in lines:
+            s.append(T(x + 16, yy, ln, 9.9, C["ink"]))
+            yy += 18
+    return finish(s, W, ["ui", "in", "bad", "gray", "data", "player"])
+
+# ============================================================ 图 8 关卡与相机
+def build_world():
+    W = 1200
+    s = []
+    s.append(head(W, "关卡与相机：七层瓦片、两条相机链、一个「钻山洞」",
+                  "关卡模块不参与任何战斗逻辑，它只做两件事：挡住不该走的地方、决定谁画在前面。"))
+
+    y0 = 118
+    s.append(section(y0, "① 七层 Tilemap + 一张水贴图", C["world"],
+                     "只有 3 层有碰撞体，而且没有 CompositeCollider2D"))
+    body, h = table(44, y0 + 34,
+                    ["层", "类型", "碰撞体", "作用"],
+                    [["Ground", "Tilemap", "无", "地面底图"],
+                     ["Rocks", "Tilemap", "无", "石头装饰"],
+                     ["Water", "Sprite（不是 Tilemap）", "无", "水面"],
+                     ["Collision-Low", "Tilemap", "TilemapCollider2D", "低处不可走"],
+                     ["Non-Collision-Low", "Tilemap", "BoxCollider2D（触发）", "挂 Elevation_Entry"],
+                     ["Collision-High", "Tilemap", "TilemapCollider2D", "高处不可走"],
+                     ["Non-Collision-High", "Tilemap", "无", "高处纯装饰"],
+                     ["MountainBoundary", "Tilemap", "TilemapCollider2D", "山体边界"]],
+                    [186, 250, 240, 300], accent=C["world"], mono_cols=(0,))
+    s.append(body)
+    y1 = y0 + 34 + h + 24
+    s.append(T(44, y1, "3 个 TilemapCollider2D 各自为战：每块瓦片一个碰撞体，瓦片越多物理开销越大。"
+                       "没有 CompositeCollider2D 合并，也就是「没有把上千个方框焊成一条多边形」。", 10.8, C["sub"]))
+
+    y2 = y1 + 30
+    s.append(section(y2, "② 两条相机链：一条给人看，一条给立绘看", C["ui"],
+                     "主相机走 Cinemachine，副相机只把画面塞进一张 256×256 的 RenderTexture"))
+    f = Flow(44, 520, y2 + 44, gap=46, side_x=596, side_w=560)
+    f.one("Cinemachine Virtual Camera",
+           ["Follow  = Player / Transform",
+            "Confiner2D -> BoundingShape2D",
+            "  = 一张 PolygonCollider2D（地图边界）"], C["ui"])
+    f.one("Main Camera（正交）",
+           ["orthographic size 3.5",
+            "depth -1 · ClearFlags SolidColor",
+            "写成屏幕，玩家直接看"], C["ui"],
+           side=("边界靠几何体，不靠代码",
+                 ["Confiner2D 读一个 PolygonCollider2D 的多边形，",
+                  "相机中心被夹在这个多边形里 —— 一行 C# 都不用写。",
+                  "改地图边界 = 拖那个 Polygon 的顶点。"], "gray"))
+    f.one("ShopKeeperCamera（正交）",
+           ["orthographic size 0.89",
+            "depth 0 · ClearFlags Skybox",
+            "只能由 ShopKeeper 开关"], C["item"])
+    f.one("ShopKeeperRennderTexture",
+           ["256 x 256（宽高都写 256）",
+            "相机 targetTexture 指向它",
+            "物体不动，画面就被「拍」进纹理"], C["item"])
+    f.one("RawImage（面板左下角）",
+           ["把 RenderTexture 当贴图显示",
+            "店主立绘 = 实时渲染的 3D 场景",
+            "不是一张静态图"], C["item"])
+    frag, endy = f.build()
+    s.append(frag)
+    s.append(gapchip(f, 1, "写屏幕", C["ui"], 22))
+    s.append(gapchip(f, 3, "写纹理", C["item"], 22))
+
+    y3 = endy + 60
+    s.append(section(y3, "③ 「钻山洞」= 关碰撞体 + 改排序号", C["player"],
+                     "Elevation_Entry / Exit 各 27 行，干的活完全对称但不完全相反"))
+    f2 = Flow(44, 520, y3 + 44, gap=46, side_x=596, side_w=560)
+    f2.one("玩家走进 Non-Collision-Low 的触发区",
+           ["Elevation_Entry（挂在这一层上）",
+            "OnTriggerEnter2D + CompareTag(\"Player\")"], C["player"])
+    f2.one("关掉山体、打开边界",
+           ["foreach mountainColliders: enabled = false",
+            "foreach boundaryColliders: enabled = true",
+            "-> 原来挡路的那几条碰撞体消失了"], C["world"])
+    f2.one("抬高玩家的排序号",
+           ["SpriteRenderer.sortingOrder = 15",
+            "玩家从此画在山体前面",
+            "观感 = 「钻进山洞，山在前、人在后」"], C["player"],
+           side=("为什么是 15 和 10",
+                 ["Entry 写死 15，Exit 写死 10。",
+                  "10 是「玩家原本的值」这个假设被硬编码了。",
+                  "如果哪天玩家默认排序改成别的数，",
+                  "走出山洞后就会停在错误的层级 —— 而且不会有任何报错。"], "bad"))
+    f2.one("走出 Exit 触发区",
+           ["Elevation_Exit（挂在 Exit 子物体上）",
+            "mountainColliders: enabled = true",
+            "boundaryColliders: enabled = false",
+            "sortingOrder = 10"], C["world"])
+    frag2, endy2 = f2.build()
+    s.append(frag2)
+    s.append(gapchip(f2, 1, "碰撞体开关", C["world"], 22))
+    s.append(gapchip(f2, 2, "排序号 15 / 10", C["player"], 22))
+
+    y4 = endy2 + 56
+    s.append(section(y4, "④ 关卡模块对外只有两个接口", C["world"], None))
+    cards = [
+        ("Tag：谁是玩家", C["player"],
+         ["CompareTag(\"Player\") 出现在 4 处：",
+          "Loot、ShopKeeper、Elevation_Entry、Elevation_Exit。",
+          "Tag 便宜、字符串、配错就静默失效。"]),
+        ("Layer：谁是敌人", C["enemy"],
+         ["Layer 6 Player · 7 Enemy · 8 Obstacle · 9 NPC。",
+          "战斗判定全部走 LayerMask 位运算，",
+          "比 Tag 快，也比 Tag 更难 debug。"]),
+        ("sortingOrder：谁画在前面", C["ui"],
+         ["SpriteRenderer.sortingOrder 决定遮挡关系",
+          "（场景里从 -10 到 51 都有）。",
+          "关卡的「高低差感」完全由它 + 碰撞体开关伪造。"]),
+    ]
+    cw = (1112 - 2 * 20) / 3
+    for i, (t, col, lines) in enumerate(cards):
+        x = 44 + i * (cw + 20)
+        s.append(f'<rect x="{x:.1f}" y="{y4 + 22}" width="{cw:.1f}" height="142" rx="9" '
+                 f'fill="#ffffff" stroke="{col}" stroke-opacity="0.32"/>')
+        s.append(T(x + 16, y4 + 48, t, 12.2, col, weight="700"))
+        yy = y4 + 72
+        for ln in lines:
+            s.append(T(x + 16, yy, ln, 10, C["sub"]))
+            yy += 18
+    return finish(s, W, ["world", "ui", "item", "player", "enemy", "bad", "gray"])
+
 BUILDERS = [
     ("arpg-mod-1-map.svg", build_map),
     ("arpg-mod-2-matrix.svg", build_matrix),
@@ -1254,6 +1511,8 @@ BUILDERS = [
     ("arpg-mod-4-enemy.svg", build_enemy),
     ("arpg-mod-5-growth.svg", build_growth),
     ("arpg-mod-6-items.svg", build_items),
+    ("arpg-mod-7-ui.svg", build_ui),
+    ("arpg-mod-8-world.svg", build_world),
 ]
 
 

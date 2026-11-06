@@ -26,7 +26,7 @@ slug: arpg-modules-overview
 | C# 脚本 | 31 个 | 不含 TextMesh Pro 自带示例 |
 | 代码行数 | 1435 行 | 最长 `Enemy_Movement` 140 行 |
 | 场景 | 1 个 | `SampleScene`，7 层 Tilemap |
-| Canvas | 5 张 | 经验条 / 属性面板 / 技能树 / 商店 / 背包 |
+| Canvas | 6 张 | 经验条 / 属性面板 / 技能树 / 商店 / 背包 / 玩家 HP |
 | 静态事件 | 6 组 | 全部跨模块通信的骨架 |
 | 单例 | 2 个 | `StatsManger.Instance`、`ShopKeeper.currentShopKeeper` |
 | 序列化引用 | 37 条 | 场景里 Inspector 拖出来的那些线 |
@@ -44,7 +44,7 @@ slug: arpg-modules-overview
 
 - **输入层**只有一个东西：`InputManager.asset` 里那 7 个轴。它不知道任何模块存在。
 - **逻辑层**是 4 个模块，各自独立成一摊：玩家、敌人、成长、物品。
-- **底层**是 2 个：`StatsManger` 这个单例（数据），5 张 Canvas + 关卡触发器（表现）。
+- **底层**是 2 个：`StatsManger` 这个单例（数据），6 张 Canvas + 关卡触发器（表现）。
 
 **依赖方向基本是单向的：逻辑层读底层，底层不知道逻辑层。** `StatsManger` 里没有任何一行代码 import `Player_Combat`，这是这个工程最稳的一点。
 
@@ -140,4 +140,4 @@ slug: arpg-modules-overview
 
 31 个脚本读起来乱，是因为它们按「哪天写的」排列；一旦按「输入 / 逻辑 / 数据表现」三层和「五类接线」重组，7 个模块的边界就非常清楚了——**逻辑层之间靠 6 组事件说话，逻辑层与底层之间靠单例和一个 `statsUI` 引用说话，而敌人和物品之间一句话都没说。**
 
-下一篇从最大的模块开始：[玩家与敌人](/post/arpg-module-player-enemy.html)。
+后续五篇分别拆开讲：[玩家与敌人](/post/arpg-module-player-enemy.html)、[成长链](/post/arpg-module-growth.html)、[物品与商店](/post/arpg-module-items-shop.html)、[表现层](/post/arpg-module-ui.html)、[关卡与相机](/post/arpg-module-world.html)。

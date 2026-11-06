@@ -42,7 +42,7 @@ summary: Day 1–16 的全景快照：31 个脚本 1435 行、5 张 Canvas、8 �
 
 ## 模块专文（按模块重读整个工程）
 
-日志按天写，模块专文按「东西长在哪」重读一遍。四篇配套 6 张流程图 + 1 张耦合矩阵：
+日志按天写，模块专文按「东西长在哪」重读一遍。六篇配套 8 张流程图 + 1 张耦合矩阵：
 
 | 篇 | 主题 | 讲了什么 |
 |---|---|---|
@@ -50,6 +50,8 @@ summary: Day 1–16 的全景快照：31 个脚本 1435 行、5 张 Canvas、8 �
 | [玩家与敌人](post/arpg-module-player-enemy.html) | 两条武器链、一个状态机 | 近战靠动画事件 + `OverlapCircleAll`，远程靠物理碰撞；敌人 4 态状态机与三个动画事件 |
 | [成长链](post/arpg-module-growth.html) | 一个 int 走完五段 | 击杀 → 经验 → 升级 → 点数 → 技能 → 属性；三段发布、三段订阅 |
 | [物品与商店](post/arpg-module-items-shop.html) | 从地上捡到换成钱 | `ItemSo` 是数据、格子只是投影；拾取 / 使用 / 买卖三条链；三处断链 |
+| [表现层](post/arpg-module-ui.html) | 六张 Canvas 与三个暂停者 | 6 张 Canvas 的分层；三处各自改 `Time.timeScale`；逻辑挂在 Canvas 上的代价 |
+| [关卡与相机](post/arpg-module-world.html) | 七层瓦片与两条相机链 | 只有 3 层有碰撞体；Cinemachine 边界 + 256×256 RT 立绘；钻山洞 = 关碰撞 + 改排序号 |
 
 > 这四篇以**当前代码**为准，不回头改早期日志里的现场记录。已知差异：`expReward` 现在是 10（Day 7 记的是 3）、`ShopKeeper` 现在 92 行（Day 16 记的是 81 行）。
 
