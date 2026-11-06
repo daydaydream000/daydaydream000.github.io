@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="auto" data-root="../">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARPG 代码分析（四）：如果重写——目录重组与六步迁移 · DayDayDream</title>
+<meta name="description" content="不改功能的条件下，把 31 个文件重新组织：目录从「按天建」改成「按层建」，迁移拆成六步，按风险从零往上排——先做纯新增（GameEvents、PanelManager），再换实现（ExpManager 搬家、SkillSO 策略化），然后才打通「升级→属性」，最后才改名。每步都给出改动量、风险和换来了什么，并说明为什么不能反过来做。">
+<link rel="canonical" href="https://daydaydream000.github.io/post/arpg-code-refactor.html">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="DayDayDream">
+<meta property="og:title" content="ARPG 代码分析（四）：如果重写——目录重组与六步迁移">
+<meta property="og:description" content="不改功能的条件下，把 31 个文件重新组织：目录从「按天建」改成「按层建」，迁移拆成六步，按风险从零往上排——先做纯新增（GameEvents、PanelManager），再换实现（ExpManager 搬家、SkillSO 策略化），然后才打通「升级→属性」，最后才改名。每步都给出改动量、风险和换来了什么，并说明为什么不能反过来做。">
+<meta property="og:url" content="https://daydaydream000.github.io/post/arpg-code-refactor.html">
+<meta property="og:image" content="https://daydaydream000.github.io/assets/images/arpg-code-c10.svg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f3f8f6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12171a" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="alternate" type="application/rss+xml" title="DayDayDream" href="../rss.xml">
+<link rel="stylesheet" href="../assets/style.css?v=db15b81cea">
+<script>
+/* 主题与公告状态在首次绘制前应用，避免闪烁 */
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('dsh-theme'); } catch (e) {}
+  if (saved !== 'light' && saved !== 'dark') saved = 'auto';
+  var root = document.documentElement;
+  root.dataset.theme = saved;
+  root.classList.toggle('dark', saved === 'dark' ||
+    (saved === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches));
+  try {
+    if (localStorage.getItem('dsh-notice') === 'off') root.classList.add('notice-off');
+  } catch (e) {}
+})();
+</script>
+
+</head>
+<body class="page-post">
+<div id="page-progress" aria-hidden="true"></div>
+<a class="skip-link" href="#main">跳到正文</a>
+
+<header class="topbar"><div class="topbar-inner"><a class="topbar-brand" href="../index.html"><img src="../assets/avatar.jpg" alt="" width="30" height="30"><span class="topbar-brand-text">DayDayDream</span></a><nav class="topbar-nav" aria-label="主导航"><a href="../index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg><span>首页</span></a><a href="../arpg-progress.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>ARPG</span></a><a href="../tags/index.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span>标签</span></a><a href="../about.html"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg><span>关于</span></a></nav><div class="topbar-tools"><button id="search-toggle" class="icon-btn" type="button" aria-label="搜索文章" title="搜索（按 /）"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button><button id="theme-toggle" class="icon-btn" type="button" aria-label="切换深浅色主题" title="切换主题"><span class="icon-sun"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12H5M19 12h2.4M5.4 5.4l1.7 1.7M16.9 16.9l1.7 1.7M18.6 5.4l-1.7 1.7M7.1 16.9l-1.7 1.7"/></svg></span><span class="icon-moon"><svg class="i" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.3A8.6 8.6 0 1 1 9.7 3.5a7 7 0 0 0 10.8 10.8z"/></svg></span></button></div></div></header>
+<header class="banner banner-short"><img class="banner-bg" src="../assets/banner.jpg" alt="" aria-hidden="true" decoding="async"><div class="banner-scrim"></div><div class="banner-inner"><p class="banner-title">DayDayDream</p><p class="banner-subtitle">醒着做梦，落笔成诗——记所思，存所学。</p></div></header>
+
+<main id="main" class="layout">
+  <div class="layout-inner">
+    <aside class="col col-left"><section class="card-panel profile-card" data-reveal="0"><a class="profile-avatar-link" href="../about.html" aria-label="关于我"><img class="profile-avatar" src="../assets/avatar.jpg" alt="DayDayDream" decoding="async"></a><p class="profile-name">DayDayDream</p><div class="profile-accent" aria-hidden="true"></div><p class="profile-greeting">Hello, I'm DayDayDream.</p><div class="profile-social"><a class="social-chip" href="https://github.com/daydaydream000" title="GitHub" aria-label="GitHub" target="_blank" rel="noopener noreferrer"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="currentColor"><path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.5 2.87 8.32 6.84 9.67.5.09.68-.22.68-.48 0-.24-.01-.87-.01-1.7-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.62.07-.62 1 .07 1.53 1.06 1.53 1.06.89 1.56 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.4 9.4 0 0 1 5 0c1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.8-4.57 5.06.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.58.69.48A10.04 10.04 0 0 0 22 12.26C22 6.58 17.52 2 12 2z"/></svg></a><a class="social-chip" href="mailto:daydaydream000@users.noreply.github.com" title="邮箱" aria-label="邮箱"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg></a><a class="social-chip" href="../rss.xml" title="RSS 订阅" aria-label="RSS 订阅"><svg class="i" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18.5" r="1.4" fill="currentColor" stroke="none"/><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/></svg></a></div></section><section class="card-panel notice-card" id="notice" data-reveal="1"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5v3A1.5 1.5 0 0 0 5.5 15H7l1 4h2l-1-4h2l7 3.5V6.5L11 10H5.5A1.5 1.5 0 0 0 4 10.5Z"/></svg><span>公告</span></h2><p class="notice-text">欢迎来到 DayDayDream —— 醒着做梦，落笔成诗，记所思，存所学。</p><div class="notice-foot"><a class="notice-more" href="../about.html">前往关于</a><button class="notice-close" type="button" aria-label="关闭公告" title="关闭"><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div></section></aside>
+    <div class="col col-main"><article class="card-panel post">
+  <header class="post-header">
+    <h1 class="post-title">ARPG 代码分析（四）：如果重写——目录重组与六步迁移</h1>
+    <div class="post-meta"><div class="post-badges"><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><time datetime="2026-11-06">2026 年 11 月 06 日</time></span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg>约 1825 字</span><span class="badge"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>6 分钟阅读</span><a class="badge badge-pin" href="../tags/index.html#tag-unity"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>Unity</a><a class="badge badge-pin" href="../tags/index.html#tag-arpg"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>ARPG</a><a class="badge badge-pin" href="../tags/index.html#tag-代码审查"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>代码审查</a><a class="badge badge-pin" href="../tags/index.html#tag-重构"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>重构</a><a class="badge badge-pin" href="../tags/index.html#tag-架构"><svg class="i" viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg>架构</a></div></div>
+  </header>
+  <div class="toc-mobile"><nav class="toc" aria-label="目录"><p class="toc-title">目录</p><div class="toc-list"><a href="#一句话说清">一句话说清</a><a href="#目录从「按天建」到「按层建」">目录：从「按天建」到「按层建」</a><a href="#现在" class="toc-h3">现在</a><a href="#之后" class="toc-h3">之后</a><a href="#六步迁移">六步迁移</a><a href="#第-1-步-抽-gameevents" class="toc-h3">第 1 步 · 抽 GameEvents</a><a href="#第-2-步-抽-panelmanager" class="toc-h3">第 2 步 · 抽 PanelManager</a><a href="#第-3-步-expmanager-搬离-canvas" class="toc-h3">第 3 步 · ExpManager 搬离 Canvas</a><a href="#第-4-步-skillso-加效果策略" class="toc-h3">第 4 步 · SkillSO 加效果策略</a><a href="#第-5-步-打通「升级-属性」" class="toc-h3">第 5 步 · 打通「升级 → 属性」</a><a href="#第-6-步-最后才改名" class="toc-h3">第 6 步 · 最后才改名</a><a href="#每一步的代价与收益">每一步的代价与收益</a><a href="#明确不建议做的三件事">明确不建议做的三件事</a><a href="#真正的顺序">真正的顺序</a><a href="#一句话总结">一句话总结</a></div></nav></div>
+  <figure class="post-cover"><img src="../assets/images/arpg-code-c10.svg" alt="ARPG 代码分析（四）：如果重写——目录重组与六步迁移" loading="lazy" decoding="async"></figure>
+  <div class="post-content"><h2 id="一句话说清">一句话说清</h2><p>重写的顺序比重写的内容重要。<strong>先做「纯新增」，再做「替换实现」，最后做「改名」</strong>——因为这个顺序下，每一步都能单独发布、单独回滚。</p><p>反过来做（先改名、再动结构）会导致：改了 60 处名字，代码结构一点没变，还多了一次大 diff。</p><hr><h2 id="目录从「按天建」到「按层建」">目录：从「按天建」到「按层建」</h2><figure class="post-figure"><img src="../assets/images/arpg-code-4-refactor.svg" alt="重构：目录树前后对照与六步迁移" loading="lazy" decoding="async"><figcaption>重构：目录树前后对照与六步迁移</figcaption></figure><h3 id="现在">现在</h3><div class="code-block"><div class="code-head"><span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code>Assets/Scripe/            ← 名字拼错（Script）
+├ Player/        9 文件 462 行
+├ Enemy/         4 文件 237 行
+├ Inventory&amp;Shop/10 文件 585 行
+│  └ Shop/       5 文件 303 行
+├ SkillTree/     5 文件 220 行
+├ Tile Scripe/   2 文件  54 行
+└ Arrow/         1 文件   7 行（空类）</code></pre></div><p>问题不是「目录太多」，是<strong>分类维度不统一</strong>：<code>Player</code> / <code>Enemy</code> 按「是谁」分，<code>Inventory&amp;Shop</code> 按「干什么」分，<code>Tile Scripe</code> 按「放在哪」分。</p><p>后果是 <code>Inventory&amp;Shop</code> 里一半是 UI（<code>InventorySlot</code>、<code>ShopInfo</code>、<code>ShopSlot</code>），另一半是数据与流程（<code>ItemSo</code>、<code>InventoryManager</code>、<code>ShopManager</code>）。<strong>你没法用「UI」这个词一次找全所有 UI。</strong></p><h3 id="之后">之后</h3><div class="code-block"><div class="code-head"><span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code>Assets/Scripts/
+├ Core/         GameEvents / IPanel / IDamageable
+├ Player/       Movement Combat Bow Arrow Health
+├ Enemy/        Movement Combat Health Knockback
+├ Items/        ItemSO Inventory Shop
+├ Skills/       SkillSO Slot TreeManager Effects
+├ World/        Elevation Entry/Exit
+└ UI/           PanelManager + 各面板</code></pre></div><p>关键差别：<strong>先按职责分层（Core / 逻辑 / UI），再按子系统分目录</strong>。<code>UI/</code> 一个目录就能回答「界面上有什么」。</p><hr><h2 id="六步迁移">六步迁移</h2><p>每一步都能单独提交、单独发布。</p><h3 id="第-1-步-抽-gameevents">第 1 步 · 抽 <code>GameEvents</code></h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public static class GameEvents
+{
+    public static event Action&lt;int&gt; MonsterDefeated;
+    public static event Action&lt;int&gt; LevelUp;
+    public static event Action&lt;SkillSlot&gt; AbilityPointSpent;
+    public static event Action&lt;SkillSlot&gt; SkillMaxed;
+    public static event Action&lt;ItemSo, int&gt; ItemLooted;
+    public static event Action&lt;ShopManager, bool&gt; ShopStateChanged;
+}</code></pre></div><p><strong>改什么</strong>：6 组事件集中到一个静态类；发布/订阅点各改一行（<code>Enemy_Health.OnMonsterDefeated</code> → <code>GameEvents.MonsterDefeated</code>）。</p><p><strong>为什么放第一步</strong>：纯搬迁——事件签名不变、订阅时机不变、行为不变。但从此「谁在发、谁在听」有了唯一入口，后面五步都能靠它解耦。</p><p><strong>风险</strong>：接近零（只改 <code>using</code> 和前缀）。</p><h3 id="第-2-步-抽-panelmanager">第 2 步 · 抽 <code>PanelManager</code></h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public class PanelManager : MonoBehaviour
+{
+    private readonly Stack&lt;CanvasGroup&gt; open = new Stack&lt;CanvasGroup&gt;();
+
+    public void Push(CanvasGroup panel)
+    {
+        open.Push(panel);
+        panel.alpha = 1; panel.blocksRaycasts = true; panel.interactable = true;
+        Time.timeScale = 0;
+    }
+
+    public void Pop(CanvasGroup panel)
+    {
+        if (open.Count &gt; 0 &amp;&amp; open.Peek() == panel) open.Pop();
+        panel.alpha = 0; panel.blocksRaycasts = false; panel.interactable = false;
+        if (open.Count == 0) Time.timeScale = 1;   // ← 只有栈空才恢复
+    }
+}</code></pre></div><p><strong>改什么</strong>：<code>StatsUI</code> / <code>ToggleSkillTree</code> / <code>ShopKeeper</code> 三份复制代码各删掉一半。</p><p><strong>解决什么</strong>：三个面板不再各记一个 <code>bool</code>；<code>timeScale</code> 只有一个主人；<code>interactable</code> 的设值统一（顺手修掉「两个面板少设一行」的不一致）。</p><p><strong>风险</strong>：低。但要逐个验证「先开 A 再开 B、关 B」的序列。</p><h3 id="第-3-步-expmanager-搬离-canvas">第 3 步 · <code>ExpManager</code> 搬离 Canvas</h3><p><strong>改什么</strong>：把组件从 <code>ExpCanvas</code> 移到 <code>Player</code> 或一个空 <code>GameManager</code>；<code>expSlider</code> / <code>currentLevelText</code> 改为 Inspector 注入（跨物体引用）。</p><p><strong>为什么必须早于「加掉落表」</strong>：掉落表会让「击杀」承担更多职责。如果那时 <code>ExpManager</code> 还挂在 Canvas 上，就是在一根随时会断的线上再加负载。</p><p><strong>风险</strong>：低（1 处挂载 + 2 个引用），但必须重跑一次「关 HUD 后打怪」的验证。</p><h3 id="第-4-步-skillso-加效果策略">第 4 步 · <code>SkillSO</code> 加效果策略</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">public abstract class SkillEffect : ScriptableObject
+{
+    public abstract void Apply();
+}
+
+// MaxHealthEffect : SkillEffect  → StatsManger.Instance.AddMaxHealth(1)
+// UnlockCombat  : SkillEffect     → 打开近战</code></pre></div><p><strong>改什么</strong>：去掉 <code>switch(skillName)</code>；4 份 SO 各挂一个 effect 资产。</p><p><strong>解决什么</strong>：以后加一份技能 SO 不用改代码。现在 24 个格子里 8 个落进 <code>default</code>，就是因为「名字不在 switch 里」。</p><p><strong>风险</strong>：中（要给 4 份 SO 重新配 effect）。</p><h3 id="第-5-步-打通「升级-属性」">第 5 步 · 打通「升级 → 属性」</h3><div class="code-block"><div class="code-head"><span><span class="code-lang">csharp</span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code class="language-csharp">// StatsManger 新增
+public void AddMaxHealth(int n) { maxHealth += n; healthText.text = ...; OnStatsChanged?.Invoke(); }
+public void AddDamage(int n)    { damage += n;    OnStatsChanged?.Invoke(); }
+
+// ExpManager.LevelUp() 末尾
+stats.AddMaxHealth(1);</code></pre></div><p><strong>改什么</strong>：<code>StatsManger</code> 暴露几个 <code>AddXxx</code>；<code>LevelUp()</code> 调它；<code>StatsUI</code> 改成订阅 <code>OnStatsChanged</code> 刷新。</p><p><strong>解决什么</strong>：等级第一次真的有意义；属性面板不再显示开局快照。</p><p><strong>风险</strong>：中（会影响手感，得重新调数值）。</p><h3 id="第-6-步-最后才改名">第 6 步 · 最后才改名</h3><div class="code-block"><div class="code-head"><span></span><button class="code-copy" type="button" data-copy aria-label="复制代码">复制</button></div><pre><code>StatsManger → StatsManager
+Player_ChangeEqiupment → Player_ChangeEquipment
+Scripe/ → Scripts/</code></pre></div><p><strong>为什么放最后</strong>：改名会同时动文件名、类名、11 个文件的引用、6 个场景组件，以及所有文档截图。<strong>它不改变任何行为</strong>——收益最低、噪音最大。</p><p>等前面五步做完、结构稳定了再改，一次到位。</p><hr><h2 id="每一步的代价与收益">每一步的代价与收益</h2><div class="table-wrap"><table><thead><tr><th>步骤</th><th>改动量</th><th>风险</th><th>换来了什么</th></tr></thead><tbody><tr><td>1 抽 <code>GameEvents</code></td><td>1 个新文件 + 6 处引用</td><td>极低</td><td>事件的唯一入口</td></tr><tr><td>2 抽 <code>PanelManager</code></td><td>1 个新类 + 3 处替换</td><td>低</td><td>面板能叠加、<code>timeScale</code> 有主</td></tr><tr><td>3 <code>ExpManager</code> 搬家</td><td>1 处挂载 + 2 个引用</td><td>低</td><td>关 HUD 不再断链</td></tr><tr><td>4 <code>SkillSO</code> 策略化</td><td>1 个基类 + 4 份 SO</td><td>中</td><td>加技能不用改代码</td></tr><tr><td>5 升级 → 属性</td><td>1 个方法 + 1 处调用</td><td>中</td><td>等级第一次真的有意义</td></tr><tr><td>6 改名</td><td>全项目 + 场景</td><td>中（易漏）</td><td>只影响可读性</td></tr></tbody></table></div><p>前两步加起来大约 80 行新代码，风险极低，但能一次性解决「面板互斥」和「事件散落」两个结构性问题。<strong>这是性价比最高的部分。</strong></p><hr><h2 id="明确不建议做的三件事">明确不建议做的三件事</h2><p><strong>① 不要先改名。</strong> 理由见第 6 步。</p><p><strong>② 不要把 <code>public</code> 字段一次性全改成 <code>GetComponent</code>。</strong> 跨物体的引用改不成 <code>GetComponent</code>，硬改会把「漏拖」变成「空引用」——问题没解决，只是换了报错的位置。<strong>按「同一物体」和「跨物体」分批改。</strong></p><p><strong>③ 不要在没有存档系统之前做「数值重做」。</strong> 现在 <code>level</code> / <code>gold</code> / <code>availablePoints</code> 全在内存里，重开归零；数值调得再好，玩家也留不下来。</p><hr><h2 id="真正的顺序">真正的顺序</h2><p>如果只能做一件事，做这个：</p><p><strong>补一张掉落表，把「敌人 → 物品」那条缺失的边接上。</strong></p><p>它同时解决三件事：让「打怪」有回报、让物品链有了稳定来源、让 <code>Loot</code> / <code>InventoryManager</code> 的代码第一次真的被用到。</p><p>然后再按第 1、2、3 步做结构收敛。剩下四步（策略化、打通升级、改名）可以慢慢来——<strong>它们不改变「玩起来对不对」，只改变「改起来累不累」。</strong></p><hr><h2 id="一句话总结">一句话总结</h2><p>重构的目标不是「代码好看」，是<strong>让下一个改动只需要改一处</strong>。</p><p>按这个标准衡量：抽 <code>GameEvents</code>（6 处变 1 处）、抽 <code>PanelManager</code>（3 份变 1 份）、<code>StatsManger</code> 暴露 <code>AddXxx</code>（属性只有一个写入口）——这三件事都在把「多处」变「一处」。而改名只是把「一处」写得更顺眼。</p><p>回到体检报告：<a href="arpg-code-audit.html">31 个文件的一次静态体检</a>。</p></div>
+  <footer class="post-footer">
+    <div class="post-tags"><a class="tag" href="../tags/index.html#tag-unity">Unity</a><a class="tag" href="../tags/index.html#tag-arpg">ARPG</a><a class="tag" href="../tags/index.html#tag-代码审查">代码审查</a><a class="tag" href="../tags/index.html#tag-重构">重构</a><a class="tag" href="../tags/index.html#tag-架构">架构</a></div>
+    <p class="post-source"><a href="https://github.com/daydaydream000/daydaydream000.github.io/blob/main/posts/arpg-code-refactor.md">在 GitHub 上查看源文件</a></p>
+  </footer>
+</article>
+<nav class="post-nav" aria-label="上下篇"><a class="post-nav-item prev" href="../post/hello-daydaydream.html"><span class="post-nav-label">← 更新的一篇</span><span class="post-nav-title">你好，欢迎来到 DayDayDream</span></a><a class="post-nav-item next" href="../post/arpg-code-antipatterns.html"><span class="post-nav-label">更早的一篇 →</span><span class="post-nav-title">ARPG 代码分析（三）：八个反模式</span></a></nav>
+</div>
+    <aside class="col col-right"><nav class="card-panel toc-card" aria-label="文章目录" data-reveal="0"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span>文章目录</span></h2><div class="toc-list"><a class="" href="#一句话说清">一句话说清</a><a class="" href="#目录从「按天建」到「按层建」">目录：从「按天建」到「按层建」</a><a class="toc-h3" href="#现在">现在</a><a class="toc-h3" href="#之后">之后</a><a class="" href="#六步迁移">六步迁移</a><a class="toc-h3" href="#第-1-步-抽-gameevents">第 1 步 · 抽 GameEvents</a><a class="toc-h3" href="#第-2-步-抽-panelmanager">第 2 步 · 抽 PanelManager</a><a class="toc-h3" href="#第-3-步-expmanager-搬离-canvas">第 3 步 · ExpManager 搬离 Canvas</a><a class="toc-h3" href="#第-4-步-skillso-加效果策略">第 4 步 · SkillSO 加效果策略</a><a class="toc-h3" href="#第-5-步-打通「升级-属性」">第 5 步 · 打通「升级 → 属性」</a><a class="toc-h3" href="#第-6-步-最后才改名">第 6 步 · 最后才改名</a><a class="" href="#每一步的代价与收益">每一步的代价与收益</a><a class="" href="#明确不建议做的三件事">明确不建议做的三件事</a><a class="" href="#真正的顺序">真正的顺序</a><a class="" href="#一句话总结">一句话总结</a></div></nav><section class="card-panel" data-reveal="3"><h2 class="widget-title"><svg class="i" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span>站点统计</span></h2><ul class="stat-list"><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9l-6-6Z"/><path d="M13 3v6h6"/></svg><span class="stat-label">文章</span><span class="stat-value">31</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12.5V4a1 1 0 0 1 1-1h8.5L21 11.5 12.5 20 3 12.5Z"/><circle cx="7.8" cy="7.8" r="1.4"/></svg><span class="stat-label">标签</span><span class="stat-value">47</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M2 20h20"/></svg><span class="stat-label">总字数</span><span class="stat-value">79,542</span></li><li><svg class="i" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span class="stat-label">最近更新</span><span class="stat-value">2026-11-06</span></li></ul></section></aside>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <p>转载请注明出处</p>
+  <nav class="footer-nav" aria-label="页脚导航">
+    <a href="../index.html">首页</a>
+    <a href="../tags/index.html">标签</a>
+    <a href="../about.html">关于</a>
+    <a href="../rss.xml">RSS</a>
+    <a href="https://github.com/daydaydream000">GitHub</a>
+    <a href="https://github.com/daydaydream000/daydaydream000.github.io">源码</a>
+    <a href="mailto:daydaydream000@users.noreply.github.com">邮件</a>
+  </nav>
+  <p class="footer-note">本站是纯静态站点，由 build.py 生成，托管于 GitHub Pages。</p>
+</footer>
+
+<a class="back-to-top" id="back-to-top" href="#" aria-label="回到顶部" title="回到顶部">
+  <svg class="i" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+</a>
+
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-panel" role="dialog" aria-modal="true" aria-label="搜索文章">
+    <div class="search-head">
+      <svg class="i" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+      </svg>
+      <input id="search-input" type="search" placeholder="搜索标题、标签或正文…" autocomplete="off"
+             spellcheck="false" aria-label="搜索关键词">
+      <kbd>Esc</kbd>
+    </div>
+    <div class="search-results" id="search-results"></div>
+  </div>
+</div>
+
+<script src="../assets/search-index.js" defer></script>
+<script src="../assets/app.js?v=ffe2833a95" defer></script>
+</body>
+</html>
